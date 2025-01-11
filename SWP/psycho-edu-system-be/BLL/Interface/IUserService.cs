@@ -1,18 +1,19 @@
-﻿using DAL.Entities;
-using DAL.Repositories.IRepositories;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DAL.Entities;
 
-namespace DAL.Repositories.IRepositories
+namespace BLL.Interface
 {
-
-    public interface IUserRepository : IGenericRepository<User>
+    public interface IUserService
     {
+
         Task<User> GetUserByUserNameAsync(string userName);
         Task<User> GetUserByEmailAsync(string email);
+        Task<bool> RegisterUserAsync(User newUser);
         Task<bool> IsUserExistAsync(string userName, string email);
+
     }
 }

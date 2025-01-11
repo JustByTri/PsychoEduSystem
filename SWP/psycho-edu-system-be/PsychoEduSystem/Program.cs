@@ -1,6 +1,10 @@
 using Swashbuckle.AspNetCore.Swagger;
 using DAL.Data;
 using Microsoft.EntityFrameworkCore;
+using DAL.Repositories.IRepositories;
+using BLL.Interface;
+using DAL.Repositories;
+using BLL.Service;
 
 namespace MIndAid
 
@@ -16,10 +20,13 @@ namespace MIndAid
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddDbContext<MindAidContext>(options =>
            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+
        );
 
             var app = builder.Build();
