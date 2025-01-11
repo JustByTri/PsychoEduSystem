@@ -6,9 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DAL.Repositories.IReposiotories
+namespace DAL.Repositories.IRepositories
 {
-    public interface ICourseContentRepository : IGenericRepository<CourseContent>
+
+    public interface IUserRepository : IGenericRepository<User>
     {
     }
 }
