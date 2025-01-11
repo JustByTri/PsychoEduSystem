@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DAL.Repositories.IReposiotories
+namespace DAL.Repositories.IRepositories
 {
-    public interface IMentalHealthPointDetailRepository : IGenericRepository<MentalHealthPointDetail>
+    public interface ICategoryRepository : IGenericRepository<Category>
     {
     }
 }
