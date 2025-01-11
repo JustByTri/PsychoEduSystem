@@ -40,6 +40,7 @@ namespace DAL.Entities
         public virtual ICollection<Message> SentMessages { get; set; }
         public virtual ICollection<Message> ReceivedMessages { get; set; }
         public virtual ICollection<MentalHealthPoint> MentalHealthPoints { get; set; }
+        public virtual ICollection<PsychoQuestionSet> PsychoQuestions { get; set; }
 
     }
 }

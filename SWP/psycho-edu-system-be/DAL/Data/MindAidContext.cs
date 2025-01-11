@@ -20,6 +20,9 @@ namespace DAL.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<MentalHealthPoint> MentalHealthPoints { get; set; }
         public DbSet<MentalHealthPointDetail> MentalHealthPointDetails { get; set; }
+        public DbSet<PsychoQuestionSet> PsychoQuestionSets { get; set; }
+        public DbSet<Question> QuestionSets { get; set; }
+        public DbSet<Answer> Answers { get; set; }
         #endregion
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
@@ -132,7 +135,33 @@ namespace DAL.Data
                 .HasOne(mhp => mhp.MentalHealthPointDetail)
                 .WithOne(mhpd => mhpd.MentalHealthPoints)
                 .HasForeignKey<MentalHealthPoint>(mhp => mhp.MentalHealthPointDetailId);
+            modelBuilder.Entity<PsychoQuestionSet>()
+            .HasOne(pqs => pqs.User)
+            .WithMany(u => u.PsychoQuestions)
+            .HasForeignKey(pqs => pqs.UserId);
 
+            modelBuilder.Entity<Question>()
+                .HasOne(q => q.QuestionSet)
+                .WithMany(pqs => pqs.Questions)
+                .HasForeignKey(q => q.SetId);
+
+            modelBuilder.Entity<Answer>()
+                .HasOne(a => a.Question)
+                .WithMany(q => q.Answers)
+                .HasForeignKey(a => a.QuestionId);
+
+            // Configure automatic creation of CreateAt
+            modelBuilder.Entity<PsychoQuestionSet>()
+                .Property(p => p.CreateAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<Question>()
+                .Property(q => q.CreateAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<Answer>()
+                .Property(a => a.CreateAt)
+                .HasDefaultValueSql("GETDATE()");
             #endregion
 
             #region Seed Data
