@@ -141,7 +141,8 @@ namespace DAL.Data
                 new Role { RoleId = adminRoleId, RoleName = "Admin" },
                 new Role { RoleId = Guid.NewGuid(), RoleName = "Psychologist" },
                 new Role { RoleId = Guid.NewGuid(), RoleName = "Student" },
-                new Role { RoleId = Guid.NewGuid(), RoleName = "Parent" }
+                new Role { RoleId = Guid.NewGuid(), RoleName = "Parent" },
+                new Role { RoleId = Guid.NewGuid(), RoleName = "Teacher" }
             );
 
             var adminUser = CreateAdminUser();
