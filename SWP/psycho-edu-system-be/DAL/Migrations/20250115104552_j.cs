@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class aa : Migration
+    public partial class j : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -335,22 +335,22 @@ namespace DAL.Migrations
                 columns: new[] { "RoleId", "RoleName" },
                 values: new object[,]
                 {
-                    { new Guid("71cd3790-c350-44c5-9495-770f83d5ce42"), "Parent" },
-                    { new Guid("cefda240-91fa-43b2-bb2b-1bf1fdbd929c"), "Teacher" },
-                    { new Guid("d57643b7-5664-42ee-8228-02369efbcf57"), "Admin" },
-                    { new Guid("e1a2148b-b0f7-4626-aa6b-f2245bb1007f"), "Psychologist" },
-                    { new Guid("f77f3d55-8e5c-4895-8013-82042c0eeb59"), "Student" }
+                    { new Guid("0eb94925-6bab-42ee-8395-6cd1db80b96b"), "Psychologist" },
+                    { new Guid("324d798c-e1d9-494e-b6d1-9a5153ac3a23"), "Parent" },
+                    { new Guid("3fcec13d-b1ae-4636-a9f6-9eba982d79a7"), "Admin" },
+                    { new Guid("768b9dbc-a532-4ed1-82da-2a3f667c239e"), "Teacher" },
+                    { new Guid("b97fdba8-5cab-4477-9ba3-5c2d39dfc5c1"), "Student" }
                 });
 
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "UserId", "Address", "BirthDay", "CreateAt", "Email", "FullName", "Gender", "PasswordHash", "PasswordSalt", "Phone", "Status", "UserName" },
-                values: new object[] { new Guid("edadd373-a390-40ca-b8b4-506a0872bb44"), "Ha Noi", new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(2025, 1, 11, 16, 14, 40, 160, DateTimeKind.Local).AddTicks(5948), "admin@fpt.edu.vn", "Administrator", "Male", new byte[] { 63, 123, 116, 57, 7, 229, 39, 159, 215, 215, 51, 2, 239, 4, 26, 211, 209, 42, 239, 246, 24, 91, 212, 192, 157, 105, 235, 236, 207, 0, 52, 217, 88, 78, 229, 210, 158, 88, 147, 172, 204, 3, 193, 235, 210, 79, 99, 167, 110, 78, 95, 131, 114, 71, 254, 205, 92, 203, 220, 189, 224, 33, 217, 68 }, new byte[] { 209, 76, 234, 93, 43, 81, 226, 190, 0, 149, 211, 193, 236, 101, 74, 66, 91, 187, 29, 231, 7, 151, 62, 155, 211, 73, 78, 59, 25, 141, 139, 191, 199, 63, 150, 173, 102, 110, 189, 164, 240, 43, 105, 41, 251, 244, 70, 85, 176, 55, 253, 190, 151, 214, 212, 241, 199, 62, 24, 214, 145, 14, 14, 87, 217, 87, 16, 179, 2, 135, 239, 130, 128, 158, 30, 20, 144, 28, 100, 110, 160, 18, 88, 1, 143, 87, 153, 27, 146, 241, 93, 15, 88, 65, 169, 15, 112, 234, 226, 13, 207, 55, 9, 178, 61, 217, 164, 63, 212, 95, 113, 62, 11, 14, 188, 160, 17, 91, 162, 46, 4, 140, 65, 127, 38, 246, 51, 46 }, "0123456789", true, "admin" });
+                values: new object[] { new Guid("5216de74-f903-4f9d-9a16-7c79e7cc329e"), "Ha Noi", new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(2025, 1, 15, 17, 45, 51, 30, DateTimeKind.Local).AddTicks(9755), "admin@fpt.edu.vn", "Administrator", "Male", new byte[] { 3, 172, 172, 210, 129, 2, 48, 193, 168, 224, 83, 137, 208, 209, 250, 234, 32, 163, 212, 67, 179, 157, 233, 25, 94, 251, 129, 162, 162, 83, 172, 9, 100, 112, 91, 243, 137, 172, 146, 30, 247, 123, 246, 3, 162, 217, 52, 69, 21, 109, 229, 161, 85, 38, 218, 86, 100, 119, 214, 195, 62, 226, 14, 82 }, new byte[] { 251, 152, 241, 153, 63, 36, 234, 215, 3, 42, 70, 118, 141, 148, 162, 243, 185, 41, 96, 101, 224, 166, 4, 114, 8, 165, 84, 70, 200, 121, 172, 167, 136, 127, 245, 159, 108, 23, 87, 105, 25, 205, 148, 214, 19, 183, 212, 155, 25, 249, 17, 57, 207, 126, 25, 28, 247, 49, 224, 190, 225, 214, 246, 114, 211, 1, 233, 39, 139, 20, 188, 162, 138, 153, 251, 115, 59, 152, 156, 22, 9, 254, 251, 61, 186, 76, 127, 25, 38, 230, 181, 170, 51, 7, 68, 244, 128, 243, 244, 103, 119, 17, 200, 160, 249, 156, 180, 59, 33, 210, 255, 185, 172, 225, 143, 43, 69, 164, 199, 140, 80, 118, 234, 114, 173, 15, 205, 136 }, "0123456789", true, "admin" });
 
             migrationBuilder.InsertData(
                 table: "UserRoles",
                 columns: new[] { "RoleId", "UserId" },
-                values: new object[] { new Guid("d57643b7-5664-42ee-8228-02369efbcf57"), new Guid("edadd373-a390-40ca-b8b4-506a0872bb44") });
+                values: new object[] { new Guid("3fcec13d-b1ae-4636-a9f6-9eba982d79a7"), new Guid("5216de74-f903-4f9d-9a16-7c79e7cc329e") });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Answers_QuestionId",
