@@ -1,14 +1,14 @@
-using Swashbuckle.AspNetCore.Swagger;
+﻿using Swashbuckle.AspNetCore.Swagger;
 using DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using DAL.Repositories.IRepositories;
 using BLL.Interface;
 using DAL.Repositories;
 using BLL.Service;
+using DAL.UnitOfWork;
+using BLL.Utilities;
 
 namespace MIndAid
-
-
 {
     public class Program
     {
@@ -17,17 +17,25 @@ namespace MIndAid
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+            // Đăng ký IHttpContextAccessor để có thể truy cập HttpContext
+            builder.Services.AddHttpContextAccessor();
+
+            // Đăng ký các dịch vụ của bạn
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<UserUtility>();
+
+            // Cấu hình Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddDbContext<MindAidContext>(options =>
-           options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 
-       );
+            // Cấu hình DbContext
+            builder.Services.AddDbContext<MindAidContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+            );
 
             var app = builder.Build();
 
@@ -39,12 +47,8 @@ namespace MIndAid
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }
