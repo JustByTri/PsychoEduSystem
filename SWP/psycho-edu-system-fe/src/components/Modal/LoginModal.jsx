@@ -1,17 +1,17 @@
 import { useState, useRef, useEffect } from "react";
-
+import { GoogleLogin } from "@react-oauth/google";
 const LoginModal = () => {
-  const [isOpened, setIsOpened] = useState(false);
+  const [isLoginModal, setIsLoginModal] = useState(false);
   const modalRef = useRef(null);
 
   const handleOutsideClick = (event) => {
     if (modalRef.current && !modalRef.current.contains(event.target)) {
-      setIsOpened(false);
+      setIsLoginModal(false);
     }
   };
 
   useEffect(() => {
-    if (isOpened) {
+    if (isLoginModal) {
       document.addEventListener("mousedown", handleOutsideClick);
     } else {
       document.removeEventListener("mousedown", handleOutsideClick);
@@ -19,17 +19,17 @@ const LoginModal = () => {
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
-  }, [isOpened]);
+  }, [isLoginModal]);
 
   return (
     <>
       <a
         className="block py-2 pr-4 pl-3 text-[#3B945E] hover:text-[#65CCB8] font-bold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
-        onClick={() => setIsOpened(true)}
+        onClick={() => setIsLoginModal(true)}
       >
         Sign In
       </a>
-      {isOpened && (
+      {isLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg">
             {/* Modal content */}
@@ -43,7 +43,7 @@ const LoginModal = () => {
                   type="button"
                   className=" text-gray-400 border-none focus:ring-0 focus:outline-none hover:bg-gray-200 hover:text-gray-900 w-8 h-8 ms-auto inline-flex justify-center items-center"
                   data-modal-hide="authentication-modal"
-                  onClick={() => setIsOpened(false)}
+                  onClick={() => setIsLoginModal(false)}
                 >
                   <svg
                     className="w-3 h-3"
@@ -123,13 +123,19 @@ const LoginModal = () => {
                   >
                     Login
                   </button>
-                  <div className="text-sm font-medium text-gray-500">
-                    Not registered?{" "}
-                    <a href="#" className="text-blue-700 hover:underline">
-                      Create account
-                    </a>
-                  </div>
                 </form>
+                <hr className="h-px my-5 bg-gray-200 border-0"></hr>
+                <GoogleLogin
+                  onSuccess={(credentialResponse) => {
+                    console.log(
+                      "Login Success:",
+                      credentialResponse.credential
+                    );
+                  }}
+                  onError={() => {
+                    console.log("Login Failed");
+                  }}
+                />
               </div>
             </div>
           </div>

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import LoginModal from "../Modal/LoginModal";
-
+import { GoogleOAuthProvider } from "@react-oauth/google";
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const clientId =
+    "1018910450198-m8sitc37vcjdg1qbe7d3cp00nca00840.apps.googleusercontent.com";
+
   const links = [
     { href: "", title: "About" },
     { href: "", title: "News" },
@@ -111,7 +114,9 @@ const Navbar = () => {
                 </li>
               ))}
               <li>
-                <LoginModal />
+                <GoogleOAuthProvider clientId={clientId}>
+                  <LoginModal />
+                </GoogleOAuthProvider>
               </li>
             </ul>
           </div>
