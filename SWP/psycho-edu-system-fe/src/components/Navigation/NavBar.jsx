@@ -18,7 +18,7 @@ const Navbar = () => {
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-screen-xl">
           <a href="/" className="flex items-center">
             <span className="self-center text-2xl font-extrabold">
-              <span className="text-[#0129F1] font-extrabold text-3xl">
+              <span className="text-[#49b2c9] font-bold text-2xl">
                 Mental Health
               </span>
             </span>
