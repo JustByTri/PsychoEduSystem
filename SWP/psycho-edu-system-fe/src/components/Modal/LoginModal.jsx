@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
 const LoginModal = () => {
-  const [isOpened, setIsOpened] = useState(false); // set state for login modal
+  const [isOpened, setIsOpened] = useState(false);
   const modalRef = useRef(null);
 
   const handleOutsideClick = (event) => {
@@ -24,31 +24,27 @@ const LoginModal = () => {
 
   return (
     <>
-      <button
+      <a
         data-modal-target="authentication-modal"
         data-modal-toggle="authentication-modal"
-        className="block text-white bg-blue-700 hover:bg-blue-800 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+        className="block py-2 pr-4 pl-3 text-[#3B945E] hover:text-[#65CCB8] font-bold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
         onClick={() => setIsOpened(true)}
-        type="button"
       >
-        Login
-      </button>
+        Sign In
+      </a>
       {isOpened && (
-        <div className="overflow-y-auto fixed top-0 right-0 left-10 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative p-4 w-full max-w-md max-h-full">
             {/* Modal content */}
-            <div
-              ref={modalRef}
-              className="relative bg-white rounded-lg shadow dark:bg-gray-700"
-            >
-              {/*-- Modal header */}
+            <div ref={modalRef} className="relative bg-[#65CCB8] rounded-lg">
+              {/* Modal header */}
               <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Sign in to our platform
                 </h3>
                 <button
                   type="button"
-                  className="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  className="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white focus:outline-none"
                   data-modal-hide="authentication-modal"
                   onClick={() => setIsOpened(false)}
                 >
@@ -84,7 +80,7 @@ const LoginModal = () => {
                       type="email"
                       name="email"
                       id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none"
                       placeholder="name@company.com"
                       required
                     />
@@ -101,7 +97,7 @@ const LoginModal = () => {
                       name="password"
                       id="password"
                       placeholder="••••••••"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none"
                       required
                     />
                   </div>
@@ -112,7 +108,7 @@ const LoginModal = () => {
                           id="remember"
                           type="checkbox"
                           value=""
-                          className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                          className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:outline-none"
                           required
                         />
                       </div>
