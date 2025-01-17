@@ -18,8 +18,9 @@ const Navbar = () => {
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-screen-xl">
           <a href="/" className="flex items-center">
             <span className="self-center text-2xl font-extrabold">
-              <span className="text-[#0129F1]">Mental </span>
-              <span className="text-[#34FF71]">Health</span>
+              <span className="text-[#0129F1] font-extrabold text-3xl">
+                Mental Health
+              </span>
             </span>
           </a>
           <div className="flex items-center lg:order-2">
@@ -31,14 +32,14 @@ const Navbar = () => {
                 <input
                   type="text"
                   id="simple-search"
-                  className="bg-white border border-gray-300 text-sm rounded-lg text-black block w-full ps-10 p-2.5 transition focus:ring-2 focus:ring-blue-500"
+                  className="bg-white text-sm text-gray-600 shadow-inner block w-full p-2 transition focus:ring-0 focus:outline-none"
                   placeholder="Search..."
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="p-2.5 ms-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800 transition focus:ring-2 focus:ring-blue-500"
+                className="p-2.5 border-none rounded-none bg-blue-700 hover:bg-blue-800 transition focus:ring-0 focus:outline-none"
               >
                 <svg
                   className="w-4 h-4"
@@ -61,7 +62,7 @@ const Navbar = () => {
             <button
               onClick={toggleMenu}
               type="button"
-              className="inline-flex items-center p-2 ml-1 text-sm text-black rounded-lg lg:hidden hover:bg-[#3493FF] hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="inline-flex items-center p-2 ml-1 text-sm text-black border-none rounded-none lg:hidden focus:ring-0 focus:outline-none"
               aria-controls="mobile-menu-2"
               aria-expanded={isMenuOpen}
             >
