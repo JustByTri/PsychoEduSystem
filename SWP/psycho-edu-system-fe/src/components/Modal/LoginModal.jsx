@@ -16,7 +16,6 @@ const LoginModal = () => {
     } else {
       document.removeEventListener("mousedown", handleOutsideClick);
     }
-    // Cleanup event listener
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
@@ -25,8 +24,6 @@ const LoginModal = () => {
   return (
     <>
       <a
-        data-modal-target="authentication-modal"
-        data-modal-toggle="authentication-modal"
         className="block py-2 pr-4 pl-3 text-[#3B945E] hover:text-[#65CCB8] font-bold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
         onClick={() => setIsOpened(true)}
       >
@@ -34,17 +31,17 @@ const LoginModal = () => {
       </a>
       {isOpened && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="relative p-4 w-full max-w-md max-h-full">
+          <div className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg">
             {/* Modal content */}
-            <div ref={modalRef} className="relative bg-[#65CCB8] rounded-lg">
+            <div ref={modalRef} className="relative bg-white rounded-lg">
               {/* Modal header */}
-              <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Sign in to our platform
+              <div className="flex items-center justify-between p-4 md:p-5">
+                <h3 className="text-xl font-bold text-blue-600 flex-grow text-center">
+                  Sign In
                 </h3>
                 <button
                   type="button"
-                  className="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white focus:outline-none"
+                  className=" text-gray-400 border-none focus:ring-0 focus:outline-none hover:bg-gray-200 hover:text-gray-900 w-8 h-8 ms-auto inline-flex justify-center items-center"
                   data-modal-hide="authentication-modal"
                   onClick={() => setIsOpened(false)}
                 >
@@ -66,40 +63,34 @@ const LoginModal = () => {
                   <span className="sr-only">Close modal</span>
                 </button>
               </div>
+              <h5 className="text-xs font-light italic text-gray-400">
+                Please input your account information
+              </h5>
+
               {/* Modal body */}
               <div className="p-4 md:p-5">
                 <form className="space-y-4" action="#">
                   <div>
-                    <label
-                      htmlFor="email"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Your email
-                    </label>
                     <input
                       type="email"
                       name="email"
                       id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none"
-                      placeholder="name@company.com"
+                      className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
+                      placeholder="Email"
                       required
                     />
                   </div>
+                  <hr className="h-px my-8 bg-gray-200 border-0"></hr>
                   <div>
-                    <label
-                      htmlFor="password"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Your password
-                    </label>
                     <input
                       type="password"
                       name="password"
                       id="password"
-                      placeholder="••••••••"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none"
+                      placeholder="Password"
+                      className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
                       required
                     />
+                    <hr className="h-px my-8 bg-gray-200 border-0"></hr>
                   </div>
                   <div className="flex justify-between">
                     <div className="flex items-start">
@@ -108,36 +99,33 @@ const LoginModal = () => {
                           id="remember"
                           type="checkbox"
                           value=""
-                          className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:outline-none"
+                          className="w-4 h-4"
                           required
                         />
                       </div>
                       <label
                         htmlFor="remember"
-                        className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                        className="ms-2 text-sm font-medium text-gray-400"
                       >
                         Remember me
                       </label>
                     </div>
                     <a
                       href="#"
-                      className="text-sm text-blue-700 hover:underline dark:text-blue-500"
+                      className="text-sm text-blue-400 hover:underline"
                     >
                       Lost Password?
                     </a>
                   </div>
                   <button
                     type="submit"
-                    className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                    className="w-full text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center rounded-none shadow-md hover:shadow-lg transition-all duration-300"
                   >
-                    Login to your account
+                    Login
                   </button>
-                  <div className="text-sm font-medium text-gray-500 dark:text-gray-300">
+                  <div className="text-sm font-medium text-gray-500">
                     Not registered?{" "}
-                    <a
-                      href="#"
-                      className="text-blue-700 hover:underline dark:text-blue-500"
-                    >
+                    <a href="#" className="text-blue-700 hover:underline">
                       Create account
                     </a>
                   </div>
