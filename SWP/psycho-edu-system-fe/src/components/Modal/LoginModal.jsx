@@ -3,7 +3,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { ToastContainer, toast } from "react-toastify";
 const LoginModal = () => {
   const [isLoginModal, setIsLoginModal] = useState(false);
-  const [isOpenMenu, setIsOpenMenu] = useState(true);
+  const [isOpenMenu, setIsOpenMenu] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     return isLoggedIn ? JSON.parse(isLoggedIn) : false;
