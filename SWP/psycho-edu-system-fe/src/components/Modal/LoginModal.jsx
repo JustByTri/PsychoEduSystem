@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { ToastContainer, toast } from "react-toastify";
+import LogoutModal from "./LogoutModal";
 const LoginModal = () => {
   const [isLoginModal, setIsLoginModal] = useState(false);
+  const [isLogoutModal, setIsLogoutModal] = useState(false);
   const [isOpenMenu, setIsOpenMenu] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -58,6 +60,11 @@ const LoginModal = () => {
       setIsOpenMenu(true);
     }
   };
+
+  const handleLogoutModal = () => {
+    setIsLogoutModal(true);
+    setIsOpenMenu(false);
+  };
   return (
     <>
       <ToastContainer />
@@ -110,6 +117,7 @@ const LoginModal = () => {
                   <a
                     href="#"
                     className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-md"
+                    onClick={handleLogoutModal}
                   >
                     Sign out
                   </a>
@@ -119,7 +127,14 @@ const LoginModal = () => {
           )}
         </div>
       )}
-
+      {isLogoutModal && (
+        <>
+          <LogoutModal
+            isLogoutModal={isLogoutModal}
+            setIsLogoutModal={setIsLogoutModal}
+          />
+        </>
+      )}
       {isLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg">
