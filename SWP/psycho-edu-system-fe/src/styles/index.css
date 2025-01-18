@@ -1,9 +1,3 @@
-#card {
-  background-color: black;
-  color: white;
-  size: 12px;
-}
-
 @keyframes marquee {
   0% {
     transform: translateX(100%);

@@ -3,6 +3,11 @@ import { GoogleLogin } from "@react-oauth/google";
 import { ToastContainer, toast } from "react-toastify";
 const LoginModal = () => {
   const [isLoginModal, setIsLoginModal] = useState(false);
+  const [isOpenMenu, setIsOpenMenu] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    return isLoggedIn ? JSON.parse(isLoggedIn) : false;
+  });
   const modalRef = useRef(null);
 
   const handleOutsideClick = (event) => {
@@ -22,12 +27,18 @@ const LoginModal = () => {
     };
   }, [isLoginModal]);
 
+  useEffect(() => {
+    localStorage.setItem("isLoggedIn", JSON.stringify(isAuthenticated));
+  }, [isAuthenticated]);
+
   const handleGoogleSuccess = (response) => {
     try {
       if (response.credential) {
         toast.success("Login success");
+        setIsAuthenticated(true);
       } else {
         toast.error("Login failed");
+        setIsAuthenticated(false);
       }
     } catch (error) {
       toast.error(`Login failed: ${error.message}`);
@@ -40,15 +51,75 @@ const LoginModal = () => {
     toast.error(error);
   };
 
+  const handleOpenMenu = () => {
+    if (isOpenMenu) {
+      setIsOpenMenu(false);
+    } else {
+      setIsOpenMenu(true);
+    }
+  };
   return (
     <>
       <ToastContainer />
-      <a
-        className="block py-2 pr-4 pl-3 text-[#3B945E] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
-        onClick={() => setIsLoginModal(true)}
-      >
-        Sign In
-      </a>
+      {isAuthenticated === false ? (
+        <a
+          className="block py-2 pr-4 pl-3 text-[#3B945E] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
+          onClick={() => setIsLoginModal(true)}
+        >
+          Sign In
+        </a>
+      ) : (
+        <div className="relative cursor-pointer">
+          <div
+            onClick={handleOpenMenu}
+            className="block py-2 pr-4 pl-3 text-sm text-[#3B945E] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
+          >
+            User
+          </div>
+          {isOpenMenu && (
+            <div className="absolute right-0 mt-2 w-44 bg-[#dbf7f1] rounded-lg shadow-2xl text-left">
+              <ul
+                className="py-2 px-1 text-sm font-thin text-blue-700"
+                aria-labelledby="dropdownDefaultButton"
+              >
+                <li>
+                  <a
+                    href="#"
+                    className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
+                  >
+                    Portal
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
+                  >
+                    Profile
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
+                  >
+                    Switch Account
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-md"
+                  >
+                    Sign out
+                  </a>
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
       {isLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg">
