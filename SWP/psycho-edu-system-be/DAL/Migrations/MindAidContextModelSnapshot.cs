@@ -320,6 +320,29 @@ namespace DAL.Migrations
                     b.ToTable("QuestionSets");
                 });
 
+            modelBuilder.Entity("DAL.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RefreshTokenId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RefreshTokenKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId", "RefreshTokenId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("DAL.Entities.Role", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -337,27 +360,27 @@ namespace DAL.Migrations
                     b.HasData(
                         new
                         {
-                            RoleId = new Guid("3fcec13d-b1ae-4636-a9f6-9eba982d79a7"),
+                            RoleId = new Guid("fd52b2d3-6b1b-4a14-a9a2-05526184cbfb"),
                             RoleName = "Admin"
                         },
                         new
                         {
-                            RoleId = new Guid("0eb94925-6bab-42ee-8395-6cd1db80b96b"),
+                            RoleId = new Guid("ebfa838e-c2d9-4d49-a3c0-6448ecc27ef5"),
                             RoleName = "Psychologist"
                         },
                         new
                         {
-                            RoleId = new Guid("b97fdba8-5cab-4477-9ba3-5c2d39dfc5c1"),
+                            RoleId = new Guid("78dd7fe2-63ad-4429-8f9e-8f16cd0ffc3b"),
                             RoleName = "Student"
                         },
                         new
                         {
-                            RoleId = new Guid("324d798c-e1d9-494e-b6d1-9a5153ac3a23"),
+                            RoleId = new Guid("75889736-f47c-4c89-907f-c468f729bddc"),
                             RoleName = "Parent"
                         },
                         new
                         {
-                            RoleId = new Guid("768b9dbc-a532-4ed1-82da-2a3f667c239e"),
+                            RoleId = new Guid("3876f5ca-477c-4cac-9ff7-9a84aa538db7"),
                             RoleName = "Teacher"
                         });
                 });
@@ -415,6 +438,9 @@ namespace DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -422,6 +448,12 @@ namespace DAL.Migrations
 
                     b.Property<string>("Gender")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsEmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("PasswordHash")
@@ -451,15 +483,16 @@ namespace DAL.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = new Guid("5216de74-f903-4f9d-9a16-7c79e7cc329e"),
+                            UserId = new Guid("8eb564a5-1234-4770-b67a-483da1e3e6e4"),
                             Address = "Ha Noi",
                             BirthDay = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            CreateAt = new DateTime(2025, 1, 15, 17, 45, 51, 30, DateTimeKind.Local).AddTicks(9755),
+                            CreateAt = new DateTime(2025, 1, 18, 14, 57, 54, 187, DateTimeKind.Local).AddTicks(3252),
                             Email = "admin@fpt.edu.vn",
                             FullName = "Administrator",
                             Gender = "Male",
-                            PasswordHash = new byte[] { 3, 172, 172, 210, 129, 2, 48, 193, 168, 224, 83, 137, 208, 209, 250, 234, 32, 163, 212, 67, 179, 157, 233, 25, 94, 251, 129, 162, 162, 83, 172, 9, 100, 112, 91, 243, 137, 172, 146, 30, 247, 123, 246, 3, 162, 217, 52, 69, 21, 109, 229, 161, 85, 38, 218, 86, 100, 119, 214, 195, 62, 226, 14, 82 },
-                            PasswordSalt = new byte[] { 251, 152, 241, 153, 63, 36, 234, 215, 3, 42, 70, 118, 141, 148, 162, 243, 185, 41, 96, 101, 224, 166, 4, 114, 8, 165, 84, 70, 200, 121, 172, 167, 136, 127, 245, 159, 108, 23, 87, 105, 25, 205, 148, 214, 19, 183, 212, 155, 25, 249, 17, 57, 207, 126, 25, 28, 247, 49, 224, 190, 225, 214, 246, 114, 211, 1, 233, 39, 139, 20, 188, 162, 138, 153, 251, 115, 59, 152, 156, 22, 9, 254, 251, 61, 186, 76, 127, 25, 38, 230, 181, 170, 51, 7, 68, 244, 128, 243, 244, 103, 119, 17, 200, 160, 249, 156, 180, 59, 33, 210, 255, 185, 172, 225, 143, 43, 69, 164, 199, 140, 80, 118, 234, 114, 173, 15, 205, 136 },
+                            IsEmailConfirmed = false,
+                            PasswordHash = new byte[] { 61, 227, 154, 230, 237, 208, 17, 45, 152, 73, 163, 107, 104, 208, 207, 23, 84, 48, 19, 215, 150, 10, 128, 157, 20, 24, 38, 172, 186, 143, 108, 154, 249, 53, 29, 232, 69, 73, 133, 225, 21, 60, 165, 87, 215, 201, 98, 5, 74, 222, 41, 232, 215, 92, 255, 219, 74, 226, 125, 217, 101, 240, 6, 90 },
+                            PasswordSalt = new byte[] { 58, 216, 132, 185, 111, 128, 143, 82, 216, 19, 108, 214, 250, 5, 253, 71, 241, 242, 53, 208, 11, 184, 227, 104, 147, 133, 219, 84, 200, 193, 72, 58, 108, 47, 222, 185, 213, 250, 175, 65, 242, 252, 112, 192, 245, 229, 253, 174, 222, 22, 182, 34, 160, 216, 160, 204, 111, 98, 28, 195, 140, 52, 7, 224, 189, 157, 180, 7, 178, 71, 102, 81, 216, 137, 29, 66, 47, 187, 135, 57, 57, 242, 224, 243, 72, 71, 96, 220, 33, 7, 27, 230, 140, 25, 173, 74, 139, 202, 188, 17, 231, 46, 222, 207, 97, 12, 172, 35, 17, 94, 125, 103, 247, 98, 60, 124, 100, 91, 244, 143, 51, 106, 5, 32, 141, 85, 95, 252 },
                             Phone = "0123456789",
                             Status = true,
                             UserName = "admin"
@@ -483,8 +516,8 @@ namespace DAL.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = new Guid("5216de74-f903-4f9d-9a16-7c79e7cc329e"),
-                            RoleId = new Guid("3fcec13d-b1ae-4636-a9f6-9eba982d79a7")
+                            UserId = new Guid("8eb564a5-1234-4770-b67a-483da1e3e6e4"),
+                            RoleId = new Guid("fd52b2d3-6b1b-4a14-a9a2-05526184cbfb")
                         });
                 });
 
@@ -614,6 +647,17 @@ namespace DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("QuestionSet");
+                });
+
+            modelBuilder.Entity("DAL.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("DAL.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DAL.Entities.Slot", b =>

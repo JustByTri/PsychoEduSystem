@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace Common.DTO
 {
-    internal class QuestionDTO
+    public class QuestionDTO
     {
+        public string Content { get; set; }
+        public List<AnswerDTO> Answers { get; set; }
     }
 }

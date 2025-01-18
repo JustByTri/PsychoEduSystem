@@ -27,10 +27,13 @@ namespace MIndAid
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<UserUtility>();
+            builder.Services.AddScoped<ILoginService, LoginService>();
+
 
             // Cấu hình Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
 
             // Cấu hình DbContext
             builder.Services.AddDbContext<MindAidContext>(options =>

@@ -19,8 +19,6 @@ namespace DAL.Repositories
             _mindAidContext = context;
         }
 
-
-
         // tìm kiếm người dùng theo tên 
         public async Task<User> GetUserByUserNameAsync(string userName)
         {
@@ -37,6 +35,13 @@ namespace DAL.Repositories
         {
             return await _mindAidContext.Users
                 .AnyAsync(u => u.UserName.ToLower() == userName.ToLower() || u.Email.ToLower() == email.ToLower());
+        }
+
+        public async Task<User> GetByEmailOrUserNameAsync(string emailOrUserName)
+        {                    
+            return await _mindAidContext.Users
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role) // Load roles nếu cần
+                .FirstOrDefaultAsync(u => u.Email == emailOrUserName || u.UserName == emailOrUserName);
         }
 
 

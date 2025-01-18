@@ -23,7 +23,7 @@ namespace BLL.Service
 
         public async Task<User> GetUserByUserNameAsync(string userName)
         {
-            return await _unitOfWork.User.GetUserByUserNameAsync(userName);
+            return await _unitOfWork.User.GetByEmailOrUserNameAsync(userName);
         }
 
         public async Task<User> GetUserByEmailAsync(string email)
