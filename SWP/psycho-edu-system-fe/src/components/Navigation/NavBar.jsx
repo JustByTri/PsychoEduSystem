@@ -17,13 +17,11 @@ const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-50 shadow-md">
-      <nav className="bg-gradient-to-r from-[#C4E9E4] to-[#A8E0D6] px-4 lg:px-6 py-2.5">
+      <nav className="bg-[#A8E0D6] px-4 lg:px-6 py-2.5">
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-screen-xl">
           <a href="/" className="flex items-center">
-            <span className="self-center text-2xl font-extrabold">
-              <span className="text-[#49b2c9] font-bold text-2xl">
-                Mental Health
-              </span>
+            <span className="self-center text-2xl text-[#34258a] font-Verdana font-semibold">
+              Mental Health Care©
             </span>
           </a>
           <div className="flex items-center lg:order-2">
@@ -35,14 +33,14 @@ const Navbar = () => {
                 <input
                   type="text"
                   id="simple-search"
-                  className="bg-white text-sm text-gray-600 shadow-inner block w-full p-2 transition focus:ring-0 focus:outline-none"
+                  className="bg-slate-50 text-sm text-gray-500 shadow-inner rounded-sm block w-full p-2 focus:text-slate-950 focus:ring-0 focus:outline-none"
                   placeholder="Search..."
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="p-2.5 border-none rounded-none bg-blue-700 hover:bg-blue-800 transition focus:ring-0 focus:outline-none"
+                className="p-2.5 border-none bg-blue-800 rounded-sm hover:bg-blue-600 transition focus:ring-0 focus:outline-none"
               >
                 <svg
                   className="w-4 h-4"
@@ -99,15 +97,15 @@ const Navbar = () => {
           <div
             className={`${
               isMenuOpen ? "block" : "hidden"
-            } justify-between items-center w-full lg:flex lg:w-auto lg:order-1`}
+            } justify-between items-center w-full lg:flex lg:w-auto lg:order-2`}
             id="mobile-menu-2"
           >
-            <ul className="flex flex-col mt-4 font-medium lg:flex-row lg:space-x-8 lg:mt-0">
+            <ul className="flex flex-col mt-4 font-medium lg:flex-row lg:space-x-16 lg:mt-0">
               {links.map((link, index) => (
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="block py-2 pr-4 pl-3 text-[#3B945E] hover:text-[#65CCB8] font-bold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
+                    className="block py-2 pr-4 pl-3 text-sm text-[#3B945E] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
                   >
                     {link.title}
                   </a>

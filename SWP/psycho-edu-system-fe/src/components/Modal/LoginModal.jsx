@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
+import { ToastContainer, toast } from "react-toastify";
 const LoginModal = () => {
   const [isLoginModal, setIsLoginModal] = useState(false);
   const modalRef = useRef(null);
@@ -21,10 +22,29 @@ const LoginModal = () => {
     };
   }, [isLoginModal]);
 
+  const handleGoogleSuccess = (response) => {
+    try {
+      if (response.credential) {
+        toast.success("Login success");
+      } else {
+        toast.error("Login failed");
+      }
+    } catch (error) {
+      toast.error(`Login failed: ${error.message}`);
+    } finally {
+      setIsLoginModal(false);
+    }
+  };
+
+  const handleGoogleError = (error) => {
+    toast.error(error);
+  };
+
   return (
     <>
+      <ToastContainer />
       <a
-        className="block py-2 pr-4 pl-3 text-[#3B945E] hover:text-[#65CCB8] font-bold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
+        className="block py-2 pr-4 pl-3 text-[#3B945E] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
         onClick={() => setIsLoginModal(true)}
       >
         Sign In
@@ -32,9 +52,7 @@ const LoginModal = () => {
       {isLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg">
-            {/* Modal content */}
             <div ref={modalRef} className="relative bg-white rounded-lg">
-              {/* Modal header */}
               <div className="flex items-center justify-between p-4 md:p-5">
                 <h3 className="text-xl font-bold text-blue-600 flex-grow text-center">
                   Sign In
@@ -67,7 +85,6 @@ const LoginModal = () => {
                 Please input your account information
               </h5>
 
-              {/* Modal body */}
               <div className="p-4 md:p-5">
                 <form className="space-y-4" action="#">
                   <div>
@@ -126,15 +143,8 @@ const LoginModal = () => {
                 </form>
                 <hr className="h-px my-5 bg-gray-200 border-0"></hr>
                 <GoogleLogin
-                  onSuccess={(credentialResponse) => {
-                    console.log(
-                      "Login Success:",
-                      credentialResponse.credential
-                    );
-                  }}
-                  onError={() => {
-                    console.log("Login Failed");
-                  }}
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
                 />
               </div>
             </div>
