@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background: url('../assets/background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: #333;
+}
+
+h2 {
+  color: #4CAF50;
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+p {
+  line-height: 1.6;
+}

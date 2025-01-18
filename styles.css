@@ -1,0 +1,8 @@
+body {
+    background-image: url('https://www.google.com/url?sa=i&url=https%3A%2F%2Fdepositphotos.com%2Fphoto%2Fhuman-geometry-series-abstract-composition-human-face-lines-fractal-gridlines-409141852.html&psig=AOvVaw25jFZQXO58ayvR4shFuzqL&ust=1737233467371000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCLCap5LR_YoDFQAAAAAdAAAAABAf');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    z-index: -1; /* Ensure the background is behind all content */
+}
