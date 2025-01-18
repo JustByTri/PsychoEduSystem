@@ -8,14 +8,17 @@ using System.Threading.Tasks;
 
 namespace DAL.Entities
 {
-   public class User
+    public class User
     {
-    
+
         [Key]
         public Guid UserId { get; set; }
         [Required]
         [MaxLength(30)]
-        public  string UserName  {  get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
         public byte[] PasswordHash { get; set; } = new byte[32];
         public byte[] PasswordSalt { get; set; } = new byte[32];
         [Required(ErrorMessage = "Phone không được rỗng.")]
@@ -25,11 +28,15 @@ namespace DAL.Entities
         [RegularExpression(@"^[\w-\.]+@fpt\.edu\.vn$", ErrorMessage = "Email phải thuộc miền fpt.edu.vn.")]
         public string Email { get; set; } = string.Empty;
         [MaxLength(30)]
-        public string FullName {  get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
         public DateTime BirthDay { get; set; }
         public string Gender { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public bool Status { get; set; }
+
+
+
+        public bool IsEmailConfirmed { get; set; } = false;
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
         public virtual ICollection<UserRole> UserRoles { get; set; }
@@ -41,6 +48,8 @@ namespace DAL.Entities
         public virtual ICollection<Message> ReceivedMessages { get; set; }
         public virtual ICollection<MentalHealthPoint> MentalHealthPoints { get; set; }
         public virtual ICollection<PsychoQuestionSet> PsychoQuestions { get; set; }
+
+
 
     }
 }

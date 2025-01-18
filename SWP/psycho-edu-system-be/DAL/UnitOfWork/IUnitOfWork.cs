@@ -1,6 +1,6 @@
-﻿using DAL.Entities;
+﻿using System;
+using System.Threading.Tasks;
 using DAL.Repositories.IRepositories;
-
 
 namespace DAL.UnitOfWork
 {
@@ -18,9 +18,17 @@ namespace DAL.UnitOfWork
         IUserRepository User { get; }
         IUserRoleRepository UserRole { get; }
 
+        IAnswerRepository Answer { get; }
 
+        IRefreshTokenRepository RefreshToken { get; }
+
+        // Dispose method để giải phóng tài nguyên
         void Dispose();
+
+        // Phương thức lưu thay đổi bất đồng bộ
         Task<bool> SaveChangeAsync();
+
+        // Phương thức lưu thay đổi đồng bộ
         bool SaveChange();
     }
 }
