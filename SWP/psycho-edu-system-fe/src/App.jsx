@@ -3,6 +3,7 @@ import "./App.css";
 import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
 import NotFoundPage from "./pages/error/NotFoundPage";
+import PortalPage from "./pages/counselor/PortalPage";
 function App() {
   return (
     <Router>
@@ -13,6 +14,7 @@ function App() {
           <Route index element={<HomePage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
+        <Route path="counselor" element={<PortalPage />} />
       </Routes>
     </Router>
   );
