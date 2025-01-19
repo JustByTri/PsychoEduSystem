@@ -1,36 +1,40 @@
 import React, { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react"; // Import icons cho nút thu gọn
 
 const SideBar = ({
-  items,
-  className = "",
-  currentPath = "/",
-  title,
-  onItemClick,
-  collapsible = false,
+  items, // Danh sách các menu items
+  className = "", // Custom classes (optional)
+  currentPath = "/", // Đường dẫn hiện tại để highlight item active
+  title, // Tiêu đề của sidebar (optional)
+  onItemClick, // Callback function khi click vào item
 }) => {
+  // State quản lý trạng thái thu gọn của sidebar
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div
-      className={`${
-        isCollapsed ? "w-16" : "w-64"
-      } bg-white shadow-lg h-screen fixed left-0 p-4 transition-all duration-300 ${className}`}
+      className={`
+        ${isCollapsed ? "w-20" : "w-64"} // Điều chỉnh độ rộng khi thu gọn
+         ${className}
+        bg-white shadow-lg h-screen left-0 border-r
+        flex flex-col // Sử dụng flexbox để căn chỉnh nội dung
+        transition-all duration-300 ease-in-out // Animation mượt mà khi thu gọn
+      `}
     >
-      {title && (
-        <div className="mb-6 flex items-center justify-between">
-          {!isCollapsed && <h2 className="text-xl font-semibold">{title}</h2>}
-          {collapsible && (
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              {isCollapsed ? "→" : "←"}
-            </button>
-          )}
-        </div>
-      )}
+      {/* Header của sidebar */}
+      <div className="flex items-center p-4 border-b">
+        {!isCollapsed && <span className="text-xl font-semibold">{title}</span>}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="p-2 hover:bg-gray-100 rounded-lg ml-auto"
+          title={isCollapsed ? "Expand" : "Collapse"}
+        >
+          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+        </button>
+      </div>
 
-      <nav className="space-y-2">
+      {/* Menu items */}
+      <nav className="p-3 space-y-2">
         {items.map((item) => {
           const isActive = currentPath === item.href;
           const Icon = item.icon;
@@ -40,12 +44,15 @@ const SideBar = ({
               key={item.name}
               href={item.href}
               onClick={(e) => {
-                if (onItemClick) {
+                if (onItemClick && !item.disabled) {
                   e.preventDefault();
                   onItemClick(item);
                 }
               }}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200
+              title={isCollapsed ? item.name : ""} // Hiển thị tooltip khi thu gọn
+              className={`
+                flex items-center gap-3 p-3 rounded-lg
+                transition-all duration-200
                 ${
                   isActive
                     ? "bg-blue-50 text-blue-600"
@@ -56,14 +63,22 @@ const SideBar = ({
                     ? "opacity-50 cursor-not-allowed"
                     : "cursor-pointer"
                 }
+                ${
+                  isCollapsed ? "justify-center" : ""
+                } // Căn giữa icon khi thu gọn
               `}
             >
-              {Icon && <Icon className="w-5 h-5" />}
+              {/* Icon luôn hiển thị */}
+              {Icon && (
+                <Icon className={`w-5 h-5 ${isCollapsed ? "mx-auto" : ""}`} />
+              )}
+
+              {/* Text và badge chỉ hiển thị khi không thu gọn */}
               {!isCollapsed && (
                 <>
-                  <span className="font-medium">{item.name}</span>
+                  <span>{item.name}</span>
                   {item.badge && (
-                    <span className="ml-auto bg-blue-100 text-blue-600 px-2 py-1 text-xs rounded-full">
+                    <span className="bg-blue-100 text-blue-600 px-2 py-1 text-xs rounded-full">
                       {item.badge}
                     </span>
                   )}

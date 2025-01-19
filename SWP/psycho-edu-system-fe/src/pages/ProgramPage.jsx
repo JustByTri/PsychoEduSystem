@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { BookOpen, PlayCircle, Users, Star } from "lucide-react";
+import {
+  BookOpen,
+  PlayCircle,
+  Users,
+  Star,
+  Airplay,
+  AlignCenter,
+  LucideShoppingBasket,
+} from "lucide-react";
 
 import { courseCatalogData, courseListData } from "../data/courseData";
 import CourseCatalog from "../components/ProgramPageComponents/CourseCatalog";
@@ -11,31 +19,43 @@ const ProgramCoursePage = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCounselor, setSelectedCounselor] = useState("All");
   const [selectedType, setSelectedType] = useState("All");
-  const [currentPage, setCurrentPage] = useState("/program");
+  const [currentPage, setCurrentPage] = useState("/program"); // State quản lý trang hiện tại
+
+  // Config menu items cho sidebar
   const courseNavigationItems = [
     {
-      name: "Tổng quan khóa học",
+      name: "Home",
       href: "/course/overview",
       icon: BookOpen,
     },
     {
-      name: "Bài giảng",
-      href: "/course/lessons",
+      name: "Survey",
+      href: "",
       icon: PlayCircle,
-      badge: "12",
     },
     {
-      name: "Học viên",
-      href: "/course/students",
+      name: "Program",
+      href: "/program",
       icon: Users,
     },
     {
-      name: "Đánh giá",
-      href: "/course/reviews",
-      icon: Star,
+      name: "Account",
+      href: "/a",
+      icon: Airplay,
+    },
+    {
+      name: "History",
+      href: "/b",
+      icon: AlignCenter,
+    },
+    {
+      name: "Report",
+      href: "/c",
+      icon: LucideShoppingBasket,
     },
   ];
 
+  // Lọc danh sách khóa học dựa trên các điều kiện
   const filteredCourses = courseListData.filter((course) => {
     const matchesSearch = course.title
       .toLowerCase()
@@ -47,16 +67,39 @@ const ProgramCoursePage = () => {
     const matchesType = selectedType === "All" || course.type === selectedType;
     return matchesSearch && matchesCategory && matchesCounselor && matchesType;
   });
-  console.log(courseNavigationItems);
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto">
+      {/* 
+  - min-h-screen: Đặt chiều cao tối thiểu bằng 100% chiều cao màn hình
+  - bg-white: Đặt màu nền trắng cho container
+  */}
+
+      <div className="">
         <div className="flex flex-col lg:flex-row">
+          {/* 
+    - flex: Sử dụng flexbox layout
+    - flex-col: Xếp các items theo chiều dọc (column) trên mobile
+    - lg:flex-row: Khi màn hình lớn hơn breakpoint lg (1024px),
+      chuyển sang xếp items theo chiều ngang (row)
+    */}
+          {/* Sidebar component với các menu items */}
+          <SideBar
+            items={courseNavigationItems}
+            title="Course Catalog"
+            currentPath={currentPage}
+            onItemClick={(item) => {
+              setCurrentPage(item.href);
+            }}
+          />
+
+          {/* Component danh mục khóa học */}
           <CourseCatalog
             selectedCategory={selectedCategory}
             onCategorySelect={setSelectedCategory}
             categories={courseCatalogData}
           />
+          {/* Component danh sách khóa học */}
           <CourseList
             searchTerm={searchTerm}
             onSearchChange={(e) => setSearchTerm(e.target.value)}
@@ -65,15 +108,6 @@ const ProgramCoursePage = () => {
             selectedType={selectedType}
             onCounselorChange={(e) => setSelectedCounselor(e.target.value)}
             onTypeChange={(e) => setSelectedType(e.target.value)}
-          />
-          <SideBar
-            items={courseNavigationItems}
-            title="Quản lý khóa học"
-            currentPath={currentPage}
-            onItemClick={(item) => {
-              setCurrentPage(item.href);
-            }}
-            collapsible={false}
           />
         </div>
       </div>
