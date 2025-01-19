@@ -15,7 +15,7 @@ const SideBar = ({
     <div
       className={`
         ${
-          isCollapsed ? "w-[80px]" : "w-[280px]"
+          isCollapsed ? "w-[80px]" : "w-[250px]"
         } // Điều chỉnh độ rộng khi thu gọn
          ${className}
         bg-white h-screen shadow-lg left-0 border-r

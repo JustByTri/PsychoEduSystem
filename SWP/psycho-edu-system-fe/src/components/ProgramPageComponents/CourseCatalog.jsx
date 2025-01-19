@@ -37,6 +37,6 @@ const CourseCatalog = ({ selectedCategory, onCategorySelect, categories }) => {
       </div>
     </div>
   );
-};  
+};
 
 export default CourseCatalog;
