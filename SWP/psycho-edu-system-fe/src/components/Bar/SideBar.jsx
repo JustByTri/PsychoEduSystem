@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react"; // Import icons cho nút thu gọn
 
 const SideBar = ({
@@ -7,16 +7,18 @@ const SideBar = ({
   currentPath = "/", // Đường dẫn hiện tại để highlight item active
   title, // Tiêu đề của sidebar (optional)
   onItemClick, // Callback function khi click vào item
+  onCollapse, //Prop để xử lý việc thu gọn
+  isCollapsed, // Prop để quản lí trạng thái thu gọn
 }) => {
   // State quản lý trạng thái thu gọn của sidebar
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
   return (
     <div
       className={`
-        ${isCollapsed ? "w-20" : "w-64"} // Điều chỉnh độ rộng khi thu gọn
+        ${
+          isCollapsed ? "w-[80px]" : "w-[280px]"
+        } // Điều chỉnh độ rộng khi thu gọn
          ${className}
-        bg-white shadow-lg h-screen left-0 border-r
+        bg-white h-screen shadow-lg left-0 border-r
         flex flex-col // Sử dụng flexbox để căn chỉnh nội dung
         transition-all duration-300 ease-in-out // Animation mượt mà khi thu gọn
       `}
@@ -25,9 +27,9 @@ const SideBar = ({
       <div className="flex items-center p-4 border-b">
         {!isCollapsed && <span className="text-xl font-semibold">{title}</span>}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={onCollapse}
           className="p-2 hover:bg-gray-100 rounded-lg ml-auto"
-          title={isCollapsed ? "Expand" : "Collapse"}
+          title={isCollapsed ? "Mở rộng" : "Thu gọn"}
         >
           {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
@@ -53,25 +55,16 @@ const SideBar = ({
               className={`
                 flex items-center gap-3 p-3 rounded-lg
                 transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }
-                ${
-                  item.disabled
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer"
-                }
-                ${
-                  isCollapsed ? "justify-center" : ""
-                } // Căn giữa icon khi thu gọn
+                 ${
+                   isActive
+                     ? "bg-blue-50 text-blue-600"
+                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                 }
+                ${isCollapsed ? "justify-center" : ""}
               `}
             >
               {/* Icon luôn hiển thị */}
-              {Icon && (
-                <Icon className={`w-5 h-5 ${isCollapsed ? "mx-auto" : ""}`} />
-              )}
+              {Icon && <Icon size={20} />}
 
               {/* Text và badge chỉ hiển thị khi không thu gọn */}
               {!isCollapsed && (
