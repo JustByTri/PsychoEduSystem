@@ -4,7 +4,7 @@ import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
 import NotFoundPage from "./pages/error/NotFoundPage";
 import PortalPage from "./pages/counselor/PortalPage";
-import ProgramPage from "./pages/ProgramPage";
+import ProgramCoursePage from "./pages/student/ProgramPage";
 
 function App() {
   return (
@@ -14,7 +14,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           {/* Nested Routes */}
           <Route index element={<HomePage />} />
-          <Route path="/program" element={<ProgramPage />} />
+          <Route path="/program/*" element={<ProgramCoursePage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
         <Route path="counselor" element={<PortalPage />} />
