@@ -1,5 +1,5 @@
 export const courseCatalogData = [
-  { id: 1, name: "Story And Experience", count: 15 },
+  { id: 1, name: "Story And Shared", count: 15 },
   { id: 2, name: "Mental Science", count: 12 },
   { id: 3, name: "Health Development", count: 8 },
   { id: 4, name: "Life Chance", count: 10 },
@@ -10,7 +10,7 @@ export const courseListData = [
   {
     id: 1,
     title: "1 minutes R U OK",
-    category: "Story And Experience",
+    category: "Story And Shared",
     duration: "6 Topic",
     counselor: "Prof.Thinh",
     type: "Emotional",
