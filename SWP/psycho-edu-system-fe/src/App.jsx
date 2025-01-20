@@ -2,7 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
+import NotFoundPage from "./pages/error/NotFoundPage";
+import PortalPage from "./pages/counselor/PortalPage";
 import ProgramPage from "./pages/ProgramPage";
+
 function App() {
   return (
     <Router>
@@ -13,6 +16,8 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="/program" element={<ProgramPage />} />
         </Route>
+        <Route path="*" element={<NotFoundPage />} />
+        <Route path="counselor" element={<PortalPage />} />
       </Routes>
     </Router>
   );
