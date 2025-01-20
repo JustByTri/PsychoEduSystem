@@ -14,12 +14,17 @@ namespace DAL.Data
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<CourseContent> CourseContents { get; set; }
-        public DbSet<Category> Categories { get; set; }      
+        public DbSet<Category> Categories { get; set; }
         public DbSet<Slot> Slots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<MentalHealthPoint> MentalHealthPoints { get; set; }
         public DbSet<MentalHealthPointDetail> MentalHealthPointDetails { get; set; }
+        public DbSet<PsychoQuestionSet> PsychoQuestionSets { get; set; }
+        public DbSet<Question> QuestionSets { get; set; }
+        public DbSet<Answer> Answers { get; set; }
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         #endregion
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
@@ -56,7 +61,7 @@ namespace DAL.Data
         {
             #region Entity Configurations
 
-         
+
             modelBuilder.Entity<UserRole>()
                 .HasKey(ur => new { ur.UserId, ur.RoleId });
 
@@ -70,7 +75,7 @@ namespace DAL.Data
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
 
-        
+
             modelBuilder.Entity<Course>()
                 .HasOne(c => c.Category)
                 .WithMany()
@@ -81,15 +86,14 @@ namespace DAL.Data
                 .WithMany(u => u.Courses)
                 .HasForeignKey(c => c.OwnerId);
 
-      
+
             modelBuilder.Entity<CourseContent>()
                 .HasOne(cc => cc.Course)
                 .WithMany(c => c.CourseContents)
                 .HasForeignKey(cc => cc.CourseId);
 
-          
 
-       
+
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Slot)
                 .WithMany(s => s.Appointments)
@@ -119,7 +123,9 @@ namespace DAL.Data
                 .HasForeignKey(m => m.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-          
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasKey(mhp => new { mhp.UserId, mhp.RefreshTokenId });
             modelBuilder.Entity<MentalHealthPoint>()
                 .HasKey(mhp => new { mhp.UserId, mhp.MentalHealthPointDetailId });
 
@@ -132,7 +138,33 @@ namespace DAL.Data
                 .HasOne(mhp => mhp.MentalHealthPointDetail)
                 .WithOne(mhpd => mhpd.MentalHealthPoints)
                 .HasForeignKey<MentalHealthPoint>(mhp => mhp.MentalHealthPointDetailId);
+            modelBuilder.Entity<PsychoQuestionSet>()
+            .HasOne(pqs => pqs.User)
+            .WithMany(u => u.PsychoQuestions)
+            .HasForeignKey(pqs => pqs.UserId);
 
+            modelBuilder.Entity<Question>()
+                .HasOne(q => q.QuestionSet)
+                .WithMany(pqs => pqs.Questions)
+                .HasForeignKey(q => q.SetId);
+
+            modelBuilder.Entity<Answer>()
+                .HasOne(a => a.Question)
+                .WithMany(q => q.Answers)
+                .HasForeignKey(a => a.QuestionId);
+
+            // Configure automatic creation of CreateAt
+            modelBuilder.Entity<PsychoQuestionSet>()
+                .Property(p => p.CreateAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<Question>()
+                .Property(q => q.CreateAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<Answer>()
+                .Property(a => a.CreateAt)
+                .HasDefaultValueSql("GETDATE()");
             #endregion
 
             #region Seed Data
@@ -141,7 +173,8 @@ namespace DAL.Data
                 new Role { RoleId = adminRoleId, RoleName = "Admin" },
                 new Role { RoleId = Guid.NewGuid(), RoleName = "Psychologist" },
                 new Role { RoleId = Guid.NewGuid(), RoleName = "Student" },
-                new Role { RoleId = Guid.NewGuid(), RoleName = "Parent" }
+                new Role { RoleId = Guid.NewGuid(), RoleName = "Parent" },
+                new Role { RoleId = Guid.NewGuid(), RoleName = "Teacher" }
             );
 
             var adminUser = CreateAdminUser();
