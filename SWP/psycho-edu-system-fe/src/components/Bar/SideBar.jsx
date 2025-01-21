@@ -15,20 +15,27 @@ const SideBar = ({
     <div
       className={`
         ${
-          isCollapsed ? "w-[80px]" : "w-[250px]"
+          isCollapsed ? "w-[80px]" : "w-[200px]"
         } // Điều chỉnh độ rộng khi thu gọn
+       
          ${className}
-        bg-white h-screen shadow-lg left-0 border-r
+        bg-white h-screen
         flex flex-col // Sử dụng flexbox để căn chỉnh nội dung
-        transition-all duration-300 ease-in-out // Animation mượt mà khi thu gọn
+        transition-all duration-300 // Animation mượt mà khi thu gọn
+        shadow-sm
+        border-r border-gray-200
       `}
     >
       {/* Header của sidebar */}
-      <div className="flex items-center p-4 border-b">
-        {!isCollapsed && <span className="text-xl font-semibold">{title}</span>}
+      <div className="flex items-center p-6 border-b border-gray-100">
+        {!isCollapsed && (
+          <span className="text-xl font-semibold text-gray-800 transition-opacity duration-300">
+            {title}
+          </span>
+        )}
         <button
           onClick={onCollapse}
-          className="p-2 hover:bg-gray-100 rounded-lg ml-auto"
+          className="p-2 hover:bg-gray-50 rounded-lg ml-auto text-gray-600 hover:text-gray-900 transition-colors duration-200"
           title={isCollapsed ? "Mở rộng" : "Thu gọn"}
         >
           {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
@@ -36,7 +43,7 @@ const SideBar = ({
       </div>
 
       {/* Menu items */}
-      <nav className="p-3 space-y-2">
+      <nav className="flex-1 p-1 space-y-2">
         {items.map((item) => {
           const isActive = currentPath === item.href;
           const Icon = item.icon;
@@ -64,18 +71,21 @@ const SideBar = ({
               `}
             >
               {/* Icon luôn hiển thị */}
-              {Icon && <Icon size={20} />}
-
+              {Icon && (
+                <div className="transition-transform duration-200 hover:scale-110">
+                  <Icon size={20} />
+                </div>
+              )}
               {/* Text và badge chỉ hiển thị khi không thu gọn */}
               {!isCollapsed && (
-                <>
-                  <span>{item.name}</span>
+                <div className="flex items-center justify-between flex-1">
+                  <span className="font-medium">{item.name}</span>
                   {item.badge && (
-                    <span className="bg-blue-100 text-blue-600 px-2 py-1 text-xs rounded-full">
+                    <span className="px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-600 rounded-full">
                       {item.badge}
                     </span>
                   )}
-                </>
+                </div>
               )}
             </a>
           );
