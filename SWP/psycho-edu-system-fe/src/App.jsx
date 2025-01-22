@@ -15,8 +15,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           {/* Nested Routes */}
           <Route index element={<HomePage />} />
-          <Route path="/program" element={<ProgramPage />} />
-          <Route path="/survey" element={<SurveyPage/>} />
+          <Route path="/survey" element={<SurveyPage />} />
           <Route path="/course/*" element={<CoursePage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
