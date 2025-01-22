@@ -16,11 +16,10 @@ import {
   courseListData,
   courseTopicsData,
 } from "../../data/courseData";
-import CourseCatalog from "../../components/ProgramPageComponents/CourseCatalog";
-import CourseList from "../../components/ProgramPageComponents/CoursesList";
-import CourseContent from "../../components/ProgramPageComponents/CourseContent";
-import CourseDetail from "../../components/ProgramPageComponents/CourseDetail";
+
 import SideBar from "../../components/Bar/SideBar";
+import CourseCatalog from "../../components/CoursePageComponents/CourseCatalog";
+import CourseList from "../../components/CoursePageComponents/CoursesList";
 
 /**
  * Component hiển thị chi tiết khóa học
