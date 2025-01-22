@@ -9,7 +9,7 @@ const Navbar = () => {
   const links = [
     { href: "", title: "About" },
     { href: "", title: "News" },
-    { href: "", title: "Survey" },
+    { href: "/survey", title: "Survey" },
     { href: "", title: "Contact" },
   ];
 
@@ -20,7 +20,8 @@ const Navbar = () => {
       <nav className="bg-[#A8E0D6] px-4 lg:px-6 py-2.5">
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-screen-xl">
           <a href="/" className="flex items-center">
-            <span className="text-2xl text-[#34258a] font-Verdana font-semibold">
+            <span className="self-center text-2xl text-[#34258a] font-Verdana font-semibold">
+
               Mental Health Care©
             </span>
           </a>
@@ -97,7 +98,7 @@ const Navbar = () => {
           <div
             className={`${
               isMenuOpen ? "block" : "hidden"
-            } justify-between items-center w-full lg:flex lg:w-auto lg:order-1`}
+            } justify-between items-center w-full lg:flex lg:w-auto lg:order-2`}
             id="mobile-menu-2"
           >
             <ul className="flex flex-col mt-4 font-medium lg:flex-row lg:space-x-16 lg:mt-0">
