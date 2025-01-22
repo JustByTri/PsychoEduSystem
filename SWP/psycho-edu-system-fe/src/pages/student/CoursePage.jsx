@@ -51,7 +51,7 @@ const CourseDetailView = () => {
  * Component chính của trang Program
  * Quản lý state và điều hướng giữa danh sách khóa học và chi tiết khóa học
  */
-const ProgramCoursePage = () => {
+const CoursePage = () => {
   // Các state quản lý filter và tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -195,41 +195,4 @@ const ProgramCoursePage = () => {
   );
 };
 
-//         <div
-//           className={`flex-1 transition-all duration-300 ${
-//             isCollapsed ? "ml-20" : "ml-72"
-//           }`}
-//         >
-//           <div className="max-w-[1920px] mx-auto px-4 py-6 lg:px-8">
-//             <Routes>
-//               <Route
-//                 path="/"
-//                 element={
-//                   <div className="flex flex-col lg:flex-row gap-6">
-//                     <CourseCatalog
-//                       selectedCategory={selectedCategory}
-//                       onCategorySelect={setSelectedCategory}
-//                       categories={courseCatalogData}
-//                     />
-//                     <CourseList
-//                       searchTerm={searchTerm}
-//                       onSearchChange={(e) => setSearchTerm(e.target.value)}
-//                       courses={filteredCourses}
-//                       selectedCounselor={selectedCounselor}
-//                       selectedType={selectedType}
-//                       onCounselorChange={(e) => setSelectedCounselor(e.target.value)}
-//                       onTypeChange={(e) => setSelectedType(e.target.value)}
-//                     />
-//                   </div>
-//                 }
-//               />
-//               <Route path="/course/:courseId" element={<CourseDetailView />} />
-//             </Routes>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-export default ProgramCoursePage;
+export default CoursePage;
