@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BLL.Interface
+namespace Common.DTO
 {
-    public class IQuestionAnswerService
+    public class LoginDTO
     {
-
+        public string Account { get; set; }
+        public string Password { get; set; }
     }
 }

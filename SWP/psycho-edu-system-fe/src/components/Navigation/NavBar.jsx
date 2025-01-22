@@ -21,6 +21,7 @@ const Navbar = () => {
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-screen-xl">
           <a href="/" className="flex items-center">
             <span className="self-center text-2xl text-[#34258a] font-Verdana font-semibold">
+
               Mental Health Care©
             </span>
           </a>

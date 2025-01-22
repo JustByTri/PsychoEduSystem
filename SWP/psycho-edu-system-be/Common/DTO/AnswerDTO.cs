@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace Common.DTO
 {
-    internal class AnswerDTO
+    public class AnswerDTO
     {
+        public Guid AnswerId { get; set; }
+        public string Content { get; set; }
+        public Guid QuestionId { get; set; }
     }
 }

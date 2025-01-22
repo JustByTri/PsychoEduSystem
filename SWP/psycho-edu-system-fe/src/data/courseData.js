@@ -16,7 +16,7 @@ export const courseListData = [
     type: "Emotional",
     description: "How to check if you are feeling ok today",
     image:
-      "https://img.freepik.com/free-photo/expressive-woman-posing-indoor_344912-1878.jpg?t=st=1737199812~exp=1737203412~hmac=c0f87e80d6ce9bced24118781a0a3a462afe3631b64da9784701f79086affec5&w=900",
+      "https://img.freepik.com/free-photo/expressive-woman-posing-indoor_344912-1878.jpg",
   },
   {
     id: 2,
@@ -27,6 +27,124 @@ export const courseListData = [
     type: "Physic",
     description: "Learn to manantaince your mind",
     image:
-      "https://img.freepik.com/premium-photo/house-depression-woman-sofa-sad-decision-with-anxiety-lonely-mental-health-apartment-person-girl-couch-stress-doubt-with-fatigue-tired-confused-with-burnout_590464-497737.jpg?w=1060",
+      "https://img.freepik.com/free-photo/expressive-woman-posing-indoor_344912-1878.jpg",
+  },
+  {
+    id: 3,
+    title: "Building Mental Resilience",
+    category: "Mental Science",
+    duration: "8 Topic",
+    counselor: "Dr.Emily",
+    type: "Online",
+    description: "Develop strategies to cope with stress and adversity",
+    image:
+      "https://img.freepik.com/free-photo/expressive-woman-posing-indoor_344912-1878.jpg",
+  },
+  {
+    id: 4,
+    title: "Healthy Lifestyle Habits",
+    category: "Health Development",
+    duration: "7 Topic",
+    counselor: "Prof.Thinh",
+    type: "Hybrid",
+    description: "Create and maintain healthy daily routines",
+    image:
+      "https://img.freepik.com/free-photo/expressive-woman-posing-indoor_344912-1878.jpg",
+  },
+  {
+    id: 5,
+    title: "Career Path Discovery",
+    category: "Life Chance",
+    duration: "6 Topic",
+    counselor: "Dr.Jesyca",
+    type: "In-Person",
+    description: "Find your ideal career path through self-discovery",
+    image:
+      "https://img.freepik.com/free-photo/expressive-woman-posing-indoor_344912-1878.jpg",
   },
 ];
+
+export const courseTopicsData = {
+  1: {
+    // courseId
+    topics: [
+      {
+        id: 1,
+        title: "Understanding Your Emotions",
+        steps: [
+          {
+            id: 1,
+            title: "Identifying Different Emotions",
+            content: "Learn to recognize and name various emotional states",
+            duration: "15 mins",
+          },
+          {
+            id: 2,
+            title: "Emotion Tracking Exercise",
+            content: "Daily practice of monitoring your emotional states",
+            duration: "10 mins",
+          },
+        ],
+      },
+      {
+        id: 2,
+        title: "Self-Check Techniques",
+        steps: [
+          {
+            id: 1,
+            title: "Quick Mental Health Check",
+            content: "Simple steps to assess your current mental state",
+            duration: "5 mins",
+          },
+          {
+            id: 2,
+            title: "Daily Mood Journal",
+            content: "Recording and reflecting on daily emotions",
+            duration: "10 mins",
+          },
+        ],
+      },
+    ],
+  },
+  2: {
+    // courseId
+    topics: [
+      {
+        id: 1,
+        title: "Understanding Bullying",
+        steps: [
+          {
+            id: 1,
+            title: "Types of Bullying",
+            content: "Identifying different forms of bullying behavior",
+            duration: "20 mins",
+          },
+          {
+            id: 2,
+            title: "Impact Assessment",
+            content: "Understanding the effects of bullying on mental health",
+            duration: "15 mins",
+          },
+        ],
+      },
+      {
+        id: 2,
+        title: "Prevention Strategies",
+        steps: [
+          {
+            id: 1,
+            title: "Building Support Systems",
+            content: "Creating networks for prevention and support",
+            duration: "25 mins",
+          },
+          {
+            id: 2,
+            title: "Intervention Techniques",
+            content: "Learning when and how to intervene safely",
+            duration: "30 mins",
+          },
+        ],
+      },
+    ],
+  },
+};
