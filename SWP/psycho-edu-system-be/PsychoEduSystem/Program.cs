@@ -28,6 +28,7 @@ namespace MIndAid
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<UserUtility>();
             builder.Services.AddScoped<ILoginService, LoginService>();
+            builder.Services.AddScoped<ISurveyService, SurveyService>();
 
 
             // Cấu hình Swagger

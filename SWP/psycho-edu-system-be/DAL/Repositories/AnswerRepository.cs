@@ -10,34 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Repositories
 {
-    public class AnswerRepository : IAnswerRepository
-
+    public class AnswerRepository : GenericRepository<Answer>, IAnswerRepository
     {
-        private readonly MindAidContext _mindAidContext;
-
-        public AnswerRepository(MindAidContext mindAidContext)
-        {
-            _mindAidContext = mindAidContext;
-        }
-
-        public async Task<Answer> GetId(Guid answerId)
-        {
-            return await _mindAidContext.Answers.FirstOrDefaultAsync(a => a.AnswerId == answerId);
-        }
-
-        public async Task<IEnumerable<Answer>> GetAll()
-        {
-            return await _mindAidContext.Answers.ToListAsync();
-        }
-
-        public async Task Add(Answer answer)
-        {
-            await _mindAidContext.AddAsync(answer);
-        }
-
-        public async Task Save()
-        {
-            await _mindAidContext.SaveChangesAsync();
-        }
+        public AnswerRepository(MindAidContext context) : base(context) { }
     }
 }

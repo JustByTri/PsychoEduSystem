@@ -29,7 +29,8 @@ namespace DAL.UnitOfWork
             UserToken = new UserTokenRepository(_context);
             Answer = new AnswerRepository(_context);
             RefreshToken = new RefreshTokenRepository(_context);
-
+            Question = new QuestionRepository(_context);    
+            Survey = new SurveyRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
@@ -52,6 +53,8 @@ namespace DAL.UnitOfWork
         public IAnswerRepository Answer { get; private set; }
 
         public IRefreshTokenRepository RefreshToken { get; private set; }
+        public IQuestionRepository Question { get; private set; }
+        public ISurveyRepository Survey { get; private set; }
 
         // Giải phóng tài nguyên
         public void Dispose()
