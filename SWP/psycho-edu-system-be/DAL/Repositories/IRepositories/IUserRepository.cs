@@ -11,7 +11,9 @@ namespace DAL.Repositories.IRepositories
 
     public interface IUserRepository : IGenericRepository<User>
     {
-        Task<User> GetUserByUserNameAsync(string userName);
+        Task<User> GetByEmailOrUserNameAsync(string emailOrUserName);
+
+
         Task<User> GetUserByEmailAsync(string email);
         Task<bool> IsUserExistAsync(string userName, string email);
     }

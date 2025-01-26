@@ -1,22 +1,20 @@
-﻿using Common.Constants;
-using Common.Settings;
-using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
+
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
+using Common.Constant;
+using Common.Setting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 
-
-namespace BLL.Services
+namespace BLL.Service
 {
     public static class JwtProvider
     {
 
-        /// <summary>
-        /// Generate token
-        /// </summary>
-        /// <param name="claims">the</param>
-        /// <returns></returns>
         public static string GenerateAccessToken(List<Claim> claims)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -53,6 +51,7 @@ namespace BLL.Services
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+
         public static void HandleRefreshToken(string tokenInput, out string accessToken, out string refreshToken)
         {
             List<Claim> claims = DecodeToken(tokenInput);
@@ -286,6 +285,11 @@ namespace BLL.Services
             return GetUserIdAsGuid(accessToken);
         }
 
+
     }
 }
+
+
+
+
 

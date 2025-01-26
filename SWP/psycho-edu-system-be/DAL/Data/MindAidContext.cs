@@ -1,4 +1,4 @@
-﻿using DAL.Entities;
+using DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
@@ -14,7 +14,7 @@ namespace DAL.Data
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<CourseContent> CourseContents { get; set; }
-        public DbSet<Category> Categories { get; set; }      
+        public DbSet<Category> Categories { get; set; }
         public DbSet<Slot> Slots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Message> Messages { get; set; }
@@ -27,6 +27,10 @@ namespace DAL.Data
         public DbSet<RequestAppointments> RequestAppointments { get; set; }
         public DbSet<Survey> Surveys { get; set; }
         public DbSet<Video> Videos { get; set; }
+
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         #endregion
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
@@ -63,7 +67,7 @@ namespace DAL.Data
         {
             #region Entity Configurations
 
-         
+
             modelBuilder.Entity<UserRole>()
                 .HasKey(ur => new { ur.UserId, ur.RoleId });
 
@@ -77,7 +81,7 @@ namespace DAL.Data
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
 
-        
+
             modelBuilder.Entity<Course>()
                 .HasOne(c => c.Category)
                 .WithMany()
@@ -88,15 +92,14 @@ namespace DAL.Data
                 .WithMany(u => u.Courses)
                 .HasForeignKey(c => c.OwnerId);
 
-      
+
             modelBuilder.Entity<CourseContent>()
                 .HasOne(cc => cc.Course)
                 .WithMany(c => c.CourseContents)
                 .HasForeignKey(cc => cc.CourseId);
 
-          
 
-       
+
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Slot)
                 .WithMany(s => s.Appointments)
@@ -126,7 +129,9 @@ namespace DAL.Data
                 .HasForeignKey(m => m.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-          
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasKey(mhp => new { mhp.UserId, mhp.RefreshTokenId });
             modelBuilder.Entity<MentalHealthPoint>()
                 .HasKey(mhp => new { mhp.UserId, mhp.MentalHealthPointDetailId });
 
