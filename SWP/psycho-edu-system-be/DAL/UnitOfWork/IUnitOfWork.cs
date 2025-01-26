@@ -23,6 +23,8 @@ namespace DAL.UnitOfWork
         IAnswerRepository Answer { get; }
 
         IRefreshTokenRepository RefreshToken { get; }
+     IQuestionRepository Question { get; }
+        ISurveyRepository Survey { get; }
 
         // Dispose method để giải phóng tài nguyên
         void Dispose();

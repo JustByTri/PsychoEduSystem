@@ -7,11 +7,8 @@ using DAL.Entities;
 
 namespace DAL.Repositories.IRepositories
 {
-    public interface IQuestionRepository
+    public interface IQuestionRepository : IGenericRepository<Question>
     {
-        Task<Question> GetId(Guid questionId);
-        Task<IEnumerable<Question>> GetAll();
-        Task Add(Question question);
-        Task Save();
+     
     }
 }

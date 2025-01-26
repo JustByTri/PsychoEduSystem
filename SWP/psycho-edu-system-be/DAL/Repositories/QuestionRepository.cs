@@ -10,35 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Repositories
 {
-    public class QuestionRepository : IQuestionRepository
+    public class QuestionRepository : GenericRepository<Question>, IQuestionRepository
     {
-        private readonly MindAidContext _mindAidContext;
-
-        public QuestionRepository(MindAidContext mindAidContext)
-        {
-            _mindAidContext = mindAidContext;
-        }
-
-        public async Task<Question> GetId(Guid questionId)
-        {
-            return await _mindAidContext.QuestionSets.FindAsync(questionId);
-
-        }
-
-        public async Task<IEnumerable<Question>> GetAll()
-        {
-            return await _mindAidContext.QuestionSets.ToListAsync();
-
-        }
-
-        public async Task Add(Question question)
-        {
-            await _mindAidContext.QuestionSets.AddAsync(question);
-        }
-
-        public async Task Save()
-        {
-            await _mindAidContext.SaveChangesAsync();
-        }
+        public QuestionRepository(MindAidContext context) : base(context) { }
     }
 }
+

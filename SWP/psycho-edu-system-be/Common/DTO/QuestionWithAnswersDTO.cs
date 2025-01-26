@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Common.DTO
 {
-    public class AnswerDTO
+    public class QuestionWithAnswersDTO
     {
-        public Guid AnswerId { get; set; }
+        public Guid QuestionId { get; set; }
         public string Content { get; set; }
-        public int Point { get; set; }
+        public List<AnswerDTO> Answers { get; set; }
     }
 }

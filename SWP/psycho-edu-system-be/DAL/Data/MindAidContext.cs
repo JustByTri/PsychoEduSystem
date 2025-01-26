@@ -20,7 +20,7 @@ namespace DAL.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<MentalHealthPoint> MentalHealthPoints { get; set; }
         public DbSet<MentalHealthPointDetail> MentalHealthPointDetails { get; set; }
-        public DbSet<PsychoQuestionSet> PsychoQuestionSets { get; set; }
+    
         public DbSet<Question> QuestionSets { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Relationship> Relationships { get; set; }
@@ -144,15 +144,8 @@ namespace DAL.Data
                 .HasOne(mhp => mhp.MentalHealthPointDetail)
                 .WithOne(mhpd => mhpd.MentalHealthPoints)
                 .HasForeignKey<MentalHealthPoint>(mhp => mhp.MentalHealthPointDetailId);
-            modelBuilder.Entity<PsychoQuestionSet>()
-            .HasOne(pqs => pqs.User)
-            .WithMany(u => u.PsychoQuestions)
-            .HasForeignKey(pqs => pqs.UserId);
-
-            modelBuilder.Entity<Question>()
-                .HasOne(q => q.QuestionSet)
-                .WithMany(pqs => pqs.Questions)
-                .HasForeignKey(q => q.SetId);
+         
+        
 
             modelBuilder.Entity<Answer>()
                 .HasOne(a => a.Question)
@@ -160,9 +153,7 @@ namespace DAL.Data
                 .HasForeignKey(a => a.QuestionId);
 
             // Configure automatic creation of CreateAt
-            modelBuilder.Entity<PsychoQuestionSet>()
-                .Property(p => p.CreateAt)
-                .HasDefaultValueSql("GETDATE()");
+
 
             modelBuilder.Entity<Question>()
                 .Property(q => q.CreateAt)
