@@ -26,7 +26,7 @@ namespace DAL.UnitOfWork
             Slot = new SlotRepository(_context);
             User = new UserRepository(_context);
             UserRole = new UserRoleRepository(_context);
-            UserToken = new UserTokenRepository(_context)
+            UserToken = new UserTokenRepository(_context);
             Answer = new AnswerRepository(_context);
             RefreshToken = new RefreshTokenRepository(_context);
 
