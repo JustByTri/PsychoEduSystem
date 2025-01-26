@@ -22,6 +22,7 @@ namespace DAL.UnitOfWork
             Slot = new SlotRepository(_context);
             User = new UserRepository(_context);
             UserRole = new UserRoleRepository(_context);
+            UserToken = new UserTokenRepository(_context);
           
         }
 
@@ -37,6 +38,7 @@ namespace DAL.UnitOfWork
         public IUserRepository User { get; private set; }
         public IUserRoleRepository UserRole { get; private set; }
  
+        public IUserTokenRepository UserToken { get; private set; }
 
         public void Dispose()
         {

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(MindAidContext))]
-    [Migration("20250115104552_j")]
-    partial class j
+    [Migration("20250126194807_s")]
+    partial class s
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -323,6 +323,69 @@ namespace DAL.Migrations
                     b.ToTable("QuestionSets");
                 });
 
+            modelBuilder.Entity("DAL.Entities.Relationship", b =>
+                {
+                    b.Property<Guid>("RelationshipId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RelationshipType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("RelationshipId");
+
+                    b.ToTable("Relationships");
+                });
+
+            modelBuilder.Entity("DAL.Entities.RequestAppointments", b =>
+                {
+                    b.Property<Guid>("RequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreateAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsBooking")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCheckedIn")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeposit")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsScheduled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSend")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("SlotId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("RequestId");
+
+                    b.HasIndex("SlotId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RequestAppointments");
+                });
+
             modelBuilder.Entity("DAL.Entities.Role", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -340,27 +403,27 @@ namespace DAL.Migrations
                     b.HasData(
                         new
                         {
-                            RoleId = new Guid("3fcec13d-b1ae-4636-a9f6-9eba982d79a7"),
+                            RoleId = new Guid("07861ebe-3550-4640-a273-c46f20d63ade"),
                             RoleName = "Admin"
                         },
                         new
                         {
-                            RoleId = new Guid("0eb94925-6bab-42ee-8395-6cd1db80b96b"),
+                            RoleId = new Guid("11a38458-58ca-4706-b99e-dfa31aae71d9"),
                             RoleName = "Psychologist"
                         },
                         new
                         {
-                            RoleId = new Guid("b97fdba8-5cab-4477-9ba3-5c2d39dfc5c1"),
+                            RoleId = new Guid("17bd9a69-1d26-4a2a-98b3-39532466879b"),
                             RoleName = "Student"
                         },
                         new
                         {
-                            RoleId = new Guid("324d798c-e1d9-494e-b6d1-9a5153ac3a23"),
+                            RoleId = new Guid("f9e4c364-92bf-46ff-9101-6fdfab89f379"),
                             RoleName = "Parent"
                         },
                         new
                         {
-                            RoleId = new Guid("768b9dbc-a532-4ed1-82da-2a3f667c239e"),
+                            RoleId = new Guid("8917a2de-6c3e-4122-9a0b-6aeb7ddc5cd6"),
                             RoleName = "Teacher"
                         });
                 });
@@ -395,6 +458,35 @@ namespace DAL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Slots");
+                });
+
+            modelBuilder.Entity("DAL.Entities.Survey", b =>
+                {
+                    b.Property<Guid>("SurveyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreateAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdateAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SurveyId");
+
+                    b.ToTable("Surveys");
                 });
 
             modelBuilder.Entity("DAL.Entities.User", b =>
@@ -454,15 +546,15 @@ namespace DAL.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = new Guid("5216de74-f903-4f9d-9a16-7c79e7cc329e"),
+                            UserId = new Guid("ade04cc6-bad7-442e-bea3-33c4e3100cd1"),
                             Address = "Ha Noi",
                             BirthDay = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            CreateAt = new DateTime(2025, 1, 15, 17, 45, 51, 30, DateTimeKind.Local).AddTicks(9755),
+                            CreateAt = new DateTime(2025, 1, 27, 2, 48, 6, 961, DateTimeKind.Local).AddTicks(5842),
                             Email = "admin@fpt.edu.vn",
                             FullName = "Administrator",
                             Gender = "Male",
-                            PasswordHash = new byte[] { 3, 172, 172, 210, 129, 2, 48, 193, 168, 224, 83, 137, 208, 209, 250, 234, 32, 163, 212, 67, 179, 157, 233, 25, 94, 251, 129, 162, 162, 83, 172, 9, 100, 112, 91, 243, 137, 172, 146, 30, 247, 123, 246, 3, 162, 217, 52, 69, 21, 109, 229, 161, 85, 38, 218, 86, 100, 119, 214, 195, 62, 226, 14, 82 },
-                            PasswordSalt = new byte[] { 251, 152, 241, 153, 63, 36, 234, 215, 3, 42, 70, 118, 141, 148, 162, 243, 185, 41, 96, 101, 224, 166, 4, 114, 8, 165, 84, 70, 200, 121, 172, 167, 136, 127, 245, 159, 108, 23, 87, 105, 25, 205, 148, 214, 19, 183, 212, 155, 25, 249, 17, 57, 207, 126, 25, 28, 247, 49, 224, 190, 225, 214, 246, 114, 211, 1, 233, 39, 139, 20, 188, 162, 138, 153, 251, 115, 59, 152, 156, 22, 9, 254, 251, 61, 186, 76, 127, 25, 38, 230, 181, 170, 51, 7, 68, 244, 128, 243, 244, 103, 119, 17, 200, 160, 249, 156, 180, 59, 33, 210, 255, 185, 172, 225, 143, 43, 69, 164, 199, 140, 80, 118, 234, 114, 173, 15, 205, 136 },
+                            PasswordHash = new byte[] { 205, 34, 97, 88, 164, 157, 183, 201, 210, 199, 205, 32, 104, 47, 69, 252, 158, 255, 77, 35, 181, 49, 74, 110, 119, 123, 89, 62, 86, 216, 62, 228, 215, 169, 196, 106, 126, 195, 167, 250, 158, 206, 156, 242, 122, 169, 94, 188, 104, 129, 85, 201, 177, 39, 31, 56, 50, 0, 112, 198, 201, 138, 106, 166 },
+                            PasswordSalt = new byte[] { 56, 255, 232, 61, 61, 125, 200, 243, 197, 188, 0, 52, 63, 139, 205, 226, 124, 12, 253, 40, 48, 103, 142, 107, 191, 122, 34, 145, 110, 26, 186, 244, 225, 128, 111, 92, 232, 47, 86, 134, 246, 99, 33, 211, 234, 86, 53, 118, 46, 21, 125, 10, 151, 14, 136, 28, 4, 251, 207, 99, 7, 134, 8, 145, 22, 225, 78, 190, 197, 240, 12, 26, 245, 248, 80, 202, 183, 102, 112, 24, 78, 4, 184, 0, 98, 52, 48, 32, 3, 88, 245, 172, 229, 143, 79, 207, 57, 155, 143, 121, 90, 146, 180, 246, 86, 112, 50, 209, 104, 183, 245, 38, 12, 71, 132, 225, 125, 10, 87, 120, 211, 165, 56, 70, 92, 33, 149, 21 },
                             Phone = "0123456789",
                             Status = true,
                             UserName = "admin"
@@ -486,9 +578,39 @@ namespace DAL.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = new Guid("5216de74-f903-4f9d-9a16-7c79e7cc329e"),
-                            RoleId = new Guid("3fcec13d-b1ae-4636-a9f6-9eba982d79a7")
+                            UserId = new Guid("ade04cc6-bad7-442e-bea3-33c4e3100cd1"),
+                            RoleId = new Guid("07861ebe-3550-4640-a273-c46f20d63ade")
                         });
+                });
+
+            modelBuilder.Entity("DAL.Entities.Video", b =>
+                {
+                    b.Property<Guid>("VideoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CreateAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdateAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("VideoId");
+
+                    b.ToTable("Videos");
                 });
 
             modelBuilder.Entity("DAL.Entities.Answer", b =>
@@ -619,6 +741,29 @@ namespace DAL.Migrations
                     b.Navigation("QuestionSet");
                 });
 
+            modelBuilder.Entity("DAL.Entities.RequestAppointments", b =>
+                {
+                    b.HasOne("DAL.Entities.Slot", "Slot")
+                        .WithMany()
+                        .HasForeignKey("SlotId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.User", null)
+                        .WithMany("RequestAppointments")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Slot");
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("DAL.Entities.Slot", b =>
                 {
                     b.HasOne("DAL.Entities.User", "User")
@@ -691,6 +836,8 @@ namespace DAL.Migrations
                     b.Navigation("PsychoQuestions");
 
                     b.Navigation("ReceivedMessages");
+
+                    b.Navigation("RequestAppointments");
 
                     b.Navigation("SentMessages");
 
