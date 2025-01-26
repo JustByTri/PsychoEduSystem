@@ -17,6 +17,8 @@ namespace DAL.UnitOfWork
         ISlotRepository Slot { get; }
         IUserRepository User { get; }
         IUserRoleRepository UserRole { get; }
+        
+        IUserTokenRepository UserToken { get; }
 
         IAnswerRepository Answer { get; }
 

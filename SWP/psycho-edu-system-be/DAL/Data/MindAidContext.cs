@@ -1,4 +1,4 @@
-﻿using DAL.Entities;
+using DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
@@ -23,8 +23,14 @@ namespace DAL.Data
         public DbSet<PsychoQuestionSet> PsychoQuestionSets { get; set; }
         public DbSet<Question> QuestionSets { get; set; }
         public DbSet<Answer> Answers { get; set; }
+        public DbSet<Relationship> Relationships { get; set; }
+        public DbSet<RequestAppointments> RequestAppointments { get; set; }
+        public DbSet<Survey> Surveys { get; set; }
+        public DbSet<Video> Videos { get; set; }
+
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         #endregion
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
@@ -165,6 +171,17 @@ namespace DAL.Data
             modelBuilder.Entity<Answer>()
                 .Property(a => a.CreateAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<RequestAppointments>()
+    .HasOne(ra => ra.Student)
+    .WithMany()
+    .HasForeignKey(ra => ra.StudentId)
+    .OnDelete(DeleteBehavior.NoAction);  // Change to NoAction
+
+            modelBuilder.Entity<RequestAppointments>()
+                .HasOne(ra => ra.Slot)
+                .WithMany()
+                .HasForeignKey(ra => ra.SlotId)
+                .OnDelete(DeleteBehavior.NoAction);
             #endregion
 
             #region Seed Data

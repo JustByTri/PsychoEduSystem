@@ -1,6 +1,11 @@
-﻿using BLL.Interface;
+using BLL.Interface;
+
+using BLL.Services;
 using Common.DTO;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+
 
 namespace PsychoEduSystem.Controller
 {
@@ -8,11 +13,13 @@ namespace PsychoEduSystem.Controller
     [ApiController]
     public class LoginController : ControllerBase
     {
+		 private readonly IGoogleAuthService _googleAuthService;
         private readonly ILoginService _loginService;
 
-        public LoginController(ILoginService loginService)
+        public LoginController(ILoginService loginService,IGoogleAuthService googleAuthService)
         {
             _loginService = loginService;
+						_googleAuthService = googleAuthService;
         }
 
         [HttpPost("login")]
@@ -32,6 +39,18 @@ namespace PsychoEduSystem.Controller
 
             return StatusCode(response.StatusCode, response);
         }
+				  [HttpPost("signin-google")]
+        public async Task<IActionResult> SignInGoogle([FromBody] GoogleAuthTokenDTO googleAuthToken)
+        {
+            var result = await _googleAuthService.SignInWithGoogle(googleAuthToken);
+
+            if (result)
+            {
+                return Ok(new { message = "Login successful" });
+            }
+            return BadRequest(new { message = "Login failed" });
+        }
     }
+
 
 }

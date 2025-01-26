@@ -1,4 +1,4 @@
-﻿using System;
+
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -14,6 +14,7 @@ namespace BLL.Service
 {
     public static class JwtProvider
     {
+
         public static string GenerateAccessToken(List<Claim> claims)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -31,6 +32,7 @@ namespace BLL.Service
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+
 
         public static string GenerateRefreshToken(List<Claim> claims)
         {
@@ -97,6 +99,7 @@ namespace BLL.Service
 
             return true;
         }
+
 
         /// <summary>
         /// Gets the user id from token
@@ -283,6 +286,10 @@ namespace BLL.Service
         }
 
 
-
     }
 }
+
+
+
+
+
