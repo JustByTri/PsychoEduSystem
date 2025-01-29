@@ -91,7 +91,7 @@ const LoginModal = () => {
               >
                 <li>
                   <a
-                    href="counselor"
+                    href="student"
                     className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
                   >
                     Portal
