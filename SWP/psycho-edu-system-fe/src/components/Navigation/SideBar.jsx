@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 const SideBar = ({ isOpen }) => {
+  let navigate = useNavigate();
   return (
     <div
       className={`absolute bg-[#65CCB8] text-white w-56 min-h-screen transition-transform transform ${
@@ -19,7 +22,7 @@ const SideBar = ({ isOpen }) => {
           <li>
             <a
               className="block px-2 py-3 mb-2 text-gray-900 font-medium rounded-md hover:bg-[#00B277] hover:text-white cursor-pointer"
-              href="/"
+              onClick={() => navigate("start-up-survey")}
             >
               Survey
             </a>
