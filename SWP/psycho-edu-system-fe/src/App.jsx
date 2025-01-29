@@ -6,6 +6,7 @@ import NotFoundPage from "./pages/error/NotFoundPage";
 import ProgramCoursePage from "./pages/student/ProgramPage";
 import PortalLayout from "./components/Layouts/PortalLayout";
 import Dashboard from "./pages/student/Dashboard";
+import StartUpPage from "./pages/student/StartUpPage";
 function App() {
   return (
     <Router>
@@ -17,8 +18,9 @@ function App() {
           <Route path="/program/*" element={<ProgramCoursePage />} />
         </Route>
         {/* Student */}
-        <Route element={<PortalLayout />}>
-          <Route path="student" element={<Dashboard />} />
+        <Route path="student/" element={<PortalLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="start-up-survey" element={<StartUpPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

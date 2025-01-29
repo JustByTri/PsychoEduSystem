@@ -13,8 +13,10 @@ const PortalLayout = () => {
         <SideBar isOpen={isSidebarOpen} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header onToggleSidebar={toggleSidebar} />
-          <div className="flex-1 overflow-auto p-4">
-            <Outlet />
+          <div className="flex-1 overflow-auto p-4 flex justify-center items-center">
+            <div className="w-full max-w-7xl px-4">
+              <Outlet />
+            </div>
           </div>
         </div>
       </div>
