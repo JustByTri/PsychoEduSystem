@@ -1,67 +1,89 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  faHome,
+  faClipboardList,
+  faCogs,
+  faHistory,
+  faFileAlt,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-const SideBar = ({ isOpen }) => {
-  let navigate = useNavigate();
+const SideBar = () => {
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  const navItems = [
+    { icon: faHome, label: "Home", path: "/student" },
+    {
+      icon: faClipboardList,
+      label: "Survey",
+      path: "/student/start-up-survey",
+    },
+    { icon: faCogs, label: "Program", path: "#" },
+    { icon: faHistory, label: "History", path: "#" },
+    { icon: faFileAlt, label: "Report", path: "#" },
+    { icon: faUser, label: "Account", path: "#" },
+  ];
+
+  const handleToggleMenu = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
   return (
     <div
-      className={`absolute bg-[#65CCB8] text-white w-56 min-h-screen transition-transform transform ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      } ease-in-out duration-300`}
-      id="sidebar"
+      className={`bg-[#65CCB8] text-[#002B36] shadow-md transition-all duration-300 ${
+        isCollapsed ? "w-20" : "w-72"
+      } flex flex-col justify-between`}
+      style={{ minHeight: "100vh" }}
     >
-      <div className="p-4">
-        <ul className="mt-4 py-20">
-          <li>
-            <a
-              className="block px-2 py-3 mb-2 text-gray-900 font-medium rounded-md hover:bg-[#00B277] hover:text-white cursor-pointer"
-              href="/"
-            >
-              Home
-            </a>
-          </li>
-          <li>
-            <a
-              className="block px-2 py-3 mb-2 text-gray-900 font-medium rounded-md hover:bg-[#00B277] hover:text-white cursor-pointer"
-              onClick={() => navigate("start-up-survey")}
-            >
-              Survey
-            </a>
-          </li>
-          <li>
-            <a
-              className="block px-2 py-3 mb-2 text-gray-900 font-medium rounded-md hover:bg-[#00B277] hover:text-white cursor-pointer"
-              href="/"
-            >
-              Program
-            </a>
-          </li>
-          <li>
-            <a
-              className="block px-2 py-3 mb-2 text-gray-900 font-medium rounded-md hover:bg-[#00B277] hover:text-white cursor-pointer"
-              href="/"
-            >
-              History
-            </a>
-          </li>
-          <li>
-            <a
-              className="block px-2 py-3 mb-2 text-gray-900 font-medium rounded-md hover:bg-[#00B277] hover:text-white cursor-pointer"
-              href="/"
-            >
-              Report
-            </a>
-          </li>
-          <li>
-            <a
-              className="block px-2 py-3 mb-2 text-gray-900 font-medium rounded-md hover:bg-[#00B277] hover:text-white cursor-pointer"
-              href="/"
-            >
-              Account
-            </a>
-          </li>
-        </ul>
+      <div className="flex items-center justify-between p-4">
+        <button
+          className="text-[#002B36] p-2 w-full rounded-md hover:bg-white/20 transition-all duration-300"
+          onClick={handleToggleMenu}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`w-8 h-8 mx-auto transition-transform duration-300 ${
+              isCollapsed ? "rotate-0" : "rotate-180"
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 6h16M4 12h16m-7 6h7"
+            />
+          </svg>
+        </button>
       </div>
+
+      {/* Navigation */}
+      <nav className="flex-grow space-y-2 mt-6">
+        {navItems.map((item, index) => (
+          <Link
+            key={index}
+            to={item.path}
+            className={`flex items-center p-3 mx-3 rounded-md hover:bg-white/20 transition-all duration-300 ${
+              isCollapsed ? "justify-center" : ""
+            }`}
+          >
+            <div className="relative">
+              <FontAwesomeIcon icon={item.icon} className="w-7 h-7" />
+            </div>
+            {!isCollapsed && (
+              <span className="ml-5 text-[#002B36] font-medium">
+                {item.label}
+              </span>
+            )}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 };
+
 export default SideBar;
