@@ -1,5 +1,5 @@
 const Dashboard = () => {
-  return <div>This is student dashboard</div>;
+  return <div className="py-20">This is student dashboard</div>;
 };
 
 export default Dashboard;
