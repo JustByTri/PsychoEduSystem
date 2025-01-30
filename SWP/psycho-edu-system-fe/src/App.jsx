@@ -8,6 +8,7 @@ import PortalLayout from "./components/Layouts/PortalLayout";
 import Dashboard from "./pages/student/Dashboard";
 import StartUpPage from "./pages/student/StartUpPage";
 import SurveyPage from "./pages/student/SurveyPage";
+import SurveyResultPage from "./pages/student/SurveyResultPage";
 function App() {
   return (
     <Router>
@@ -23,6 +24,7 @@ function App() {
           <Route path="start-up-survey" element={<StartUpPage />} />
           <Route path="program" element={<ProgramCoursePage />} />
           <Route path="survey-for-student" element={<SurveyPage />} />
+          <Route path="survey-result" element={<SurveyResultPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
