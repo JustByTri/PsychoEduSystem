@@ -105,7 +105,7 @@ const Navbar = () => {
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="block py-2 pr-4 pl-3 text-sm text-[#3B945E] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
+                    className="block py-2 pr-4 pl-3 text-sm text-[#002B36] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
                   >
                     {link.title}
                   </a>
