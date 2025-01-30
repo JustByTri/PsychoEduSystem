@@ -20,7 +20,7 @@ const SideBar = () => {
       label: "Survey",
       path: "/student/start-up-survey",
     },
-    { icon: faCogs, label: "Program", path: "#" },
+    { icon: faCogs, label: "Program", path: "/student/program" },
     { icon: faHistory, label: "History", path: "#" },
     { icon: faFileAlt, label: "Report", path: "#" },
     { icon: faUser, label: "Account", path: "#" },
@@ -32,7 +32,7 @@ const SideBar = () => {
 
   return (
     <div
-      className={`bg-[#65CCB8] text-[#002B36] shadow-md transition-all duration-300 ${
+      className={`bg-[#65CCB8] text-[#002B36] shadow-md transition-all duration-300 h-full ${
         isCollapsed ? "w-20" : "w-72"
       } flex flex-col justify-between`}
       style={{ minHeight: "100vh" }}
