@@ -27,7 +27,7 @@ const StartUpPage = () => {
       <div className="flex flex-col justify-center items-center gap-4 text-white text-center">
         <button
           className="bg-[#6D60FE] hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105"
-          onClick={() => navigate("/survey-for-student")}
+          onClick={() => navigate("/student/survey-for-student")}
         >
           Start to survey
         </button>
