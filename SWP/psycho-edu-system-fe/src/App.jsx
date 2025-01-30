@@ -22,8 +22,8 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="start-up-survey" element={<StartUpPage />} />
           <Route path="program" element={<ProgramCoursePage />} />
+          <Route path="survey-for-student" element={<SurveyPage />} />
         </Route>
-        <Route path="survey-for-student" element={<SurveyPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
