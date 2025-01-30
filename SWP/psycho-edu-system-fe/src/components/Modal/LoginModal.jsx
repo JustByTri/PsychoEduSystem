@@ -70,7 +70,7 @@ const LoginModal = () => {
       <ToastContainer />
       {isAuthenticated === false ? (
         <a
-          className="block py-2 pr-4 pl-3 text-[#3B945E] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
+          className="block py-2 pr-4 pl-3 text-[#002B36] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
           onClick={() => setIsLoginModal(true)}
         >
           Sign In
@@ -79,7 +79,7 @@ const LoginModal = () => {
         <div className="relative cursor-pointer">
           <div
             onClick={handleOpenMenu}
-            className="block py-2 pr-4 pl-3 text-sm text-[#3B945E] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
+            className="block py-2 pr-4 pl-3 text-sm text-[#002B36] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
           >
             User
           </div>
