@@ -72,7 +72,12 @@ const SurveyPage = () => {
       reverseButtons: true,
     }).then((result) => {
       if (result.isConfirmed) {
-        const scores = { depression: 0, anxiety: 0, stress: 0 };
+        const scores = {
+          depression: 0,
+          anxiety: 0,
+          stress: 0,
+          date: null,
+        };
 
         // Calculate the total scores
         answeredQuestions.forEach(({ questionId, answerPoint }) => {
@@ -83,7 +88,9 @@ const SurveyPage = () => {
             scores[question.questionType] += answerPoint;
           }
         });
-
+        const timestamp = Date.now();
+        const dateFromTimestamp = new Date(timestamp);
+        scores.date = dateFromTimestamp;
         console.log("Total Scores:", scores);
         Swal.fire(
           "Survey submitted!",
