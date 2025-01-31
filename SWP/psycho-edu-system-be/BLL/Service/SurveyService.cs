@@ -21,7 +21,7 @@ namespace BLL.Service
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<IEnumerable<QuestionWithAnswersDTO>> ImportSurveyFromExcel(IFormFile file, string surveyTitle, string description)
+        public async Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings)
         {
             try
             {
@@ -67,20 +67,29 @@ namespace BLL.Service
                             questions.Add(question);
                         }
 
-                        // Create new survey
+                        var surveyId = Guid.NewGuid();
                         var survey = new Survey
                         {
-                            SurveyId = Guid.NewGuid(),
-                            Title = surveyTitle,
-                            Description = description,
-                            IsPublic = true,
-                            CreateAt = DateTime.Now,
-                            UpdateAt = DateTime.Now
+                            SurveyId = surveyId,
+                            Title = settings.Title,
+                            Description = settings.Description,
+                            Target = settings.Target,
+                            IsPublic = settings.IsPublic,
+                            UpdateAt = DateTime.Now,
                         };
 
                         await _unitOfWork.Survey.AddAsync(survey);
 
-                        var result = new List<QuestionWithAnswersDTO>();
+                        var result = new SurveyWithQuestionsAndAnswersDTO
+                        {
+                            SurveyId = surveyId,
+                            Title = settings.Title,
+                            Description = settings.Description,
+                            Target = settings.Target,
+                            IsPublic = settings.IsPublic,
+                            UpdateAt = DateTime.Now,
+                            Questions = new List<QuestionWithAnswersDTO>()
+                        };
 
                         // Add questions and answers
                         foreach (var q in questions)
@@ -89,7 +98,7 @@ namespace BLL.Service
                             {
                                 QuestionId = Guid.NewGuid(),
                                 Content = q.Question,
-                                SurveyId = survey.SurveyId,
+                                SurveyId = surveyId,
                                 CreateAt = DateTime.Now
                             };
 
@@ -121,7 +130,7 @@ namespace BLL.Service
                             }
 
                             // Add question with answers to result
-                            result.Add(new QuestionWithAnswersDTO
+                            result.Questions.Add(new QuestionWithAnswersDTO
                             {
                                 QuestionId = question.QuestionId,
                                 Content = question.Content,
@@ -130,7 +139,7 @@ namespace BLL.Service
                         }
 
                         await _unitOfWork.SaveChangeAsync();
-                        return result; // Trả về danh sách câu hỏi và câu trả lời
+                        return result; // Trả về đối tượng DTO chứa tất cả thông tin
                     }
                 }
             }

@@ -14,9 +14,13 @@ namespace DAL.Entities
         public Guid SurveyId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
+        public string Target { get; set; }
+
         public Boolean IsPublic { get; set; }
         public DateTime? UpdateAt { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
+        public User? User { get; set; } 
+        public Guid?  UserId { get; set; }   
     }
 }
