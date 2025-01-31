@@ -3,10 +3,32 @@ import Avatar from "../../assets/avatar.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 const Header = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    Swal.fire({
+      title: "Are you sure",
+      text: "Do you want to log out?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, logout!",
+      cancelButtonText: "No, cancel",
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem("isLoggedIn");
+        Swal.fire("You logged out!", "success").then(() => {
+          navigate("/");
+        });
+      }
+    });
+  };
   return (
     <header className="flex items-center justify-between sticky top-0 z-50 shadow-sm p-2 bg-[#C9EDE4]">
       <img src={LogoHeader} className="w-32 h-15" />
@@ -37,7 +59,10 @@ const Header = () => {
               >
                 Home
               </Link>
-              <button className="block px-4 py-2 w-full text-left text-gray-800 font-medium shadow-md hover:bg-white/20 hover:scale-90 transition-all duration-300">
+              <button
+                className="block px-4 py-2 w-full text-left text-gray-800 font-medium shadow-md hover:bg-white/20 hover:scale-90 transition-all duration-300"
+                onClick={handleLogout}
+              >
                 Logout
               </button>
             </div>
