@@ -1,5 +1,6 @@
 ﻿using BLL.Interface;
 using BLL.Service;
+using Common.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,21 +18,22 @@ namespace PsychoEduSystem.Controller
         }
 
         [HttpPost("import")]
-        public async Task<IActionResult> ImportSurvey(IFormFile file, [FromForm] string title, [FromForm] string description)
+        public async Task<IActionResult> ImportSurvey(IFormFile file, [FromForm] SurveySettingsDTO settings)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("File is empty");
+            {
+                return BadRequest("File is required.");
+            }
 
-            string fileExtension = Path.GetExtension(file.FileName);
-            if (fileExtension != ".xls" && fileExtension != ".xlsx")
-                return BadRequest("Only Excel files are allowed");
+            var result = await _surveyService.ImportSurveyFromExcel(file, settings);
 
-            var result = await _surveyService.ImportSurveyFromExcel(file, title, description);
+            if (result == null)
+            {
+                return StatusCode(500, "An error occurred while importing the survey.");
+            }
 
-            if (result != null && result.Any())
-                return Ok(result);
-            else
-                return BadRequest("Failed to import survey");
+            return Ok(result);
         }
+
     }
 }

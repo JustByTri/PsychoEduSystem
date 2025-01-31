@@ -10,6 +10,6 @@ namespace BLL.Interface
 {
   public interface ISurveyService
     {
-        Task<IEnumerable<QuestionWithAnswersDTO>> ImportSurveyFromExcel(IFormFile file, string surveyTitle, string description);
+ Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings);
     }
 }
