@@ -12,7 +12,7 @@ namespace Common.DTO
         public string Title { get; set; }
         public string Description { get; set; }
         public string Target { get; set; }
-        public bool IsPublic { get; set; }
+   
         public DateTime UpdateAt { get; set; }
         public List<QuestionWithAnswersDTO> Questions { get; set; }
     }

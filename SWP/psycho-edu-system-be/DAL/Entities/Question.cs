@@ -21,5 +21,7 @@ namespace DAL.Entities
   public virtual ICollection<Answer> Answers { get; set;}
         public virtual Survey Survey { get; set; }
         public Guid SurveyId { get; set; }
+        public Category Category { get; set; }
+        public int CategoryId { get; set; }    
     }
 }

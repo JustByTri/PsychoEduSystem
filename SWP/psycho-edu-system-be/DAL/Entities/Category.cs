@@ -11,15 +11,14 @@ namespace DAL.Entities
     public  class Category
     {
         [Key]
-        public Guid CategoryId { get; set; }
+        public int CategoryId { get; set; }
         [MaxLength(30)]
         public string? CategoryName { get; set; }
-        [MaxLength(100)]
-        public string? CategoryDescription { get; set; }
-        public Boolean? IsActive { get; set; }
+   
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
 
+        public virtual ICollection<Question> Questions { get; set; }
 
     }
 }

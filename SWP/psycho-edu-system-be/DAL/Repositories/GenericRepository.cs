@@ -53,6 +53,14 @@ namespace DAL.Repositories
             return await _dbSet.FindAsync(id);
         }
         
+        public async Task<T> GetByIdInt(int id )
+        {
+            if(id == null)
+            {
+                throw new ArgumentException("Id cannot be empty", nameof(id));
+            }
+            return await _dbSet.FindAsync(id);
+        }
         public async Task<T> UpdateAsync(T entity)
         {
              _dbSet.Update(entity);

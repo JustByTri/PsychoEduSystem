@@ -40,14 +40,14 @@ namespace DAL.Entities
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
         public virtual ICollection<UserRole> UserRoles { get; set; }
-        public virtual ICollection<Course> Courses { get; set; }
+    
         public virtual ICollection<Slot> Slots { get; set; }
         public virtual ICollection<Appointment> StudentAppointments { get; set; }
         public virtual ICollection<Appointment> CounselorAppointments { get; set; }
         public virtual ICollection<Message> SentMessages { get; set; }
         public virtual ICollection<Message> ReceivedMessages { get; set; }
         public virtual ICollection<MentalHealthPoint> MentalHealthPoints { get; set; }
-        public virtual ICollection<PsychoQuestionSet> PsychoQuestions { get; set; }
+     
         public virtual ICollection<RequestAppointments> RequestAppointments { get; set; }
         public virtual ICollection<Survey> Surveys { get; set; }
 

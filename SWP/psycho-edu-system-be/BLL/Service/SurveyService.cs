@@ -22,7 +22,7 @@ namespace BLL.Service
         }
 
         public async Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings)
-        {
+            {
             try
             {
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -48,23 +48,44 @@ namespace BLL.Service
                         // Read each row
                         for (int row = 0; row < dataTable.Rows.Count; row++)
                         {
-                            // Kiểm tra nếu hàng rỗng thì bỏ qua
+                            // Bỏ qua hàng trống
                             if (string.IsNullOrEmpty(dataTable.Rows[row][0]?.ToString()))
                                 continue;
 
-                            var question = new SurveyQuestionDTO
+                            try
                             {
-                                Question = dataTable.Rows[row][0].ToString(), // Column A - Question
-                                Answers = new List<string>
-                        {
-                            dataTable.Rows[row][1].ToString(), // Column B - Answer 1
-                            dataTable.Rows[row][2].ToString(), // Column C - Answer 2
-                            dataTable.Rows[row][3].ToString(), // Column D - Answer 3
-                            dataTable.Rows[row][4].ToString()  // Column E - Answer 4
-                        },
-                                Points = new List<int> { 1, 2, 3, 4 } // Points for answers
-                            };
-                            questions.Add(question);
+                                // Đọc CategoryId từ cột đầu tiên (A)
+                                var categoryId = int.Parse(dataTable.Rows[row][0].ToString());
+
+                                // Kiểm tra Category tồn tại
+                                var category = await _unitOfWork.Category.GetByIdInt(categoryId);
+                                if (category == null)
+                                {
+                                    // Có thể ném exception hoặc ghi log
+                                    continue;
+                                }
+
+                                // Tạo DTO cho câu hỏi
+                                var question = new SurveyQuestionDTO
+                                {
+                                    CategoryId = categoryId,
+                                    CategoryName = category.CategoryName,
+                                    Question = dataTable.Rows[row][1].ToString(), // Cột B - Câu hỏi
+                                    Answers = new List<string>
+            {
+                dataTable.Rows[row][2].ToString(), // Cột C - Answer 1
+                dataTable.Rows[row][3].ToString(), // Cột D - Answer 2
+                dataTable.Rows[row][4].ToString(), // Cột E - Answer 3
+                dataTable.Rows[row][5].ToString()  // Cột F - Answer 4
+            },
+                                    Points = new List<int> { 0, 1, 2, 3}
+                                };
+                                questions.Add(question);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new ArgumentException("Error when export file, please check");
+                            }
                         }
 
                         var surveyId = Guid.NewGuid();
@@ -74,7 +95,7 @@ namespace BLL.Service
                             Title = settings.Title,
                             Description = settings.Description,
                             Target = settings.Target,
-                            IsPublic = settings.IsPublic,
+                         
                             UpdateAt = DateTime.Now,
                         };
 
@@ -86,17 +107,17 @@ namespace BLL.Service
                             Title = settings.Title,
                             Description = settings.Description,
                             Target = settings.Target,
-                            IsPublic = settings.IsPublic,
+                          
                             UpdateAt = DateTime.Now,
                             Questions = new List<QuestionWithAnswersDTO>()
                         };
 
-                        // Add questions and answers
                         foreach (var q in questions)
                         {
                             var question = new Question
                             {
                                 QuestionId = Guid.NewGuid(),
+                                CategoryId = q.CategoryId,
                                 Content = q.Question,
                                 SurveyId = surveyId,
                                 CreateAt = DateTime.Now
@@ -134,19 +155,20 @@ namespace BLL.Service
                             {
                                 QuestionId = question.QuestionId,
                                 Content = question.Content,
+                                CategoryName = q.CategoryName,
                                 Answers = answers
                             });
                         }
 
                         await _unitOfWork.SaveChangeAsync();
-                        return result; // Trả về đối tượng DTO chứa tất cả thông tin
+                        return result; 
                     }
                 }
             }
             catch (Exception ex)
             {
                 // Log exception nếu cần
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message} , please check file again");
                 return null;
             }
         }

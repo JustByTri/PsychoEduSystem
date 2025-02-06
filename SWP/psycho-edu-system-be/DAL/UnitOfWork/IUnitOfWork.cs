@@ -8,8 +8,7 @@ namespace DAL.UnitOfWork
     {
         IAppointmentRepository Appointment { get; }
         ICategoryRepository Category { get; }
-        ICourseContentRepository CourseContent { get; }
-        ICourseRepository Course { get; }
+       
         IMentalHealthPointDetailRepository MentalHealthPointDetail { get; }
         IMentalHealthPointRepository MentalHealthPoint { get; }
         IMessageRepository Message { get; }
