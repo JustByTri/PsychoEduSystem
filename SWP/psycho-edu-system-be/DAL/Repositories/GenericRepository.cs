@@ -129,7 +129,10 @@ namespace DAL.Repositories
             }
             return query;
         }
-
+        public async Task<bool> AnyAsync(Expression<Func<User, bool>> predicate)
+        {
+            return await _context.Users.AnyAsync(predicate);
+        }
         public async Task<T> GetByConditionWithIncludesAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes)
         {
             IQueryable<T> query = _dbSet.Where(expression);

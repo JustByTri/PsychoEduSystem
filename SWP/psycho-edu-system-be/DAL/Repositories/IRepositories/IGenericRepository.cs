@@ -20,7 +20,7 @@ namespace DAL.Repositories.IRepositories
         void UpdateRange(List<T> entity);
         void RemoveRange(List<T> entity);
         Task DeleteAsync(Guid id);
-
+        Task<bool> AnyAsync(Expression<Func<User, bool>> predicate);
         Task<T> GetByConditionAsync(Expression<Func<T, bool>> expression);
         T GetByCondition(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> FindProductAsync(Expression<Func<T, bool>> expression);
