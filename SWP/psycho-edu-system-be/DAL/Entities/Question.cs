@@ -13,13 +13,13 @@ namespace DAL.Entities
     {
         [Key]
         public Guid QuestionId { get; set; }
-        public PsychoQuestionSet QuestionSet { get; set; }
-        [ForeignKey("SetID")]
-        public Guid SetId { get; set; }
+   
         public string Content { get; set; }
         public DateTime? UpdateTime     { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
   public virtual ICollection<Answer> Answers { get; set;}
+        public virtual Survey Survey { get; set; }
+        public Guid SurveyId { get; set; }
     }
 }

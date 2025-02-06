@@ -1,0 +1,571 @@
+{
+  "questions": [
+    {
+      "questionId": 1,
+      "questionType": "depression",
+      "questionContent": "Tôi thấy khó mà thoải mái được",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 2,
+      "questionType": "depression",
+      "questionContent": "Tôi bị khô miệng",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 3,
+      "questionType": "depression",
+      "questionContent": "Tôi không thấy có chút cảm xúc tích cực nào",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 4,
+      "questionType": "depression",
+      "questionContent": "Tôi bị rối loạn nhịp thở (thở gấp, khó thở dù chẳng làm việc gì nặng)",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 5,
+      "questionType": "depression",
+      "questionContent": "Tôi thấy khó bắt tay vào công việc",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 6,
+      "questionType": "depression",
+      "questionContent": "Tôi đã phản ứng thái quá khi có những sự việc xảy ra",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 7,
+      "questionType": "depression",
+      "questionContent": "Tôi bị ra mồ hôi (chẳng hạn như mồ hôi tay...)",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 8,
+      "questionType": "anxiety",
+      "questionContent": "Tôi cảm thấy mệt mỏi và thiếu sức sống",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 9,
+      "questionType": "anxiety",
+      "questionContent": "Tôi cảm thấy lo âu về các tình huống không thể kiểm soát được",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 10,
+      "questionType": "anxiety",
+      "questionContent": "Tôi cảm thấy thất vọng với chính mình",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 11,
+      "questionType": "anxiety",
+      "questionContent": "Tôi cảm thấy không thể làm được việc gì đúng đắn",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 12,
+      "questionType": "anxiety",
+      "questionContent": "Tôi cảm thấy ít có hứng thú với những việc trước đây mình thích",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 13,
+      "questionType": "anxiety",
+      "questionContent": "Tôi bị khó ngủ",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 14,
+      "questionType": "anxiety",
+      "questionContent": "Tôi cảm thấy không có đủ năng lượng cho những công việc hàng ngày",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 15,
+      "questionType": "stress",
+      "questionContent": "Tôi cảm thấy lạc lõng hoặc bị cô lập",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 16,
+      "questionType": "stress",
+      "questionContent": "Tôi cảm thấy dễ bị kích động hoặc bị làm phiền",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 17,
+      "questionType": "stress",
+      "questionContent": "Tôi cảm thấy áp lực về thời gian hoặc công việc",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 18,
+      "questionType": "stress",
+      "questionContent": "Tôi cảm thấy mọi thứ đang vượt khỏi tầm kiểm soát của mình",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 19,
+      "questionType": "stress",
+      "questionContent": "Tôi cảm thấy khó chịu với những điều xảy ra xung quanh mình",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 20,
+      "questionType": "stress",
+      "questionContent": "Tôi cảm thấy ít quan tâm đến những thứ diễn ra quanh mình",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    },
+    {
+      "questionId": 21,
+      "questionType": "stress",
+      "questionContent": "Tôi cảm thấy lo lắng không thể kiểm soát được khi có một sự kiện sắp xảy ra",
+      "answers": [
+        {
+          "answerId": 1,
+          "answerContent": "Không đúng với tôi chút nào cả",
+          "answerPoint": 0
+        },
+        {
+          "answerId": 2,
+          "answerContent": "Đúng với tôi một phần, hoặc thỉnh thoảng mới đúng",
+          "answerPoint": 1
+        },
+        {
+          "answerId": 3,
+          "answerContent": "Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng",
+          "answerPoint": 2
+        },
+        {
+          "answerId": 4,
+          "answerContent": "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng",
+          "answerPoint": 3
+        }
+      ]
+    }
+  ]
+}

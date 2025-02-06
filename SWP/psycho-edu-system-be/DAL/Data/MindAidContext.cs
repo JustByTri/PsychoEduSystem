@@ -1,4 +1,4 @@
-﻿using DAL.Entities;
+using DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
@@ -20,11 +20,17 @@ namespace DAL.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<MentalHealthPoint> MentalHealthPoints { get; set; }
         public DbSet<MentalHealthPointDetail> MentalHealthPointDetails { get; set; }
-        public DbSet<PsychoQuestionSet> PsychoQuestionSets { get; set; }
+    
         public DbSet<Question> QuestionSets { get; set; }
         public DbSet<Answer> Answers { get; set; }
+        public DbSet<Relationship> Relationships { get; set; }
+        public DbSet<RequestAppointments> RequestAppointments { get; set; }
+        public DbSet<Survey> Surveys { get; set; }
+        public DbSet<Video> Videos { get; set; }
+
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         #endregion
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
@@ -138,15 +144,8 @@ namespace DAL.Data
                 .HasOne(mhp => mhp.MentalHealthPointDetail)
                 .WithOne(mhpd => mhpd.MentalHealthPoints)
                 .HasForeignKey<MentalHealthPoint>(mhp => mhp.MentalHealthPointDetailId);
-            modelBuilder.Entity<PsychoQuestionSet>()
-            .HasOne(pqs => pqs.User)
-            .WithMany(u => u.PsychoQuestions)
-            .HasForeignKey(pqs => pqs.UserId);
-
-            modelBuilder.Entity<Question>()
-                .HasOne(q => q.QuestionSet)
-                .WithMany(pqs => pqs.Questions)
-                .HasForeignKey(q => q.SetId);
+         
+        
 
             modelBuilder.Entity<Answer>()
                 .HasOne(a => a.Question)
@@ -154,9 +153,7 @@ namespace DAL.Data
                 .HasForeignKey(a => a.QuestionId);
 
             // Configure automatic creation of CreateAt
-            modelBuilder.Entity<PsychoQuestionSet>()
-                .Property(p => p.CreateAt)
-                .HasDefaultValueSql("GETDATE()");
+
 
             modelBuilder.Entity<Question>()
                 .Property(q => q.CreateAt)
@@ -165,6 +162,17 @@ namespace DAL.Data
             modelBuilder.Entity<Answer>()
                 .Property(a => a.CreateAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<RequestAppointments>()
+    .HasOne(ra => ra.Student)
+    .WithMany()
+    .HasForeignKey(ra => ra.StudentId)
+    .OnDelete(DeleteBehavior.NoAction);  // Change to NoAction
+
+            modelBuilder.Entity<RequestAppointments>()
+                .HasOne(ra => ra.Slot)
+                .WithMany()
+                .HasForeignKey(ra => ra.SlotId)
+                .OnDelete(DeleteBehavior.NoAction);
             #endregion
 
             #region Seed Data

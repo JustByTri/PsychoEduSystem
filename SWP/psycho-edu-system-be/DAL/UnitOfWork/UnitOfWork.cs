@@ -26,9 +26,11 @@ namespace DAL.UnitOfWork
             Slot = new SlotRepository(_context);
             User = new UserRepository(_context);
             UserRole = new UserRoleRepository(_context);
+            UserToken = new UserTokenRepository(_context);
             Answer = new AnswerRepository(_context);
             RefreshToken = new RefreshTokenRepository(_context);
-
+            Question = new QuestionRepository(_context);    
+            Survey = new SurveyRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
@@ -44,9 +46,15 @@ namespace DAL.UnitOfWork
         public IUserRepository User { get; private set; }
         public IUserRoleRepository UserRole { get; private set; }
 
+        public IUserTokenRepository UserToken { get; private set; }
+
+
+
         public IAnswerRepository Answer { get; private set; }
 
         public IRefreshTokenRepository RefreshToken { get; private set; }
+        public IQuestionRepository Question { get; private set; }
+        public ISurveyRepository Survey { get; private set; }
 
         // Giải phóng tài nguyên
         public void Dispose()

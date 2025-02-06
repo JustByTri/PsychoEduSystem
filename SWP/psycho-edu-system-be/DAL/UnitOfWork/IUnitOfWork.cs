@@ -17,10 +17,14 @@ namespace DAL.UnitOfWork
         ISlotRepository Slot { get; }
         IUserRepository User { get; }
         IUserRoleRepository UserRole { get; }
+        
+        IUserTokenRepository UserToken { get; }
 
         IAnswerRepository Answer { get; }
 
         IRefreshTokenRepository RefreshToken { get; }
+     IQuestionRepository Question { get; }
+        ISurveyRepository Survey { get; }
 
         // Dispose method để giải phóng tài nguyên
         void Dispose();

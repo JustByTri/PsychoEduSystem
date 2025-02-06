@@ -15,6 +15,7 @@ namespace DAL.Entities
         public Question Question { get; set; }
         [ForeignKey("QuestionId")]
         public Guid QuestionId { get; set; }
+        public int Point { get; set; }
         public string Content { get; set; }
         public DateTime? UpdatedTime { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

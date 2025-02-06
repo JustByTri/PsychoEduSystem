@@ -4,9 +4,12 @@ import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
 import SurveyPage from "./pages/survey/SurveyPage";
 import NotFoundPage from "./pages/error/NotFoundPage";
-import PortalPage from "./pages/counselor/PortalPage";
-import CoursePage from "./pages/student/CoursePage";
-
+import ProgramCoursePage from "./pages/student/ProgramPage";
+import PortalLayout from "./components/Layouts/PortalLayout";
+import Dashboard from "./pages/student/Dashboard";
+import StartUpPage from "./pages/student/StartUpPage";
+import SurveyPage from "./pages/student/SurveyPage";
+import SurveyResultPage from "./pages/student/SurveyResultPage";
 function App() {
   return (
     <Router>
@@ -15,11 +18,16 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           {/* Nested Routes */}
           <Route index element={<HomePage />} />
-          <Route path="/survey" element={<SurveyPage />} />
-          <Route path="/course/*" element={<CoursePage />} />
+        </Route>
+        {/* Student */}
+        <Route path="student/" element={<PortalLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="start-up-survey" element={<StartUpPage />} />
+          <Route path="program" element={<ProgramCoursePage />} />
+          <Route path="survey-for-student" element={<SurveyPage />} />
+          <Route path="survey-result" element={<SurveyResultPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
-        <Route path="counselor" element={<PortalPage />} />
       </Routes>
     </Router>
   );
