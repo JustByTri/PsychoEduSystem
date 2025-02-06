@@ -115,21 +115,9 @@ namespace DAL.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
 
-            modelBuilder.Entity<RefreshToken>()
-                .HasKey(mhp => new { mhp.UserId, mhp.RefreshTokenId });
-            modelBuilder.Entity<MentalHealthPoint>()
-                .HasKey(mhp => new { mhp.UserId, mhp.MentalHealthPointDetailId });
-
-            modelBuilder.Entity<MentalHealthPoint>()
-                .HasOne(mhp => mhp.User)
-                .WithMany(u => u.MentalHealthPoints)
-                .HasForeignKey(mhp => mhp.UserId);
-
-            modelBuilder.Entity<MentalHealthPoint>()
-                .HasOne(mhp => mhp.MentalHealthPointDetail)
-                .WithOne(mhpd => mhpd.MentalHealthPoints)
-                .HasForeignKey<MentalHealthPoint>(mhp => mhp.MentalHealthPointDetailId);
-
+        
+       
+    
 
 
             modelBuilder.Entity<Answer>()

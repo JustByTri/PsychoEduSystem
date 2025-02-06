@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
@@ -9,14 +10,15 @@ namespace DAL.Entities
 {
     public class MentalHealthPoint
     {
-        public Guid UserId { get; set; }
-        public Guid MentalHealthPointDetailId { get; set; }
+        [Key]
+        public Guid MHPId { get; set; }
 
-        [ForeignKey("UserId")]
-        public virtual User User { get; set; }
-        [ForeignKey("MentalHealthPointDetailId")]
-        public virtual MentalHealthPointDetail MentalHealthPointDetail { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
+        public User User { get; set; }
+
+        public Guid UserId { get; set; }
+        public virtual ICollection<MentalHealthPointDetail> MentalHealthPointDetails { get; set; } // Thêm mối quan hệ với chi tiết điểm
+
     }
 }
