@@ -16,5 +16,7 @@ namespace DAL.Entities
         public virtual User User { get; set; }
         [ForeignKey("MentalHealthPointDetailId")]
         public virtual MentalHealthPointDetail MentalHealthPointDetail { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public DateTime? CreateAt { get; set; }
     }
 }

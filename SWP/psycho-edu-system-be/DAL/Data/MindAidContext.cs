@@ -1,4 +1,4 @@
-using DAL.Entities;
+﻿using DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
@@ -12,8 +12,7 @@ namespace DAL.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
-        public DbSet<Course> Courses { get; set; }
-        public DbSet<CourseContent> CourseContents { get; set; }
+    
         public DbSet<Category> Categories { get; set; }
         public DbSet<Slot> Slots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
@@ -82,21 +81,7 @@ namespace DAL.Data
                 .HasForeignKey(ur => ur.RoleId);
 
 
-            modelBuilder.Entity<Course>()
-                .HasOne(c => c.Category)
-                .WithMany()
-                .HasForeignKey(c => c.CategoryId);
-
-            modelBuilder.Entity<Course>()
-                .HasOne(c => c.User)
-                .WithMany(u => u.Courses)
-                .HasForeignKey(c => c.OwnerId);
-
-
-            modelBuilder.Entity<CourseContent>()
-                .HasOne(cc => cc.Course)
-                .WithMany(c => c.CourseContents)
-                .HasForeignKey(cc => cc.CourseId);
+        
 
 
 
@@ -144,8 +129,8 @@ namespace DAL.Data
                 .HasOne(mhp => mhp.MentalHealthPointDetail)
                 .WithOne(mhpd => mhpd.MentalHealthPoints)
                 .HasForeignKey<MentalHealthPoint>(mhp => mhp.MentalHealthPointDetailId);
-         
-        
+
+
 
             modelBuilder.Entity<Answer>()
                 .HasOne(a => a.Question)
@@ -176,6 +161,29 @@ namespace DAL.Data
             #endregion
 
             #region Seed Data
+            modelBuilder.Entity<Category>().HasData(
+         new Category
+         {
+             CategoryId = 1,
+             CategoryName = "Lo Âu",
+             CreateAt = DateTime.Now, 
+      
+         },
+         new Category
+         {
+             CategoryId = 2,
+             CategoryName = "Trầm Cảm",
+             CreateAt = DateTime.Now,
+            
+         },
+         new Category
+         {
+             CategoryId = 3,
+             CategoryName = "Căng Thẳng",
+             CreateAt = DateTime.Now,
+          
+         }
+     );
             var adminRoleId = Guid.NewGuid();
             modelBuilder.Entity<Role>().HasData(
                 new Role { RoleId = adminRoleId, RoleName = "Admin" },

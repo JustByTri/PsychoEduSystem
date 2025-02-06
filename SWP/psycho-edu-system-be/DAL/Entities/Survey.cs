@@ -16,7 +16,7 @@ namespace DAL.Entities
         public string Description { get; set; }
         public string Target { get; set; }
 
-        public Boolean IsPublic { get; set; }
+
         public DateTime? UpdateAt { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }

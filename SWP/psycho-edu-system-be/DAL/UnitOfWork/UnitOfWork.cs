@@ -17,8 +17,7 @@ namespace DAL.UnitOfWork
             // Khởi tạo các repository
             Appointment = new AppointmentRepository(_context);
             Category = new CategoryRepository(_context);
-            CourseContent = new CourseContentRepository(_context);
-            Course = new CourseRepository(_context);
+       
             MentalHealthPointDetail = new MentalHealthPointDetailRepository(_context);
             MentalHealthPoint = new MentalHealthPointRepository(_context);
             Message = new MessageRepository(_context);
@@ -36,8 +35,7 @@ namespace DAL.UnitOfWork
         // Các repository được khởi tạo từ constructor
         public IAppointmentRepository Appointment { get; private set; }
         public ICategoryRepository Category { get; private set; }
-        public ICourseContentRepository CourseContent { get; private set; }
-        public ICourseRepository Course { get; private set; }
+    
         public IMentalHealthPointDetailRepository MentalHealthPointDetail { get; private set; }
         public IMentalHealthPointRepository MentalHealthPoint { get; private set; }
         public IMessageRepository Message { get; private set; }

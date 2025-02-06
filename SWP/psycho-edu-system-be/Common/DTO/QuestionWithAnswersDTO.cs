@@ -10,6 +10,9 @@ namespace Common.DTO
     {
         public Guid QuestionId { get; set; }
         public string Content { get; set; }
+ 
+
+        public string CategoryName { get; set; }
         public List<AnswerDTO> Answers { get; set; }
     }
 }
