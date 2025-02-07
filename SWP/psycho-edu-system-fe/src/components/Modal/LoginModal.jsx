@@ -60,7 +60,6 @@ const LoginModal = () => {
       setIsOpenMenu(true);
     }
   };
-
   const handleLogoutModal = () => {
     setIsLogoutModal(true);
     setIsOpenMenu(false);
