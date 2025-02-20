@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Azure;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,6 @@ namespace Common.DTO
     public class SubmitSurveyRequestDTO
     {
         public Guid SurveyId { get; set; }
-  
+        public List<QuestionResponseDTO> Responses { get; set; }
     }
 }
