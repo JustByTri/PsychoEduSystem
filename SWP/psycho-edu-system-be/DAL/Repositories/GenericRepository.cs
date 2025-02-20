@@ -163,6 +163,14 @@ namespace DAL.Repositories
         {
             await _dbSet.AddRangeAsync(entities);
         }
-
+        public async Task<List<SurveyAnswerUser>> GetUserAnswersAsync(Guid userId, Guid surveyId)
+        {
+            return await _context.SurveyAnswerUsers
+                .Include(sau => sau.Question)
+                .Include(sau => sau.Answer)
+                .Include(sau => sau.Survey)
+                .Where(sau => sau.UserId == userId && sau.SurveyId == surveyId)
+                .ToListAsync();
+        }
     }
 }
