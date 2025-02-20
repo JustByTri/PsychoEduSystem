@@ -10,7 +10,7 @@ namespace DAL.UnitOfWork
         ICategoryRepository Category { get; }
        
         IMentalHealthPointDetailRepository MentalHealthPointDetail { get; }
-        IMentalHealthPointRepository MentalHealthPoint { get; }
+
         IMessageRepository Message { get; }
         IRoleRepository Role { get; }
         ISlotRepository Slot { get; }

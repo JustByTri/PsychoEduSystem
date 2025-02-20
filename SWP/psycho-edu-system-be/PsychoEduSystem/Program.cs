@@ -29,7 +29,7 @@ namespace MIndAid
             builder.Services.AddScoped<UserUtility>();
             builder.Services.AddScoped<ILoginService, LoginService>();
             builder.Services.AddScoped<ISurveyService, SurveyService>();
-            builder.Services.AddScoped<IMentalHealthPointService, MentalHealthPointService>();
+
 
             // Cấu hình Swagger
             builder.Services.AddEndpointsApiExplorer();

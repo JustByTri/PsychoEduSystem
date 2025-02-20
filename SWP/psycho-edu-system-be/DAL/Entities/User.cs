@@ -33,12 +33,13 @@ namespace DAL.Entities
         public string Gender { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public bool Status { get; set; }
-
-
+        public bool IsAdmin { get; set; }
+        public bool IsSurvey { get; set; }
 
         public bool IsEmailConfirmed { get; set; } = false;
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateSurveyAt { get; set; }
         public virtual ICollection<UserRole> UserRoles { get; set; }
     
         public virtual ICollection<Slot> Slots { get; set; }
@@ -46,7 +47,7 @@ namespace DAL.Entities
         public virtual ICollection<Appointment> CounselorAppointments { get; set; }
         public virtual ICollection<Message> SentMessages { get; set; }
         public virtual ICollection<Message> ReceivedMessages { get; set; }
-        public virtual ICollection<MentalHealthPoint> MentalHealthPoints { get; set; }
+ 
      
         public virtual ICollection<RequestAppointments> RequestAppointments { get; set; }
         public virtual ICollection<Survey> Surveys { get; set; }
