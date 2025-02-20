@@ -34,6 +34,16 @@ namespace PsychoEduSystem.Controller
 
             return Ok(result);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateSurvey(Guid id, [FromBody] UpdateSurveyDTO updateDto)
+        {
+            var result = await _surveyService.UpdateSurveyAsync(id, updateDto);
+            if (!result)
+                return NotFound();
+            return NoContent();
+        }
+
+
 
     }
 }

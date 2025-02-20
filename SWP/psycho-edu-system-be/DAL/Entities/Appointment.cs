@@ -13,19 +13,20 @@ namespace DAL.Entities
         [Key]
         public Guid AppointmentId { get; set; }
         public Guid SlotId { get; set; }
-        public Guid StudentId { get; set; }
-        public Guid OwnerId { get; set; }
-        public DateTime? BookingDateTime { get; set; }
-        public Boolean InProgress { get; set; }
-        public Boolean IsCanceled { get; set; }
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public DateTime? CreateAt { get; set; }
+        public Guid BookedBy { get; set; } // FK to User (người đặt)
+        public Guid MeetingWith { get; set; } // FK to User (Counselor/Teacher)
+        public string GoogleMeet { get; set; }
+        public string Notes { get; set; }
+        public bool IsOnline { get; set; }
+        public bool IsCompleted { get; set; }
+        public bool IsCanceled { get; set; }
+        public DateTime CreateAt { get; set; }
 
         [ForeignKey("SlotId")]
-        public virtual Slot Slot { get; set; }
-        [ForeignKey("StudentId")]
-        public virtual User Student { get; set; }
-        [ForeignKey("OwnerId")]
-        public virtual User Counselor { get; set; }
+        public Slot Slot { get; set; }
+        [ForeignKey("BookedBy")]
+        public User Booker { get; set; }
+        [ForeignKey("MeetingWith")]
+        public User Counselor { get; set; }
     }
 }

@@ -13,11 +13,11 @@ namespace DAL.Data
         public DbSet<User> Users { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
     
-        public DbSet<Category> Categories { get; set; }
+        public DbSet<DimensionHealth> Categories { get; set; }
         public DbSet<Slot> Slots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Message> Messages { get; set; }
-        public DbSet<MentalHealthPoint> MentalHealthPoints { get; set; }
+    
         public DbSet<MentalHealthPointDetail> MentalHealthPointDetails { get; set; }
     
         public DbSet<Question> QuestionSets { get; set; }
@@ -26,6 +26,10 @@ namespace DAL.Data
         public DbSet<RequestAppointments> RequestAppointments { get; set; }
         public DbSet<Survey> Surveys { get; set; }
         public DbSet<Video> Videos { get; set; }
+        public DbSet<SurveyResponse> SurveyResponses { get; set; }
+        public DbSet<Class> Classes { get; set; }
+        public DbSet<TargetProgram> TargetPrograms { get; set; }
+        public DbSet<ProgramEnrollment> ProgramEnrollments { get; set; }
 
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -58,7 +62,9 @@ namespace DAL.Data
                 Gender = "Male",
                 Address = "Ha Noi",
                 Status = true,
-                CreateAt = DateTime.Now
+                CreateAt = DateTime.Now,
+                IsAdmin = true
+                
             };
         }
 
@@ -89,17 +95,16 @@ namespace DAL.Data
                 .HasOne(a => a.Slot)
                 .WithMany(s => s.Appointments)
                 .HasForeignKey(a => a.SlotId);
-
             modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.Student)
+                .HasOne(a => a.Booker) 
                 .WithMany(u => u.StudentAppointments)
-                .HasForeignKey(a => a.StudentId)
+                .HasForeignKey(a => a.BookedBy) 
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.Counselor)
+                .HasOne(a => a.Counselor) 
                 .WithMany(u => u.CounselorAppointments)
-                .HasForeignKey(a => a.OwnerId)
+                .HasForeignKey(a => a.MeetingWith) 
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Message>()
@@ -113,11 +118,12 @@ namespace DAL.Data
                 .WithMany(u => u.ReceivedMessages)
                 .HasForeignKey(m => m.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ProgramEnrollment>()
+    .HasKey(pe => new { pe.ProgramId, pe.StudentId });
 
 
-        
-       
-    
+
+
 
 
             modelBuilder.Entity<Answer>()
@@ -146,28 +152,62 @@ namespace DAL.Data
                 .WithMany()
                 .HasForeignKey(ra => ra.SlotId)
                 .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Relationship>()
+       .HasOne(r => r.Parent)
+       .WithMany()
+       .HasForeignKey(r => r.ParentId)
+       .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SurveyResponse>()
+     .HasOne(sr => sr.SurveyTaker)
+     .WithMany()
+     .HasForeignKey(sr => sr.SurveyTakerId)
+     .OnDelete(DeleteBehavior.Cascade); 
+
+            modelBuilder.Entity<SurveyResponse>()
+                .HasOne(sr => sr.SurveyTarget)
+                .WithMany()
+                .HasForeignKey(sr => sr.SurveyTargetId)
+                .OnDelete(DeleteBehavior.NoAction); 
+        
+
+            modelBuilder.Entity<Relationship>()
+                .HasOne(r => r.Student)
+                .WithMany()
+                .HasForeignKey(r => r.StudentId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ProgramEnrollment>()
+    .HasOne(pe => pe.Student)
+    .WithMany()
+    .HasForeignKey(pe => pe.StudentId)
+    .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ProgramEnrollment>()
+                .HasOne(pe => pe.Program)
+                .WithMany()
+                .HasForeignKey(pe => pe.ProgramId)
+                .OnDelete(DeleteBehavior.Cascade);
             #endregion
 
             #region Seed Data
-            modelBuilder.Entity<Category>().HasData(
-         new Category
+            modelBuilder.Entity<DimensionHealth>().HasData(
+         new DimensionHealth
          {
-             CategoryId = 1,
-             CategoryName = "Lo Âu",
+             DimensionId = 1,
+             DimensionName = "Lo Âu",
              CreateAt = DateTime.Now, 
       
          },
-         new Category
+         new DimensionHealth
          {
-             CategoryId = 2,
-             CategoryName = "Trầm Cảm",
+             DimensionId = 2,
+             DimensionName = "Trầm Cảm",
              CreateAt = DateTime.Now,
             
          },
-         new Category
+         new DimensionHealth
          {
-             CategoryId = 3,
-             CategoryName = "Căng Thẳng",
+             DimensionId = 3,
+             DimensionName = "Căng Thẳng",
              CreateAt = DateTime.Now,
           
          }

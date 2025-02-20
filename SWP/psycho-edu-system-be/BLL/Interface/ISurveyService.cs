@@ -11,5 +11,6 @@ namespace BLL.Interface
   public interface ISurveyService
     {
  Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings);
+        Task<bool> UpdateSurveyAsync(Guid surveyId, UpdateSurveyDTO updateDto);
     }
 }

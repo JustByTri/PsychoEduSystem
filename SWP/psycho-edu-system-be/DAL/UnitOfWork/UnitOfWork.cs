@@ -19,7 +19,7 @@ namespace DAL.UnitOfWork
             Category = new CategoryRepository(_context);
        
             MentalHealthPointDetail = new MentalHealthPointDetailRepository(_context);
-            MentalHealthPoint = new MentalHealthPointRepository(_context);
+
             Message = new MessageRepository(_context);
             Role = new RoleRepository(_context);
             Slot = new SlotRepository(_context);
@@ -37,7 +37,7 @@ namespace DAL.UnitOfWork
         public ICategoryRepository Category { get; private set; }
     
         public IMentalHealthPointDetailRepository MentalHealthPointDetail { get; private set; }
-        public IMentalHealthPointRepository MentalHealthPoint { get; private set; }
+      
         public IMessageRepository Message { get; private set; }
         public IRoleRepository Role { get; private set; }
         public ISlotRepository Slot { get; private set; }
