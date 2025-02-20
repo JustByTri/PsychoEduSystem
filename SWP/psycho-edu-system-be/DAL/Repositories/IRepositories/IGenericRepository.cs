@@ -25,7 +25,7 @@ namespace DAL.Repositories.IRepositories
         T GetByCondition(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> FindProductAsync(Expression<Func<T, bool>> expression);
         Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> expression);
-        Task CreateRangeAsync(List<T> entity);
+        Task CreateRangeAsync(IEnumerable<T> entities);
         Task<T> GetByConditionWithIncludesAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes);
         Task<T> GetByConditionWithIncludesAsyncc(
     Expression<Func<T, bool>> expression,

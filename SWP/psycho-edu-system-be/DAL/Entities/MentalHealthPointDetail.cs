@@ -13,12 +13,14 @@ namespace DAL.Entities
     {
         [Key]
         public Guid MentalHPDetailId { get; set; }
-        public Guid MentalHPId { get; set; }
-        public int DimensionId { get; set; } // Thay CategoryId bằng DimensionId
+
+        public int DimensionId { get; set; } 
         public int HealthPoints { get; set; }
-
-
+        public string DimensionName { get; set; }
+        public SurveyResponse SurveyResponse { get; set; }
+        public Guid SurveyResponseId { get; set; }
         [ForeignKey("DimensionId")]
         public DimensionHealth Dimension { get; set; }
+        public DateTime CreateAt { get; set; }
     }
 }

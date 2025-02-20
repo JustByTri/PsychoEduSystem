@@ -11,165 +11,165 @@ using System;
     using System.Text;
     using System.Threading.Tasks;
 
-    namespace BLL.Service
+namespace BLL.Service
+{
+    public class SurveyService : ISurveyService
     {
-        public class SurveyService : ISurveyService
+        private readonly IUnitOfWork _unitOfWork;
+
+        public SurveyService(IUnitOfWork unitOfWork)
         {
-            private readonly IUnitOfWork _unitOfWork;
+            _unitOfWork = unitOfWork;
+        }
 
-            public SurveyService(IUnitOfWork unitOfWork)
+        public async Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings)
+        {
+            try
             {
-                _unitOfWork = unitOfWork;
-            }
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            public async Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings)
+                using (var stream = new MemoryStream())
                 {
-                try
-                {
-                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                    await file.CopyToAsync(stream);
+                    stream.Position = 0;
 
-                    using (var stream = new MemoryStream())
+                    using (var reader = ExcelReaderFactory.CreateReader(stream))
                     {
-                        await file.CopyToAsync(stream);
-                        stream.Position = 0;
-
-                        using (var reader = ExcelReaderFactory.CreateReader(stream))
+                        var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration
                         {
-                            var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration
+                            ConfigureDataTable = _ => new ExcelDataTableConfiguration
                             {
-                                ConfigureDataTable = _ => new ExcelDataTableConfiguration
-                                {
-                                    UseHeaderRow = false
-                                }
-                            });
+                                UseHeaderRow = false
+                            }
+                        });
 
-                            var dataTable = dataSet.Tables[0];
-                            var questions = new List<SurveyQuestionDTO>();
+                        var dataTable = dataSet.Tables[0];
+                        var questions = new List<SurveyQuestionDTO>();
 
-                            // Read each row
-                            for (int row = 0; row < dataTable.Rows.Count; row++)
+                        // Read each row
+                        for (int row = 0; row < dataTable.Rows.Count; row++)
+                        {
+                            // Bỏ qua hàng trống
+                            if (string.IsNullOrEmpty(dataTable.Rows[row][0]?.ToString()))
+                                continue;
+                            if (!int.TryParse(dataTable.Rows[row][0].ToString(), out int categoryId))
                             {
-                                // Bỏ qua hàng trống
-                                if (string.IsNullOrEmpty(dataTable.Rows[row][0]?.ToString()))
-                                    continue;
-                                if (!int.TryParse(dataTable.Rows[row][0].ToString(), out int categoryId))
-                                {
-                                    continue; // Bỏ qua nếu không phải số
-                                }
+                                continue; // Bỏ qua nếu không phải số
+                            }
 
-                        
-                         
-                               
 
-                                    // Kiểm tra Category tồn tại
-                                    var category = await _unitOfWork.Category.GetByIdInt(categoryId);
-                                    if (category == null)
-                                    {
-                                
-                                        continue;
-                                    }
 
-                              
-                                    var question = new SurveyQuestionDTO
-                                    {
-                                        CategoryId = categoryId,
-                                        CategoryName = category.DimensionName,
-                                        Question = dataTable.Rows[row][1].ToString(), 
-                                        Answers = new List<string>
+
+
+                            // Kiểm tra Category tồn tại
+                            var category = await _unitOfWork.DimensionHealth.GetByIdInt(categoryId);
+                            if (category == null)
+                            {
+
+                                continue;
+                            }
+
+
+                            var question = new SurveyQuestionDTO
+                            {
+                                CategoryId = categoryId,
+                                CategoryName = category.DimensionName,
+                                Question = dataTable.Rows[row][1].ToString(),
+                                Answers = new List<string>
                 {
                     dataTable.Rows[row][2].ToString(), // Cột C - Answer 1
                     dataTable.Rows[row][3].ToString(), // Cột D - Answer 2
                     dataTable.Rows[row][4].ToString(), // Cột E - Answer 3
                     dataTable.Rows[row][5].ToString()  // Cột F - Answer 4
                 },
-                                        Points = new List<int> { 0, 1, 2, 3}
-                                    };
-                                    questions.Add(question);
-                          
-                            }
+                                Points = new List<int> { 0, 1, 2, 3 }
+                            };
+                            questions.Add(question);
 
-                            var surveyId = Guid.NewGuid();
-                            var survey = new Survey
+                        }
+
+                        var surveyId = Guid.NewGuid();
+                        var survey = new Survey
+                        {
+                            SurveyId = surveyId,
+                            SurveyName = settings.Title,
+                            Description = settings.Description,
+                            SurveyFor = settings.Target,
+                            IsPublic = true,
+                            CreateAt = DateTime.Now,
+                        };
+
+                        await _unitOfWork.Survey.AddAsync(survey);
+
+                        var result = new SurveyWithQuestionsAndAnswersDTO
+                        {
+                            SurveyId = surveyId,
+                            Description = settings.Description,
+
+                            UpdateAt = DateTime.Now,
+                            Questions = new List<QuestionWithAnswersDTO>()
+                        };
+
+                        foreach (var q in questions)
+                        {
+                            var question = new Question
                             {
+                                QuestionId = Guid.NewGuid(),
+                                DimensionId = q.CategoryId,
+                                Content = q.Question,
                                 SurveyId = surveyId,
-                                SurveyName = settings.Title,
-                                Description = settings.Description,
-                                SurveyFor = settings.Target,
-                                 IsPublic = true,
-                               CreateAt = DateTime.Now,
+                                CreateAt = DateTime.Now
                             };
 
-                            await _unitOfWork.Survey.AddAsync(survey);
+                            await _unitOfWork.Question.AddAsync(question);
 
-                            var result = new SurveyWithQuestionsAndAnswersDTO
-                            {
-                                SurveyId = surveyId,
-                                Description = settings.Description,
-                     
-                                UpdateAt = DateTime.Now,
-                                Questions = new List<QuestionWithAnswersDTO>()
-                            };
+                            var answers = new List<AnswerDTO>();
 
-                            foreach (var q in questions)
+                            // Add answers for each question
+                            for (int i = 0; i < q.Answers.Count; i++)
                             {
-                                var question = new Question
+                                var answer = new Answer
                                 {
-                                    QuestionId = Guid.NewGuid(),
-                                    CategoryId = q.CategoryId,
-                                    Content = q.Question,
-                                    SurveyId = surveyId,
+                                    AnswerId = Guid.NewGuid(),
+                                    Content = q.Answers[i],
+                                    Point = q.Points[i],
+                                    QuestionId = question.QuestionId,
                                     CreateAt = DateTime.Now
                                 };
 
-                                await _unitOfWork.Question.AddAsync(question);
+                                await _unitOfWork.Answer.AddAsync(answer);
 
-                                var answers = new List<AnswerDTO>();
-
-                                // Add answers for each question
-                                for (int i = 0; i < q.Answers.Count; i++)
+                                // Add answer to response
+                                answers.Add(new AnswerDTO
                                 {
-                                    var answer = new Answer
-                                    {
-                                        AnswerId = Guid.NewGuid(),
-                                        Content = q.Answers[i],
-                                        Point = q.Points[i],
-                                        QuestionId = question.QuestionId,
-                                        CreateAt = DateTime.Now
-                                    };
-
-                                    await _unitOfWork.Answer.AddAsync(answer);
-
-                                    // Add answer to response
-                                    answers.Add(new AnswerDTO
-                                    {
-                                        AnswerId = answer.AnswerId,
-                                        Content = answer.Content,
-                                        Point = answer.Point
-                                    });
-                                }
-
-                                // Add question with answers to result
-                                result.Questions.Add(new QuestionWithAnswersDTO
-                                {
-                                    QuestionId = question.QuestionId,
-                                    Content = question.Content,
-                                    CategoryName = q.CategoryName,
-                                    Answers = answers
+                                    AnswerId = answer.AnswerId,
+                                    Content = answer.Content,
+                                    Point = answer.Point
                                 });
                             }
 
-                            await _unitOfWork.SaveChangeAsync();
-                            return result; 
+                            // Add question with answers to result
+                            result.Questions.Add(new QuestionWithAnswersDTO
+                            {
+                                QuestionId = question.QuestionId,
+                                Content = question.Content,
+                                CategoryName = q.CategoryName,
+                                Answers = answers
+                            });
                         }
+
+                        await _unitOfWork.SaveChangeAsync();
+                        return result;
                     }
                 }
-                catch (Exception ex)
-                {
-                    // Log exception nếu cần
-                    Console.WriteLine($"Error: {ex.Message} , please check file again");
-                    return null;
-                }
             }
+            catch (Exception ex)
+            {
+                // Log exception nếu cần
+                Console.WriteLine($"Error: {ex.Message} , please check file again");
+                return null;
+            }
+        }
         public async Task<bool> UpdateSurveyAsync(Guid surveyId, UpdateSurveyDTO updateDto)
         {
             var survey = await _unitOfWork.Survey.GetByIdAsync(surveyId);
@@ -212,8 +212,8 @@ using System;
             var questionIds = survey.Questions.Select(q => q.QuestionId).ToList();
             var answers = await _unitOfWork.Answer.FindAll(a => questionIds.Contains(a.QuestionId)).ToListAsync();
 
-            var categoryIds = survey.Questions.Select(q => q.CategoryId).Distinct().ToList();
-            var categories = await _unitOfWork.Category.FindAll(c => categoryIds.Contains(c.DimensionId)).ToListAsync();
+            var categoryIds = survey.Questions.Select(q => q.DimensionId).Distinct().ToList();
+            var categories = await _unitOfWork.DimensionHealth.FindAll(c => categoryIds.Contains(c.DimensionId)).ToListAsync();
 
             foreach (var question in survey.Questions)
             {
@@ -233,7 +233,7 @@ using System;
                 {
                     QuestionId = q.QuestionId,
                     Content = q.Content,
-                    CategoryName = categories.FirstOrDefault(c => c.DimensionId == q.CategoryId)?.DimensionName,
+                    CategoryName = categories.FirstOrDefault(c => c.DimensionId == q.DimensionId)?.DimensionName,
                     Answers = q.Answers.Select(a => new AnswerDTO
                     {
                         AnswerId = a.AnswerId,
@@ -255,7 +255,7 @@ using System;
 
             if (user == null) throw new Exception("User not found.");
 
-            
+
             if (user.IsSurvey && user.UpdateSurveyAt.HasValue)
             {
                 var daysSinceLastSurvey = (DateTime.Now - user.UpdateSurveyAt.Value).TotalDays;
@@ -270,13 +270,13 @@ using System;
 
             if (user.IsSurvey) return new SurveyResponseDTO { CanTakeSurvey = false };
 
-     
+
             var roleNames = user.UserRoles
                 .Where(ur => ur.Role != null)
                 .Select(ur => ur.Role.RoleName.ToLower())
                 .ToList();
 
-      
+
             var surveyFors = new List<string>();
             if (roleNames.Contains("student")) surveyFors.Add("student");
             if (roleNames.Contains("teacher")) surveyFors.Add("teacher");
@@ -292,11 +292,11 @@ using System;
                 };
             }
 
-    
+
             var surveys = await _unitOfWork.Survey
        .FindAll(s => s.IsPublic && surveyFors.Contains(s.SurveyFor.ToLower()))
-       .Include(s => s.Questions)           
-       .ThenInclude(q => q.Answers)         
+       .Include(s => s.Questions)
+       .ThenInclude(q => q.Answers)
        .ToListAsync();
 
             // Map sang DTO
@@ -328,6 +328,149 @@ using System;
                 Surveys = surveyDTOs
             };
         }
+        public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(Guid userId, SubmitSurveyRequestDTO request)
+        {
+           
+            var healthPoints = 0;
+            var dimensionPoints = new Dictionary<int, (string Name, int Points)>();
+            var answerDetails = new List<UserAnswerDetailDTO>();
+            SurveyResponse surveyResponse = null;
+
+           
+            using (var transaction = _unitOfWork.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
+            {
+                try
+                {
+                 
+                    var survey = await _unitOfWork.Survey.GetByIdAsync(request.SurveyId);
+                    if (survey == null || !survey.IsPublic)
+                        throw new Exception("Survey is not public");
+
+                  
+                    var user = await _unitOfWork.User.GetByIdAsync(userId);
+                    if (user == null)
+                        throw new Exception("User not found");
+
+               
+                    surveyResponse = new SurveyResponse
+                    {
+                        SurveyResponseId = Guid.NewGuid(),
+                        SurveyTakerId = userId,
+                        SurveyTargetId = userId,
+                        HealthPoints = 0, // Tạm thời set 0
+                        CreateAt = DateTime.Now,
+                        SurveyId = request.SurveyId
+                    };
+
+                 
+                    await _unitOfWork.SurveyResponse.AddAsync(surveyResponse);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    
+                    foreach (var response in request.Responses)
+                    {
+                     
+                        var question = await _unitOfWork.Question.GetByIdAsync(response.QuestionId);
+                        var answer = await _unitOfWork.Answer.GetByIdAsync(response.AnswerId);
+
+                        // Kiểm tra tính hợp lệ
+                        if (question == null)
+                            throw new Exception($"QuestionID {response.QuestionId} not exist.");
+                        if (answer == null)
+                            throw new Exception($"AnswerID {response.AnswerId} not exist..");
+                        if (answer.QuestionId != question.QuestionId)
+                            throw new Exception($"Not correct question {question.QuestionId}.");
+
+                        // Lấy thông tin Dimension
+                        var dimension = await _unitOfWork.DimensionHealth.GetByIdInt(question.DimensionId);
+                        if (dimension == null)
+                            throw new Exception($"Dimension ID {question.DimensionId} not exist..");
+
+                        // Cập nhật điểm
+                        if (!dimensionPoints.ContainsKey(dimension.DimensionId))
+                        {
+                            dimensionPoints[dimension.DimensionId] = (dimension.DimensionName, 0);
+                        }
+                        var current = dimensionPoints[dimension.DimensionId];
+                        dimensionPoints[dimension.DimensionId] = (current.Name, current.Points + answer.Point);
+                        healthPoints += answer.Point;
+
+                        // Lưu vào SurveyAnswerUser
+                        var surveyAnswerUser = new SurveyAnswerUser
+                        {
+                            SurveyAnswerUserId = Guid.NewGuid(),
+                            UserId = userId,
+                            SurveyId = request.SurveyId,
+                            SurveyResponseId = surveyResponse.SurveyResponseId, 
+                            QuestionId = question.QuestionId,
+                            AnswerId = answer.AnswerId,
+                            UserPoint = answer.Point,
+                            CreateAt = DateTime.Now
+                        };
+                        await _unitOfWork.SurveyAnswerUser.AddAsync(surveyAnswerUser);
+
+                        // Thêm vào answerDetails
+                        answerDetails.Add(new UserAnswerDetailDTO
+                        {
+                            QuestionId = question.QuestionId,
+                            QuestionContent = question.Content ?? "N/A", 
+                            AnswerId = answer.AnswerId,
+                            AnswerContent = answer.Content ?? "N/A", 
+                            Point = answer.Point,
+                            DimensionName = dimension.DimensionName ?? "N/A" 
+                        });
+                    }
+
+                 
+                    surveyResponse.HealthPoints = healthPoints;
+                    await _unitOfWork.SurveyResponse.UpdateAsync(surveyResponse);
+
+                 
+                    var mentalHealthDetails = dimensionPoints.Select(kvp => new MentalHealthPointDetail
+                    {
+                        MentalHPDetailId = Guid.NewGuid(),
+                        DimensionId = kvp.Key,
+                        DimensionName = kvp.Value.Name,
+                        HealthPoints = kvp.Value.Points,
+                        SurveyResponseId = surveyResponse.SurveyResponseId,
+                        CreateAt = DateTime.Now
+                    }).ToList();
+
+                    await _unitOfWork.MentalHealthPointDetail.CreateRangeAsync(mentalHealthDetails);
+                    await _unitOfWork.SaveChangeAsync();
+
+              
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+            
+                    transaction.Rollback();
+
+             
+                    Console.WriteLine($"Error: {ex.Message}\nStackTrace: {ex.StackTrace}");
+
+                 
+                    if (surveyResponse == null)
+                        Console.WriteLine("Error: SurveyResponse not start");
+                    else if (surveyResponse.SurveyResponseId == Guid.Empty)
+                        Console.WriteLine("Error: SurveyResponseId not correct");
+
+                    throw new Exception($"Submit survey failed: {ex.Message}");
+                }
+            }
+
+            return new SubmitSurveyResponseDTO
+            {
+                SurveyResponseId = surveyResponse?.SurveyResponseId ?? Guid.Empty,
+                TotalHealthPoints = healthPoints,
+                Details = dimensionPoints.Select(kvp => new MentalHealthPointDetailDTO
+                {
+                    DimensionName = kvp.Value.Name,
+                    Points = kvp.Value.Points
+                }).ToList(),
+                AnswerDetails = answerDetails
+            };
+        }
     }
 }
-

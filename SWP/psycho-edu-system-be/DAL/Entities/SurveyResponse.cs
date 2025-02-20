@@ -12,8 +12,8 @@ namespace DAL.Entities
     {
         [Key]
         public Guid SurveyResponseId { get; set; }
-        public Guid SurveyTakerId { get; set; } // FK to User (người làm survey)
-        public Guid SurveyTargetId { get; set; } // FK to User (người được survey)
+        public Guid SurveyTakerId { get; set; } 
+        public Guid SurveyTargetId { get; set; } 
         public int HealthPoints { get; set; }
         public DateTime CreateAt { get; set; }
 
@@ -21,6 +21,8 @@ namespace DAL.Entities
         public User SurveyTaker { get; set; }
         [ForeignKey("SurveyTargetId")]
         public User SurveyTarget { get; set; }
+        public Guid SurveyId { get; set; }
         public Survey Survey { get; set; }
+        public virtual ICollection<MentalHealthPointDetail> HealthPointsDetail { get; set; }
     }
 }

@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
+using DAL.Entities;
 using DAL.Repositories.IRepositories;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace DAL.UnitOfWork
 {
     public interface IUnitOfWork : IDisposable
     {
         IAppointmentRepository Appointment { get; }
-        ICategoryRepository Category { get; }
+        ICategoryRepository DimensionHealth { get; }
        
         IMentalHealthPointDetailRepository MentalHealthPointDetail { get; }
 
@@ -24,7 +26,9 @@ namespace DAL.UnitOfWork
         IRefreshTokenRepository RefreshToken { get; }
      IQuestionRepository Question { get; }
         ISurveyRepository Survey { get; }
-
+        ISurveyResponseRepository SurveyResponse { get; }
+        ISurveyAnswerUserRepository SurveyAnswerUser { get; }
+        IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel);
         // Dispose method để giải phóng tài nguyên
         void Dispose();
 

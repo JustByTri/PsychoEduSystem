@@ -3,6 +3,8 @@ using DAL.Repositories.IRepositories;
 using DAL.Repositories;
 using System.Threading.Tasks;
 using DAL.Entities;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace DAL.UnitOfWork
 {
@@ -16,7 +18,7 @@ namespace DAL.UnitOfWork
 
             // Khởi tạo các repository
             Appointment = new AppointmentRepository(_context);
-            Category = new CategoryRepository(_context);
+           DimensionHealth = new CategoryRepository(_context);
        
             MentalHealthPointDetail = new MentalHealthPointDetailRepository(_context);
 
@@ -30,11 +32,13 @@ namespace DAL.UnitOfWork
             RefreshToken = new RefreshTokenRepository(_context);
             Question = new QuestionRepository(_context);    
             Survey = new SurveyRepository(_context);
+            SurveyResponse = new SurveyResponseRepository(_context);
+            SurveyAnswerUser = new SurveyAnswerUserRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
         public IAppointmentRepository Appointment { get; private set; }
-        public ICategoryRepository Category { get; private set; }
+        public ICategoryRepository DimensionHealth { get; private set; }
     
         public IMentalHealthPointDetailRepository MentalHealthPointDetail { get; private set; }
       
@@ -53,7 +57,12 @@ namespace DAL.UnitOfWork
         public IRefreshTokenRepository RefreshToken { get; private set; }
         public IQuestionRepository Question { get; private set; }
         public ISurveyRepository Survey { get; private set; }
-
+        public ISurveyResponseRepository SurveyResponse { get; private set; }
+        public ISurveyAnswerUserRepository  SurveyAnswerUser { get; private set; }
+        public IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel)
+        {
+            return _context.Database.BeginTransaction(isolationLevel);
+        }
         // Giải phóng tài nguyên
         public void Dispose()
         {

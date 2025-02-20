@@ -21,7 +21,7 @@ namespace DAL.Entities
     public virtual ICollection<Answer> Answers { get; set;}
         public virtual Survey Survey { get; set; }
         public Guid SurveyId { get; set; }
-        public DimensionHealth Category { get; set; }
-        public int CategoryId { get; set; }    
+        public DimensionHealth Dimension { get; set; }
+        public int DimensionId { get; set; }
     }
 }

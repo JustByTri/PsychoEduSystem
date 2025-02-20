@@ -159,10 +159,10 @@ namespace DAL.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(expression);
         }
-        public async Task CreateRangeAsync(List<T> entity)
+        public async Task CreateRangeAsync(IEnumerable<T> entities)
         {
-            await _dbSet.AddRangeAsync(entity);
+            await _dbSet.AddRangeAsync(entities);
         }
-     
+
     }
 }

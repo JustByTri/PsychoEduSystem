@@ -33,6 +33,7 @@ namespace DAL.Data
 
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<SurveyAnswerUser> SurveyAnswerUsers { get; set; }
 
         #endregion
 
@@ -186,6 +187,35 @@ namespace DAL.Data
                 .WithMany()
                 .HasForeignKey(pe => pe.ProgramId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SurveyAnswerUser>(entity =>
+            {
+                entity.HasOne(sau => sau.User)
+                    .WithMany()
+                    .HasForeignKey(sau => sau.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(sau => sau.Survey)
+                    .WithMany()
+                    .HasForeignKey(sau => sau.SurveyId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(sau => sau.SurveyResponse)
+                    .WithMany()
+                    .HasForeignKey(sau => sau.SurveyResponseId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(sau => sau.Question)
+                    .WithMany()
+                    .HasForeignKey(sau => sau.QuestionId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(sau => sau.Answer)
+                    .WithMany()
+                    .HasForeignKey(sau => sau.AnswerId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
+
             #endregion
 
             #region Seed Data
