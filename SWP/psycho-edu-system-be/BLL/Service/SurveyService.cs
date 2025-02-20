@@ -357,7 +357,7 @@ namespace BLL.Service
                         SurveyResponseId = Guid.NewGuid(),
                         SurveyTakerId = userId,
                         SurveyTargetId = userId,
-                        HealthPoints = 0, // Tạm thời set 0
+                        HealthPoints = 0, 
                         CreateAt = DateTime.Now,
                         SurveyId = request.SurveyId
                     };
@@ -373,7 +373,7 @@ namespace BLL.Service
                         var question = await _unitOfWork.Question.GetByIdAsync(response.QuestionId);
                         var answer = await _unitOfWork.Answer.GetByIdAsync(response.AnswerId);
 
-                        // Kiểm tra tính hợp lệ
+                    
                         if (question == null)
                             throw new Exception($"QuestionID {response.QuestionId} not exist.");
                         if (answer == null)
@@ -381,12 +381,12 @@ namespace BLL.Service
                         if (answer.QuestionId != question.QuestionId)
                             throw new Exception($"Not correct question {question.QuestionId}.");
 
-                        // Lấy thông tin Dimension
+               
                         var dimension = await _unitOfWork.DimensionHealth.GetByIdInt(question.DimensionId);
                         if (dimension == null)
                             throw new Exception($"Dimension ID {question.DimensionId} not exist..");
 
-                        // Cập nhật điểm
+                       
                         if (!dimensionPoints.ContainsKey(dimension.DimensionId))
                         {
                             dimensionPoints[dimension.DimensionId] = (dimension.DimensionName, 0);
@@ -395,7 +395,7 @@ namespace BLL.Service
                         dimensionPoints[dimension.DimensionId] = (current.Name, current.Points + answer.Point);
                         healthPoints += answer.Point;
 
-                        // Lưu vào SurveyAnswerUser
+                 
                         var surveyAnswerUser = new SurveyAnswerUser
                         {
                             SurveyAnswerUserId = Guid.NewGuid(),
@@ -409,7 +409,7 @@ namespace BLL.Service
                         };
                         await _unitOfWork.SurveyAnswerUser.AddAsync(surveyAnswerUser);
 
-                        // Thêm vào answerDetails
+
                         answerDetails.Add(new UserAnswerDetailDTO
                         {
                             QuestionId = question.QuestionId,
@@ -470,6 +470,36 @@ namespace BLL.Service
                     Points = kvp.Value.Points
                 }).ToList(),
                 AnswerDetails = answerDetails
+            };
+        }
+        public async Task<SurveyAnswerResponseDTO> GetUserSurveyAnswersAsync(Guid userId, Guid surveyId)
+        {
+          
+            var user = await _unitOfWork.User.GetByIdAsync(userId);
+            if (user == null) throw new Exception("User không tồn tại");
+
+         
+            var survey = await _unitOfWork.Survey.GetByIdAsync(surveyId);
+            if (survey == null) throw new Exception("Survey không tồn tại");
+
+        
+            var answers = await _unitOfWork.SurveyAnswerUser.GetUserAnswersAsync(userId, surveyId);
+
+    
+            return new SurveyAnswerResponseDTO
+            {
+                SurveyId = surveyId,
+                SurveyName = survey.SurveyName,
+                SubmittedAt = answers.FirstOrDefault()?.CreateAt ?? DateTime.MinValue,
+                Answers = answers.Select(a => new AnswerDetailDTO
+                {
+                    QuestionId = a.QuestionId,
+                    QuestionContent = a.Question?.Content ?? "N/A",
+                    AnswerId = a.AnswerId,
+                    AnswerContent = a.Answer?.Content ?? "N/A",
+                    Point = a.UserPoint,
+                    DimensionName = a.Question?.Dimension?.DimensionName ?? "N/A"
+                }).ToList()
             };
         }
     }
