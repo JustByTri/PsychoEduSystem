@@ -4,7 +4,8 @@
     using DAL.UnitOfWork;
     using ExcelDataReader;
     using Microsoft.AspNetCore.Http;
-    using System;
+using Microsoft.EntityFrameworkCore;
+using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
@@ -184,6 +185,64 @@
             return true;
         }
 
+        public async Task<IEnumerable<SurveyDTO>> GetAllSurveysAsync()
+        {
+            var surveys = await _unitOfWork.Survey.GetAll().ToListAsync();
+            return surveys.Select(s => new SurveyDTO
+            {
+                SurveyId = s.SurveyId,
+                SurveyName = s.SurveyName,
+                Description = s.Description,
+                IsPublic = s.IsPublic,
+                SurveyFor = s.SurveyFor,
+                CreateAt = s.CreateAt,
+                UpdateAt = s.UpdateAt
+            });
+        }
 
+        public async Task<SurveyWithQuestionsAndAnswersDTO> GetSurveyByIdAsync(Guid surveyId)
+        {
+            var survey = await _unitOfWork.Survey.GetByConditionWithIncludesAsync(
+                s => s.SurveyId == surveyId,
+                s => s.Questions);
+
+            if (survey == null)
+                return null;
+
+            var questionIds = survey.Questions.Select(q => q.QuestionId).ToList();
+            var answers = await _unitOfWork.Answer.FindAll(a => questionIds.Contains(a.QuestionId)).ToListAsync();
+
+            var categoryIds = survey.Questions.Select(q => q.CategoryId).Distinct().ToList();
+            var categories = await _unitOfWork.Category.FindAll(c => categoryIds.Contains(c.DimensionId)).ToListAsync();
+
+            foreach (var question in survey.Questions)
+            {
+                question.Answers = answers.Where(a => a.QuestionId == question.QuestionId).ToList();
+            }
+
+            return new SurveyWithQuestionsAndAnswersDTO
+            {
+                SurveyId = survey.SurveyId,
+                Title = survey.SurveyName,
+                Description = survey.Description,
+                IsPublic = survey.IsPublic,
+                Target = survey.SurveyFor,
+                CreateAt = survey.CreateAt,
+                UpdateAt = survey.UpdateAt,
+                Questions = survey.Questions.Select(q => new QuestionWithAnswersDTO
+                {
+                    QuestionId = q.QuestionId,
+                    Content = q.Content,
+                    CategoryName = categories.FirstOrDefault(c => c.DimensionId == q.CategoryId)?.DimensionName,
+                    Answers = q.Answers.Select(a => new AnswerDTO
+                    {
+                        AnswerId = a.AnswerId,
+                        Content = a.Content,
+                        Point = a.Point
+                    }).ToList()
+                }).ToList()
+            };
+        }
     }
 }
+

@@ -150,5 +150,6 @@ namespace DAL.Repositories
         {
             await _dbSet.AddRangeAsync(entity);
         }
+     
     }
 }
