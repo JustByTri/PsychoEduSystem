@@ -14,5 +14,6 @@ namespace BLL.Interface
         Task<bool> UpdateSurveyAsync(Guid surveyId, UpdateSurveyDTO updateDto);
         Task<IEnumerable<SurveyDTO>> GetAllSurveysAsync();
         Task<SurveyWithQuestionsAndAnswersDTO> GetSurveyByIdAsync(Guid surveyId);
+        Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid userId);
     }
 }

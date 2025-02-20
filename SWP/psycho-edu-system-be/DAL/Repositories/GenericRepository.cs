@@ -142,6 +142,19 @@ namespace DAL.Repositories
             }
             return await query.FirstOrDefaultAsync();
         }
+        public async Task<T> GetByConditionWithIncludesAsyncc(
+    Expression<Func<T, bool>> expression,
+    params Func<IQueryable<T>, IQueryable<T>>[] includes)
+        {
+            IQueryable<T> query = _dbSet.Where(expression);
+
+            foreach (var include in includes)
+            {
+                query = include(query); // Cho phép sử dụng ThenInclude
+            }
+
+            return await query.FirstOrDefaultAsync();
+        }
         public async Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> expression)
         {
             return await _dbSet.FirstOrDefaultAsync(expression);
