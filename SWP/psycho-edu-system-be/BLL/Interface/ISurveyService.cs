@@ -12,5 +12,7 @@ namespace BLL.Interface
     {
  Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings);
         Task<bool> UpdateSurveyAsync(Guid surveyId, UpdateSurveyDTO updateDto);
+        Task<IEnumerable<SurveyDTO>> GetAllSurveysAsync();
+        Task<SurveyWithQuestionsAndAnswersDTO> GetSurveyByIdAsync(Guid surveyId);
     }
 }

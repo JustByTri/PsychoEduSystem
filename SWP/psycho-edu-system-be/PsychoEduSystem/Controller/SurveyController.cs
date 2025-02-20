@@ -43,6 +43,21 @@ namespace PsychoEduSystem.Controller
             return NoContent();
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllSurveys()
+        {
+            var surveys = await _surveyService.GetAllSurveysAsync();
+            return Ok(surveys);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetSurveyById(Guid id)
+        {
+            var survey = await _surveyService.GetSurveyByIdAsync(id);
+            if (survey == null)
+                return NotFound();
+            return Ok(survey);
+        }
 
 
     }
