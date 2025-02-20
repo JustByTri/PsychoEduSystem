@@ -8,7 +8,7 @@ namespace DAL.Repositories.IRepositories
     {
         T GetById(string id);
         Task<T> GetByIdAsync(Guid id);
-        Task<T> GetByIdInt(int id);
+        Task<T> GetByIdInt ( int  id );
         IQueryable<T> GetAll();
         IQueryable<T> FindAll(Expression<Func<T, bool>> expression);
         IEnumerable<T> FindAllAsync(Expression<Func<T, bool>> expression);
@@ -27,6 +27,8 @@ namespace DAL.Repositories.IRepositories
         Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> expression);
         Task CreateRangeAsync(List<T> entity);
         Task<T> GetByConditionWithIncludesAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes);
-
-    }
+        Task<T> GetByConditionWithIncludesAsyncc(
+    Expression<Func<T, bool>> expression,
+    params Func<IQueryable<T>, IQueryable<T>>[] includes);
 }
+    }

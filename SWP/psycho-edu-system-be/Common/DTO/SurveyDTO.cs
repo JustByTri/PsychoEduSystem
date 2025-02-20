@@ -15,5 +15,6 @@ namespace Common.DTO
         public string SurveyFor { get; set; }
         public DateTime CreateAt { get; set; }
         public DateTime UpdateAt { get; set; }
+        public List<QuestionDTO> Questions { get; set; }
     }
 }

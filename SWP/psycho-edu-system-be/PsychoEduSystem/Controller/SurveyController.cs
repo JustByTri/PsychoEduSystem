@@ -59,6 +59,18 @@ namespace PsychoEduSystem.Controller
             return Ok(survey);
         }
 
-
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetSurveyByUserId(Guid userId)
+        {
+            try
+            {
+                var result = await _surveyService.GetSurveyByUserIdAsync(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
