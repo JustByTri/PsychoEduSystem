@@ -33,7 +33,7 @@ const BookingPageContent = () => {
     try {
       // Call API to create booking
       toast.success("Booking confirmed successfully!");
-      navigate("/");
+      // navigate("/");
     } catch (error) {
       toast.error("Failed to confirm booking");
     }
