@@ -10,7 +10,9 @@ import StartUpPage from "./pages/student/StartUpPage";
 import SurveyPage from "./pages/student/SurveyPage";
 import SurveyResultPage from "./pages/student/SurveyResultPage";
 import BookingPage from "./pages/booking/BookingPage";
-
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
+import SurveyManagementPage from "./pages/admin/SurveyManagementPage";
 function App() {
   return (
     <Router>
@@ -27,6 +29,11 @@ function App() {
           <Route path="program" element={<ProgramCoursePage />} />
           <Route path="survey-for-student" element={<SurveyPage />} />
           <Route path="survey-result" element={<SurveyResultPage />} />
+        </Route>
+        {/* Admin */}
+        <Route path="admin/" element={<AdminPortalLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="survey-management" element={<SurveyManagementPage />} />
         </Route>
         <Route path="booking/" element={<BookingPage />} />
         <Route path="*" element={<NotFoundPage />} />
