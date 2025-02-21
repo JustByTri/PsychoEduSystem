@@ -16,8 +16,6 @@ import {
   courseListData,
   courseTopicsData,
 } from "../../data/courseData";
-
-import SideBar from "../../components/Bar/SideBar";
 import CourseCatalog from "../../components/CoursePageComponents/CourseCatalog";
 import CourseList from "../../components/CoursePageComponents/CoursesList";
 
@@ -50,13 +48,12 @@ const CourseDetailView = () => {
  * Component chính của trang Program
  * Quản lý state và điều hướng giữa danh sách khóa học và chi tiết khóa học
  */
-const CoursePage = () => {
+const ProgramPage = () => {
   // Các state quản lý filter và tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCounselor, setSelectedCounselor] = useState("All");
   const [selectedType, setSelectedType] = useState("All");
-  const [currentPage, setCurrentPage] = useState("/program");
   // State quản lý trạng thái thu gọn của sidebar
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -78,40 +75,6 @@ const CoursePage = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // Cấu hình menu items cho sidebar
-  const courseNavigationItems = [
-    {
-      name: "Home",
-      href: "/course/overview",
-      icon: BookOpen,
-    },
-    {
-      name: "Survey",
-      href: "d",
-      icon: PlayCircle,
-    },
-    {
-      name: "Program",
-      href: "/program",
-      icon: Users,
-    },
-    {
-      name: "Account",
-      href: "/a",
-      icon: Airplay,
-    },
-    {
-      name: "History",
-      href: "/b",
-      icon: AlignCenter,
-    },
-    {
-      name: "Report",
-      href: "/c",
-      icon: LucideShoppingBasket,
-    },
-  ];
 
   /**
    * Filter courses dựa trên các điều kiện:
@@ -135,22 +98,6 @@ const CoursePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col lg:flex-row max-w-7xl mx-auto">
-        {/* Sidebar */}
-        <div
-          className={`top-0 left-0 h-full z-30 transition-all duration-300 ease-in-out ${
-            isCollapsed ? "w-15" : "w-30"
-          }`}
-        >
-          <SideBar
-            items={courseNavigationItems}
-            title="Course Catalog"
-            currentPath={currentPage}
-            isCollapsed={isCollapsed}
-            onCollapse={() => setIsCollapsed(!isCollapsed)}
-            onItemClick={(item) => setCurrentPage(item.href)}
-          />
-        </div>
-
         {/* Main content area */}
         <div
           className={`flex-1 transition-all duration-300 ${
@@ -194,4 +141,4 @@ const CoursePage = () => {
   );
 };
 
-export default CoursePage;
+export default ProgramPage;

@@ -9,10 +9,12 @@ import { ConsultantSelection } from "../../components/Booking/BookingSteps/Consu
 import { UserInfoForm } from "../../components/Booking/BookingSteps/UserInfoForm";
 import { ConfirmationStep } from "../../components/Booking/BookingSteps/ConfirmationStep";
 import { ProgressBar } from "../../components/Booking/ProcessBar";
+import { useNavigate } from "react-router-dom";
 
 const BookingPageContent = () => {
   const [step, setStep] = useState(1);
   const bookingData = useBooking(); // Get all booking data from context
+  const navigate = useNavigate();
 
   const handleNext = () => {
     const validationResult = validateStep(step, bookingData);
@@ -31,6 +33,7 @@ const BookingPageContent = () => {
     try {
       // Call API to create booking
       toast.success("Booking confirmed successfully!");
+      // navigate("/");
     } catch (error) {
       toast.error("Failed to confirm booking");
     }

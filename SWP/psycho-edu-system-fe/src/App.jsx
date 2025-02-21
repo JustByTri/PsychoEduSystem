@@ -3,7 +3,7 @@ import "./App.css";
 import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
 import NotFoundPage from "./pages/error/NotFoundPage";
-import ProgramCoursePage from "./pages/student/CoursePage";
+import ProgramCoursePage from "./pages/student/ProgramPage";
 import PortalLayout from "./components/Layouts/PortalLayout";
 import Dashboard from "./pages/student/Dashboard";
 import StartUpPage from "./pages/student/StartUpPage";
@@ -19,6 +19,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           {/* Nested Routes */}
           <Route index element={<HomePage />} />
+          <Route path="booking/" element={<BookingPage />} />
         </Route>
         {/* Student */}
         <Route path="student/" element={<PortalLayout />}>
@@ -28,7 +29,6 @@ function App() {
           <Route path="survey-for-student" element={<SurveyPage />} />
           <Route path="survey-result" element={<SurveyResultPage />} />
         </Route>
-        <Route path="booking/" element={<BookingPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
