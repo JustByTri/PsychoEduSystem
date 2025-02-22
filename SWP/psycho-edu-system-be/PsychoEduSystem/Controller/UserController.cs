@@ -98,5 +98,21 @@ namespace PsychoEduSystem.Controller
                 return StatusCode(500, new { Message = "An error occurred while checking user existence.", Error = ex.Message });
             }
         }
+        [HttpPost("create-parent-account")]
+        public async Task<IActionResult> CreateParentAccount([FromBody] CreateParentAccountDTO parentAccountDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _userService.CreateParentAccountAsync(parentAccountDTO);
+            if (!result)
+            {
+                return BadRequest("Failed to create parent account. Please check the student emails or parent email.");
+            }
+
+            return Ok("Parent account and relationships created successfully.");
+        }
     }
 }

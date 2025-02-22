@@ -24,8 +24,7 @@ namespace DAL.Entities
         [Required(ErrorMessage = "Phone không được rỗng.")]
         [RegularExpression(@"^(?:\+84|0)[3|5|7|8|9]\d{8}$", ErrorMessage = "Số điện thoại không hợp lệ.")]
         public string Phone { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Email không được rỗng.")]
-        [RegularExpression(@"^[\w-\.]+@fpt\.edu\.vn$", ErrorMessage = "Email phải thuộc miền fpt.edu.vn.")]
+        
         public string Email { get; set; } = string.Empty;
         [MaxLength(30)]
         public string FullName { get; set; } = string.Empty;
