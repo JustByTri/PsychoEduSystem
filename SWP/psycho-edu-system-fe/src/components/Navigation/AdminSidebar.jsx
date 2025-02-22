@@ -8,7 +8,6 @@ import {
   faCalendarCheck,
   faChartBar,
 } from "@fortawesome/free-solid-svg-icons";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const AdminSidebar = () => {
@@ -27,22 +26,22 @@ const AdminSidebar = () => {
     { icon: faChartBar, label: "Reports", path: "/admin/reports" },
   ];
 
-  const handleToggleMenu = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
   return (
     <div
-      className={`bg-[#1E293B] text-white shadow-lg transition-all duration-300 h-full ${
+      className={`transition-all duration-300 h-full flex flex-col justify-between ${
         isCollapsed ? "w-20" : "w-72"
-      } flex flex-col justify-between`}
-      style={{ minHeight: "100vh" }}
+      }`}
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #1E293B, #2E3A4E)",
+        borderRight: "1px solid rgba(255, 255, 255, 0.1)",
+      }}
     >
       {/* Sidebar Toggle Button */}
       <div className="flex items-center justify-between p-4">
         <button
-          className="text-white p-2 w-full rounded-md hover:bg-white/10 transition-all duration-300"
-          onClick={handleToggleMenu}
+          className="text-white p-2 w-full rounded-lg hover:bg-white/10 transition-all duration-300"
+          onClick={() => setIsCollapsed(!isCollapsed)}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -64,21 +63,31 @@ const AdminSidebar = () => {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-grow space-y-2 mt-6">
+      <nav className="flex-grow space-y-1 mt-6">
         {navItems.map((item, index) => (
           <Link
             key={index}
             to={item.path}
-            className={`flex items-center p-3 mx-3 rounded-md hover:bg-white/10 transition-all duration-300 ${
+            className={`flex items-center p-3 mx-3 rounded-lg transition-all duration-300 ${
               isCollapsed ? "justify-center" : ""
             }`}
+            style={{
+              background: "linear-gradient(135deg, #1F2A3A, #2B394D)",
+              transition: "background 0.3s",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background =
+                "linear-gradient(135deg, #243040, #34455A)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background =
+                "linear-gradient(135deg, #1F2A3A, #2B394D)")
+            }
           >
-            <div className="relative">
-              <FontAwesomeIcon
-                icon={item.icon}
-                className="w-7 h-7 text-gray-300"
-              />
-            </div>
+            <FontAwesomeIcon
+              icon={item.icon}
+              className="w-7 h-7 text-gray-300"
+            />
             {!isCollapsed && (
               <span className="ml-5 text-gray-300 font-medium">
                 {item.label}
