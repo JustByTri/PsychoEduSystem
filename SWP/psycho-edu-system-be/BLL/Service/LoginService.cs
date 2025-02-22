@@ -21,12 +21,13 @@ namespace BLL.Service
         private readonly IUnitOfWork _unitOfWork;
 
         private readonly UserUtility _userUtility;
+        private readonly IJwtProvider _jwtProvider;
 
-        public LoginService(IUnitOfWork unitOfWork, UserUtility userUtility)
+        public LoginService(IUnitOfWork unitOfWork, UserUtility userUtility, IJwtProvider jwtProvider)
         {
             _unitOfWork = unitOfWork;
             _userUtility = userUtility;
-
+            _jwtProvider=jwtProvider;   
         }
 
         public async Task<ResponseDTO> LoginAsync(string emailOrUserName, string password)
@@ -34,9 +35,7 @@ namespace BLL.Service
             if (_unitOfWork.User == null)
             {
                 return new ResponseDTO("User repository is not available", 500, false);
-
             }
-            
 
             // Tìm người dùng theo email
             var user = await _unitOfWork.User.GetByEmailOrUserNameAsync(emailOrUserName);
@@ -69,7 +68,7 @@ namespace BLL.Service
 
             // Thêm vai trò vào claims
             var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
-              claims.Add(new Claim(JwtConstant.KeyClaim.Role, role?.RoleName ?? "User"));
+            claims.Add(new Claim(JwtConstant.KeyClaim.Role, role?.RoleName ?? "User"));
             // Thêm email vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
 
@@ -83,11 +82,10 @@ namespace BLL.Service
             var fullName = $"{user.LastName} {user.FirstName}".Trim();
             claims.Add(new Claim(JwtConstant.KeyClaim.fullName, fullName));
 
-
             // Tạo refresh token mới
-            var refreshTokenKey = JwtProvider.GenerateRefreshToken(claims);
-            // Tạo access token
-            var accessTokenKey = JwtProvider.GenerateAccessToken(claims);
+            var refreshTokenKey = _jwtProvider.GenerateRefreshToken(claims); // Sử dụng _jwtProvider
+                                                                             // Tạo access token
+            var accessTokenKey = _jwtProvider.GenerateAccessToken(claims); // Sử dụng _jwtProvider
 
             var refreshToken = new RefreshToken
             {
@@ -114,16 +112,13 @@ namespace BLL.Service
                 RefreshToken = refreshToken.RefreshTokenKey,
                 Role = role?.RoleName // Trả về tất cả vai trò
             });
-
-
-
         }
 
         public async Task<ResponseDTO> RefreshBothTokens(string oldAccessToken, string oldRefreshTokenKey)
         {
             // Kiểm tra tính hợp lệ của refresh token
-            var claimsPrincipal = JwtProvider.Validation(oldRefreshTokenKey);
-            if (claimsPrincipal == null)
+            var isValid = _jwtProvider.Validation(oldRefreshTokenKey); // Sử dụng _jwtProvider
+            if (!isValid)
             {
                 return new ResponseDTO("Invalid refresh token", 400, false);
             }
@@ -159,13 +154,11 @@ namespace BLL.Service
             var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
             claims.Add(new Claim(JwtConstant.KeyClaim.Role, role?.RoleName ?? "User"));
 
-
             // Thêm UserId vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
 
-
             // Tạo access token mới
-            var newAccessToken = JwtProvider.GenerateAccessToken(claims);
+            var newAccessToken = _jwtProvider.GenerateAccessToken(claims); // Sử dụng _jwtProvider
 
             // Lưu refresh token mới vào database
             var newRefreshToken = new RefreshToken
@@ -195,7 +188,6 @@ namespace BLL.Service
                 RefreshToken = oldRefreshTokenKey,
                 Role = role?.RoleName
             });
-
         }
 
         public async Task<ResponseDTO> LogoutAsync(string refreshTokenKey)

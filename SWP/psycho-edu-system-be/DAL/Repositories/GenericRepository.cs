@@ -172,5 +172,9 @@ namespace DAL.Repositories
                 .Where(sau => sau.UserId == userId && sau.SurveyId == surveyId)
                 .ToListAsync();
         }
+        public async Task<T> GetByEmailAsync(string email)
+        {
+            return await _dbSet.FirstOrDefaultAsync(e => EF.Property<string>(e, "Email") == email);
+        }
     }
 }

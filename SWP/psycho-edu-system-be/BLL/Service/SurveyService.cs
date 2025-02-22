@@ -479,7 +479,7 @@ namespace BLL.Service
         }
         public async Task<SurveyWithQuestionsAndAnswersDTO> AdjustSurveyAsync(Guid surveyId)
         {
-            // Lấy thông tin survey từ database
+            
             var survey = await _unitOfWork.Survey.GetByConditionWithIncludesAsync(
                 s => s.SurveyId == surveyId,
                 s => s.Questions);
@@ -487,15 +487,15 @@ namespace BLL.Service
             if (survey == null)
                 throw new Exception("Survey không tồn tại.");
 
-            // Lấy danh sách câu hỏi và câu trả lời
+            
             var questionIds = survey.Questions.Select(q => q.QuestionId).ToList();
             var answers = await _unitOfWork.Answer.FindAll(a => questionIds.Contains(a.QuestionId)).ToListAsync();
 
-            // Lấy danh sách category (dimension)
+          
             var categoryIds = survey.Questions.Select(q => q.DimensionId).Distinct().ToList();
             var categories = await _unitOfWork.DimensionHealth.FindAll(c => categoryIds.Contains(c.DimensionId)).ToListAsync();
 
-            // Gán câu trả lời vào câu hỏi
+       
             foreach (var question in survey.Questions)
             {
                 question.Answers = answers.Where(a => a.QuestionId == question.QuestionId).ToList();
@@ -528,16 +528,16 @@ namespace BLL.Service
         }
         public async Task<ResponseDTO> UpdateSurveyWithValidationAsync(Guid surveyId, SurveyWithQuestionsAndAnswersDTO updatedSurvey)
         {
-            // Kiểm tra survey tồn tại
+          
             var survey = await _unitOfWork.Survey.GetByIdAsync(surveyId);
             if (survey == null)
                 return new ResponseDTO("Survey không tồn tại.", 404, false);
 
-            // Validation: Survey phải có đủ 21 câu hỏi
+           
             if (updatedSurvey.Questions.Count != 21)
                 return new ResponseDTO("Survey phải có đúng 21 câu hỏi.", 400, false);
 
-            // Validation: Câu hỏi và câu trả lời không được trống
+           
             foreach (var question in updatedSurvey.Questions)
             {
                 if (string.IsNullOrWhiteSpace(question.Content))
@@ -553,14 +553,14 @@ namespace BLL.Service
                 }
             }
 
-            // Cập nhật thông tin survey
+        
             survey.SurveyName = updatedSurvey.Title;
             survey.Description = updatedSurvey.Description;
             survey.IsPublic = updatedSurvey.IsPublic;
             survey.SurveyFor = updatedSurvey.Target;
             survey.UpdateAt = DateTime.Now;
 
-            // Xóa các câu hỏi và câu trả lời cũ
+         
             var existingQuestions = await _unitOfWork.Question.FindAll(q => q.SurveyId == surveyId).ToListAsync();
             foreach (var question in existingQuestions)
             {
@@ -569,7 +569,7 @@ namespace BLL.Service
             }
           await  _unitOfWork.Question.DeleteRangeAsync(existingQuestions);
 
-            // Thêm các câu hỏi và câu trả lời mới
+        
             foreach (var questionDto in updatedSurvey.Questions)
             {
                 var question = new Question
@@ -597,7 +597,7 @@ namespace BLL.Service
                 }
             }
 
-            // Lưu thay đổi vào database
+         
             await _unitOfWork.SaveChangeAsync();
 
             return new ResponseDTO("Cập nhật survey thành công.", 200, true);

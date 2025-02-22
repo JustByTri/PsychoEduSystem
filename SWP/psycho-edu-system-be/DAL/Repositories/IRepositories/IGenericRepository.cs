@@ -31,5 +31,6 @@ namespace DAL.Repositories.IRepositories
     Expression<Func<T, bool>> expression,
     params Func<IQueryable<T>, IQueryable<T>>[] includes);
         Task<List<SurveyAnswerUser>> GetUserAnswersAsync(Guid userId, Guid surveyId);
+        Task<T> GetByEmailAsync(string email);
     }
     }
