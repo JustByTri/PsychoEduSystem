@@ -9,7 +9,7 @@ namespace DAL.Repositories
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        private readonly MindAidContext _context;
+        protected readonly MindAidContext _context;
         protected readonly DbSet<T> _dbSet;
         public GenericRepository(MindAidContext context)
         {
