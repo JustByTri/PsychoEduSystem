@@ -33,15 +33,20 @@ namespace DAL.Entities
         public string Gender { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public bool Status { get; set; }
-        public bool IsAdmin { get; set; }
-        public bool IsSurvey { get; set; }
 
+        public int RoleId { get; set; }
+
+        [ForeignKey("RoleId")]
+        public Role Role { get; set; }
         public bool IsEmailConfirmed { get; set; } = false;
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
-        public DateTime? UpdateSurveyAt { get; set; }
-        public virtual ICollection<UserRole> UserRoles { get; set; }
-    
+
+        public int? ClassId { get; set; }
+        [ForeignKey("ClassId")]
+        public Class Class { get; set; }
+
+        public virtual ICollection<Class> ClassList { get; set; }
         public virtual ICollection<Slot> Slots { get; set; }
         public virtual ICollection<Appointment> StudentAppointments { get; set; }
         public virtual ICollection<Appointment> CounselorAppointments { get; set; }

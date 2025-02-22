@@ -11,12 +11,14 @@ namespace DAL.Entities
     public class Class
     {
         [Key]
-        public Guid ClassId { get; set; }
+        public int ClassId { get; set; }
         public string Name { get; set; }
         public Guid TeacherId { get; set; }
         public DateTime CreateAt { get; set; }
 
         [ForeignKey("TeacherId")]
         public User Teacher { get; set; }
+
+        public virtual ICollection<User> Students { get; set; }
     }
 }
