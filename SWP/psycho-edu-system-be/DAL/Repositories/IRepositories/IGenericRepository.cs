@@ -22,6 +22,7 @@ namespace DAL.Repositories.IRepositories
         Task DeleteAsync(Guid id);
         Task<bool> AnyAsync(Expression<Func<User, bool>> predicate);
         Task<T> GetByConditionAsync(Expression<Func<T, bool>> expression);
+        Task<IEnumerable<T>> GetByConditionAsyncc(Expression<Func<T, bool>> expression);
         T GetByCondition(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> FindProductAsync(Expression<Func<T, bool>> expression);
         Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> expression);
