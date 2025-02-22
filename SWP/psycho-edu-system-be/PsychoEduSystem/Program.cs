@@ -32,6 +32,8 @@ namespace MIndAid
             builder.Services.AddScoped<ISurveyService, SurveyService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             builder.Services.AddScoped<IJwtProvider,JwtProvider>();
+            builder.Services.AddScoped<IClassService, ClassService>();
+            builder.Services.AddScoped<IRelationshipService, RelationshipService>();
             // Cấu hình Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
