@@ -15,7 +15,7 @@ const AdminSidebar = () => {
 
   const navItems = [
     { icon: faTachometerAlt, label: "Dashboard", path: "/admin" },
-    { icon: faBookOpen, label: "Programs", path: "/admin/programs" },
+    { icon: faBookOpen, label: "Programs", path: "/admin/survey" },
     { icon: faPoll, label: "Surveys", path: "/admin/survey-management" },
     { icon: faUsers, label: "Users", path: "/admin/users" },
     {

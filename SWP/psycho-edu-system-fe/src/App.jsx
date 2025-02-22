@@ -13,6 +13,8 @@ import BookingPage from "./pages/booking/BookingPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
 import SurveyManagementPage from "./pages/admin/SurveyManagementPage";
+import SurveyList from "./pages/admin/survey/SurveyList";
+import SurveyDetail from "./pages/admin/survey/SurveyDetail";
 function App() {
   return (
     <Router>
@@ -34,6 +36,8 @@ function App() {
         <Route path="admin/" element={<AdminPortalLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="survey-management" element={<SurveyManagementPage />} />
+          <Route path="survey" element={<SurveyList />} />
+          <Route path="survey/:id" element={<SurveyDetail />} />
         </Route>
         <Route path="booking/" element={<BookingPage />} />
         <Route path="*" element={<NotFoundPage />} />

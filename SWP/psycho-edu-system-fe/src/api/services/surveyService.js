@@ -25,11 +25,9 @@ export const SurveyService = {
       return false;
     }
   },
-  getSurveyContent: async () => {
+  getSurveyContent: async (id) => {
     try {
-      const response = await axios.get(
-        `${BASE_URL}api/Survey/eb4f1b88-1cb0-488e-88f3-2c5484eb0aa9`
-      );
+      const response = await axios.get(`${BASE_URL}api/Survey/${id}`);
       if (response.status === 200) {
         return response.data;
       }
