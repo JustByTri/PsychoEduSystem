@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "../Navigation/AdminSidebar";
 import AdminHeader from "../Header/AdminHeader";
+import Breadcrumbs from "../Breadcrumbs ";
 const AdminPortalLayout = () => {
   return (
     <div className="flex flex-col h-screen">
@@ -15,6 +16,7 @@ const AdminPortalLayout = () => {
 
         {/* Outlet (Scrollable Content) */}
         <div className="flex-1 overflow-auto p-4 bg-gradient-to-br from-gray-900 to-gray-800">
+          <Breadcrumbs />
           <Outlet />
         </div>
       </div>
