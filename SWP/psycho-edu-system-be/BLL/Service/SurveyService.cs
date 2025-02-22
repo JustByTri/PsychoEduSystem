@@ -477,5 +477,130 @@ namespace BLL.Service
                 }).ToList()
             };
         }
+        public async Task<SurveyWithQuestionsAndAnswersDTO> AdjustSurveyAsync(Guid surveyId)
+        {
+            // Lấy thông tin survey từ database
+            var survey = await _unitOfWork.Survey.GetByConditionWithIncludesAsync(
+                s => s.SurveyId == surveyId,
+                s => s.Questions);
+
+            if (survey == null)
+                throw new Exception("Survey không tồn tại.");
+
+            // Lấy danh sách câu hỏi và câu trả lời
+            var questionIds = survey.Questions.Select(q => q.QuestionId).ToList();
+            var answers = await _unitOfWork.Answer.FindAll(a => questionIds.Contains(a.QuestionId)).ToListAsync();
+
+            // Lấy danh sách category (dimension)
+            var categoryIds = survey.Questions.Select(q => q.DimensionId).Distinct().ToList();
+            var categories = await _unitOfWork.DimensionHealth.FindAll(c => categoryIds.Contains(c.DimensionId)).ToListAsync();
+
+            // Gán câu trả lời vào câu hỏi
+            foreach (var question in survey.Questions)
+            {
+                question.Answers = answers.Where(a => a.QuestionId == question.QuestionId).ToList();
+            }
+
+            // Trả về thông tin survey dưới dạng DTO
+            return new SurveyWithQuestionsAndAnswersDTO
+            {
+                SurveyId = survey.SurveyId,
+                Title = survey.SurveyName,
+                Description = survey.Description,
+                IsPublic = survey.IsPublic,
+                Target = survey.SurveyFor,
+                CreateAt = survey.CreateAt,
+                UpdateAt = survey.UpdateAt,
+                Questions = survey.Questions.Select(q => new QuestionWithAnswersDTO
+                {
+                    QuestionId = q.QuestionId,
+                    Content = q.Content,
+                    CategoryId = q.DimensionId, 
+                    CategoryName = categories.FirstOrDefault(c => c.DimensionId == q.DimensionId)?.DimensionName,
+                    Answers = q.Answers.Select(a => new AnswerDTO
+                    {
+                        AnswerId = a.AnswerId,
+                        Content = a.Content,
+                        Point = a.Point
+                    }).ToList()
+                }).ToList()
+            };
+        }
+        public async Task<ResponseDTO> UpdateSurveyWithValidationAsync(Guid surveyId, SurveyWithQuestionsAndAnswersDTO updatedSurvey)
+        {
+            // Kiểm tra survey tồn tại
+            var survey = await _unitOfWork.Survey.GetByIdAsync(surveyId);
+            if (survey == null)
+                return new ResponseDTO("Survey không tồn tại.", 404, false);
+
+            // Validation: Survey phải có đủ 21 câu hỏi
+            if (updatedSurvey.Questions.Count != 21)
+                return new ResponseDTO("Survey phải có đúng 21 câu hỏi.", 400, false);
+
+            // Validation: Câu hỏi và câu trả lời không được trống
+            foreach (var question in updatedSurvey.Questions)
+            {
+                if (string.IsNullOrWhiteSpace(question.Content))
+                    return new ResponseDTO("Câu hỏi không được trống.", 400, false);
+
+                if (question.Answers == null || question.Answers.Count == 0)
+                    return new ResponseDTO("Mỗi câu hỏi phải có ít nhất một câu trả lời.", 400, false);
+
+                foreach (var answer in question.Answers)
+                {
+                    if (string.IsNullOrWhiteSpace(answer.Content))
+                        return new ResponseDTO("Câu trả lời không được trống.", 400, false);
+                }
+            }
+
+            // Cập nhật thông tin survey
+            survey.SurveyName = updatedSurvey.Title;
+            survey.Description = updatedSurvey.Description;
+            survey.IsPublic = updatedSurvey.IsPublic;
+            survey.SurveyFor = updatedSurvey.Target;
+            survey.UpdateAt = DateTime.Now;
+
+            // Xóa các câu hỏi và câu trả lời cũ
+            var existingQuestions = await _unitOfWork.Question.FindAll(q => q.SurveyId == surveyId).ToListAsync();
+            foreach (var question in existingQuestions)
+            {
+                var existingAnswers = await _unitOfWork.Answer.FindAll(a => a.QuestionId == question.QuestionId).ToListAsync();
+          await      _unitOfWork.Answer.DeleteRangeAsync(existingAnswers);
+            }
+          await  _unitOfWork.Question.DeleteRangeAsync(existingQuestions);
+
+            // Thêm các câu hỏi và câu trả lời mới
+            foreach (var questionDto in updatedSurvey.Questions)
+            {
+                var question = new Question
+                {
+                    QuestionId = Guid.NewGuid(),
+                    DimensionId = questionDto.CategoryId,
+                    Content = questionDto.Content,
+                    SurveyId = surveyId,
+                    CreateAt = DateTime.Now
+                    
+                };
+                await _unitOfWork.Question.AddAsync(question);
+
+                foreach (var answerDto in questionDto.Answers)
+                {
+                    var answer = new Answer
+                    {
+                        AnswerId = Guid.NewGuid(),
+                        Content = answerDto.Content,
+                        Point = answerDto.Point,
+                        QuestionId = question.QuestionId,
+                        CreateAt = DateTime.Now
+                    };
+                    await _unitOfWork.Answer.AddAsync(answer);
+                }
+            }
+
+            // Lưu thay đổi vào database
+            await _unitOfWork.SaveChangeAsync();
+
+            return new ResponseDTO("Cập nhật survey thành công.", 200, true);
+        }
     }
 }
