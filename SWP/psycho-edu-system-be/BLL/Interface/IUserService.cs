@@ -15,6 +15,6 @@ namespace BLL.Interface
         Task<User> GetUserByEmailAsync(string email);
         Task<bool> RegisterUserAsync(UserRegisterDTO newUser);
         Task<bool> IsUserExistAsync(string userName, string email);
-
+        Task<bool> CreateParentAccountAsync(CreateParentAccountDTO parentAccountDTO);
     }
 }

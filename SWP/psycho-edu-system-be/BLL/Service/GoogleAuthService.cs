@@ -43,7 +43,13 @@ namespace BLL.Services
                 return new ResponseDTO("Failed to validate Google token.", 400, false, ex.Message);
             }
 
-     
+            
+            if (!payload.Email.EndsWith("@fpt.edu.vn", StringComparison.OrdinalIgnoreCase))
+            {
+                return new ResponseDTO("Login failed. Only fpt.edu.vn emails are allowed.", 400, false);
+            }
+
+      
             var existingUser = await _unitOfWork.User.GetByEmailAsync(payload.Email);
             if (existingUser != null)
             {
@@ -53,14 +59,14 @@ namespace BLL.Services
             // Tạo người dùng mới nếu chưa tồn tại
             var newUser = new User
             {
-                UserId = Guid.NewGuid(), 
+                UserId = Guid.NewGuid(),
                 FullName = $"{payload.GivenName} {payload.FamilyName}".Trim(),
                 PasswordHash = new byte[32],
                 PasswordSalt = new byte[32],
                 Email = payload.Email,
-                IsEmailConfirmed = true, 
-                CreateAt = DateTime.UtcNow ,
-                RoleId = 3
+                IsEmailConfirmed = true,
+                CreateAt = DateTime.UtcNow,
+                RoleId = 3 
             };
 
             await _unitOfWork.User.AddAsync(newUser);
@@ -76,7 +82,8 @@ namespace BLL.Services
     {
         new Claim(JwtClaimTypes.UserId, user.UserId.ToString()),
         new Claim(JwtClaimTypes.Email, user.Email),
-        new Claim(JwtClaimTypes.Username, user.UserName)
+        new Claim(JwtClaimTypes.Username, user.UserName),
+         new Claim(JwtClaimTypes.RoleId, user.RoleId.ToString())
     };
 
           
@@ -109,7 +116,7 @@ namespace BLL.Services
                 AccessToken = accessToken, // Đảm bảo tên trường chính xác
                 RefreshToken = refreshToken,
                 UserId = user.UserId,
-                Role = "User" // Thêm role nếu cần
+                Role = 3 
             });
         }
     }

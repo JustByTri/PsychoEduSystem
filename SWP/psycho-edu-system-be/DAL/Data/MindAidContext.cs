@@ -309,7 +309,88 @@ namespace DAL.Data
           
          }
      );
-           
+            var studentPassword = "student123";
+            byte[] studentPasswordHash, studentPasswordSalt;
+            CreatePasswordHash(studentPassword, out studentPasswordHash, out studentPasswordSalt);
+
+            var student1 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "student1",
+                PasswordHash = studentPasswordHash,
+                PasswordSalt = studentPasswordSalt,
+                Phone = "0987654333",
+                Email = "student1@fpt.edu.vn",
+                FullName = "Nguyễn Văn C",
+                BirthDay = new DateTime(2005, 3, 10),
+                Gender = "Male",
+                Address = "Ha Noi",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 3, // RoleId 3 là học sinh
+                ClassId = 1, // Gán vào lớp SE1701
+                IsEmailConfirmed = true
+            };
+
+            var student2 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "student2",
+                PasswordHash = studentPasswordHash,
+                PasswordSalt = studentPasswordSalt,
+                Phone = "0987654334",
+                Email = "student2@fpt.edu.vn",
+                FullName = "Trần Thị D",
+                BirthDay = new DateTime(2005, 7, 22),
+                Gender = "Female",
+                Address = "Ho Chi Minh",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 3, // RoleId 3 là học sinh
+                ClassId = 1, // Gán vào lớp SE1701
+                IsEmailConfirmed = true
+            };
+
+            var student3 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "student3",
+                PasswordHash = studentPasswordHash,
+                PasswordSalt = studentPasswordSalt,
+                Phone = "0987654335",
+                Email = "student3@fpt.edu.vn",
+                FullName = "Phạm Văn E",
+                BirthDay = new DateTime(2006, 1, 15),
+                Gender = "Male",
+                Address = "Da Nang",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 3, // RoleId 3 là học sinh
+                ClassId = 2, // Gán vào lớp SE1702
+                IsEmailConfirmed = true
+            };
+
+            var student4 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "student4",
+                PasswordHash = studentPasswordHash,
+                PasswordSalt = studentPasswordSalt,
+                Phone = "0987654336",
+                Email = "student4@fpt.edu.vn",
+                FullName = "Lê Thị F",
+                BirthDay = new DateTime(2006, 9, 30),
+                Gender = "Female",
+                Address = "Can Tho",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 3, // RoleId 3 là học sinh
+                ClassId = 3, // Gán vào lớp AI1703
+                IsEmailConfirmed = true
+            };
+
+            modelBuilder.Entity<User>().HasData(student1, student2, student3, student4);
+
             modelBuilder.Entity<Role>().HasData(
                 new Role { RoleId = 1, RoleName = "Admin" },
                 new Role { RoleId = 2, RoleName = "Psychologist" },

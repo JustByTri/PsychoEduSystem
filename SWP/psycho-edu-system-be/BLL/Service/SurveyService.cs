@@ -178,6 +178,8 @@ namespace BLL.Service
 
             survey.IsPublic = updateDto.IsPublic;
             survey.SurveyFor = updateDto.SurveyFor;
+            survey.SurveyName = updateDto.Title;
+            survey.Description = updateDto.Description;
             survey.UpdateAt = DateTime.Now;
 
             _unitOfWork.Survey.UpdateAsync(survey);

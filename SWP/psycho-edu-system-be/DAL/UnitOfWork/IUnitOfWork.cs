@@ -28,6 +28,7 @@ namespace DAL.UnitOfWork
         ISurveyRepository Survey { get; }
         ISurveyResponseRepository SurveyResponse { get; }
         ISurveyAnswerUserRepository SurveyAnswerUser { get; }
+        IRelationshipRepository Relationship { get; }
         IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel);
         // Dispose method để giải phóng tài nguyên
         void Dispose();

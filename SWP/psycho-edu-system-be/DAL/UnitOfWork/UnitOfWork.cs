@@ -34,6 +34,7 @@ namespace DAL.UnitOfWork
             Survey = new SurveyRepository(_context);
             SurveyResponse = new SurveyResponseRepository(_context);
             SurveyAnswerUser = new SurveyAnswerUserRepository(_context);
+            Relationship = new RelationshipRepository(_context);    
         }
 
         // Các repository được khởi tạo từ constructor
@@ -59,6 +60,7 @@ namespace DAL.UnitOfWork
         public ISurveyRepository Survey { get; private set; }
         public ISurveyResponseRepository SurveyResponse { get; private set; }
         public ISurveyAnswerUserRepository  SurveyAnswerUser { get; private set; }
+        public IRelationshipRepository Relationship { get; private set; }
         public IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel)
         {
             return _context.Database.BeginTransaction(isolationLevel);
