@@ -70,10 +70,10 @@ const StudentHeader = ({ userData = {
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg overflow-hidden z-50">
                 <div className="py-1 text-left">
-                  <a href="/student/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <a href="/students/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Profile
                   </a>
-                  <a href="/student/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <a href="/students/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Settings
                   </a>
                   <hr className="my-1" />

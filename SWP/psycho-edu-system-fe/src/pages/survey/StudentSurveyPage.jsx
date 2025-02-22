@@ -8,6 +8,7 @@ import { Box } from "@mui/material";
 const StudentSurveyPage = () => {
   const navigate = useNavigate();
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
@@ -23,7 +24,7 @@ const StudentSurveyPage = () => {
   };
 
   const handleStart = () => {
-    navigate('/student/survey/questions');
+    navigate('/students/survey/questions');
   };
 
   const handleSkip = () => {
@@ -40,23 +41,23 @@ const StudentSurveyPage = () => {
   };
 
   return (
-    <Box sx={{ height: '100vh', overflow: 'hidden', bgcolor: '#f5f5f5' }}>
-      <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}>
+    <div className="min-h-screen bg-gray-50">
+      <div className="fixed top-0 left-0 right-0 z-50">
         <StudentHeader userData={studentData} />
-      </Box>
+      </div>
 
-      <Box sx={{ display: 'flex', pt: '0px', height: 'calc(100vh)' }}>
-        <Box sx={{ position: 'fixed', left: 0, top: '50px', bottom: 0, width: '100px' }}>
-          <StudentSideBar />
-        </Box>
+      <div className="flex pt-[64px]">
+        <div className="fixed left-0 top-[64px] bottom-0">
+          <StudentSideBar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+        </div>
 
-        <Box sx={{ flex: 1, ml: '80px', height: '100%', position: 'relative' }}>
-          <div className="w-full h-full flex flex-col items-center justify-center"
+        <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-[6s0px]' : 'ml-[160px]'}`}>
+          <div className="w-full h-[calc(100vh-64px)] flex flex-col items-center justify-center"
             style={{
               backgroundImage: `url('https://thedecisionlab.com/_next/image?url=https%3A%2F%2Fimages.prismic.io%2Fthedecisionlab%2FZq0zEEaF0TcGIqOZ_4879b5bc-4680-4c2a-8203-6c0da046ee8b.png%3Fauto%3Dformat%2Ccompress&w=3840&q=75')`,
-              backgroundSize: 'cover', 
-              backgroundPosition: 'center', 
-              backgroundRepeat: 'no-repeat'
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
             }}
           >
             <div className="bg-white/80 p-8 rounded-lg shadow-lg backdrop-blur-sm">
@@ -77,15 +78,15 @@ const StudentSurveyPage = () => {
               </div>
             </div>
           </div>
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       <StudentSkipSurvey 
         open={skipDialogOpen}
         onClose={handleSkipCancel}
         onConfirm={handleSkipConfirm}
       />
-    </Box>
+    </div>
   );
 };
 

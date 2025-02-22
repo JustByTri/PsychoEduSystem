@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import ParentSideBar from "../../components/Bar/ParentSideBar";
 import ParentHeader from "../../components/Header/ParentHeader";
+import SideBar from "../../components/Navigation/SideBar";
 import AuthCard from "../../components/Card/AuthCard";
 import FeelingCard from "../../components/Card/FeelingCard";
 import QuickLinksCard from "../../components/Card/QuickLinksCard";
@@ -23,7 +24,7 @@ const PortalPage = () => {
 
       <div className="flex pt-[64px]">
         <div className="fixed left-0 top-[64px] bottom-0 w-[100px]">
-          <ParentSideBar />
+          <SideBar />
         </div>
 
         <div className="flex-1 ml-[100px] p-8 min-h-screen overflow-y-auto">

@@ -14,6 +14,7 @@ import StudentProgramPage from "./pages/student/StudentProgramPage";
 import StudentProgramDetail from "./pages/student/StudentProgramDetail";
 import StudentSurveyPage from './pages/survey/StudentSurveyPage';
 import StudentSurveyQuestion from './pages/survey/StudentSurveyQuestion';
+import SurveyDetailsPage from "./pages/student/SurveyDetailsPage";
 
 function App() {
   return (
@@ -33,14 +34,15 @@ function App() {
         <Route path="/parent" element={<ParentPortal />} />
 
         <Route path="/students" element={<PrivateRoute><StudentPortal /></PrivateRoute>} />
-        <Route path="/student/program" element={ <PrivateRoute> <StudentProgramPage /> </PrivateRoute> } />
-        <Route path="/student/program/:id" element={
+        <Route path="/students/program" element={ <PrivateRoute> <StudentProgramPage /> </PrivateRoute> } />
+        <Route path="/students/program/:id" element={
           <PrivateRoute>
             <StudentProgramDetail />
           </PrivateRoute>
         } />
-        <Route path="/student/survey" element={<PrivateRoute> <StudentSurveyPage /> </PrivateRoute>} />
-        <Route path="/student/survey/questions" element={<PrivateRoute> <StudentSurveyQuestion /> </PrivateRoute>} />
+        <Route path="/students/survey" element={<PrivateRoute> <StudentSurveyPage /> </PrivateRoute>} />
+        <Route path="/students/survey/questions" element={<PrivateRoute> <StudentSurveyQuestion /> </PrivateRoute>} />
+        <Route path="/students/survey/details" element={<PrivateRoute> <SurveyDetailsPage /> </PrivateRoute>} />
 
         {/* Other Routes */}
         <Route path="*" element={<NotFoundPage />} />

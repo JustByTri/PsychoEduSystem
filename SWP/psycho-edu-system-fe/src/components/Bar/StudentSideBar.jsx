@@ -1,71 +1,84 @@
-import React from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, MessageCircle, Calendar, User, History, BookOpen, FileText } from "lucide-react";
+import {
+  faHome,
+  faClipboardList,
+  faCogs,
+  faHistory,
+  faFileAlt,
+  faUser,
+  faBookOpen
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-const StudentSideBar = () => {
-  const menuItems = [
+const StudentSideBar = ({ isCollapsed, setIsCollapsed }) => {
+  const navItems = [
+    { icon: faHome, label: "Home", path: "/students" },
     {
-      icon: Home,
-      label: "Home",
-      href: "/student"
-    },
-    {
-      icon: MessageCircle,
-      label: "Survey",
-      href: "/student/survey"
-    },
-    {
-      icon: Calendar,
-      label: "Program",
-      href: "/student/program"
-    },
-    {
-      icon: User,
-      label: "Account",
-      href: "/student/account"
-    },
-    {
-      icon: History,
-      label: "History",
-      href: "/student/history"
-    },
-    {
-      icon: BookOpen,
-      label: "Course",
-      href: "/student/course"
-    },
-    {
-      icon: FileText,
-      label: "Report",
-      href: "/student/report"
-    }
+      icon: faClipboardList, label: "Survey", path: "/students/survey",},
+    { icon: faCogs, label: "Program", path: "/students/program" },
+    { icon: faUser, label: "Account", path: "/students/account" },
+    { icon: faHistory, label: "History", path: "/students/history" },
+    { icon: faBookOpen, label: "Course", path: "/students/course" },
+    { icon: faFileAlt, label: "Report", path: "/students/report" },
   ];
 
+  const handleToggleMenu = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
   return (
-    <div className="flex flex-col justify-between h-screen bg-[#A8E0D6] w-20 fixed left-0 top-0">
-      {/* Logo */}
-      <div className="flex justify-center pt-4">
-        <img src="/path-to-your-logo.png" alt="Logo" className="w-12 h-12" />
+    <div
+      className={`bg-[#65CCB8] text-[#002B36] shadow-md transition-all duration-300 h-full ${
+        isCollapsed ? "w-20" : "w-65"
+           } flex flex-col justify-between`}
+      style={{ minHeight: "100vh" }}
+    >
+      <div className="flex items-center justify-between p-4">
+        <button
+          className="text-[#002B36] p-2 w-full rounded-md hover:bg-white/20 transition-all duration-300"
+          onClick={handleToggleMenu}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`w-8 h-8 mx-auto transition-transform duration-300 ${
+              isCollapsed ? "rotate-0" : "rotate-180"
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 6h16M4 12h16m-7 6h7"
+            />
+          </svg>
+        </button>
       </div>
 
-      {/* Menu Items */}
-      <div className="flex flex-col items-center pt-6 space-y-6">
-        {menuItems.map((item, index) => (
+      {/* Navigation */}
+      <nav className="flex-grow space-y-2 mt-6">
+        {navItems.map((item, index) => (
           <Link
             key={index}
-            to={item.href}
-            className="flex flex-col items-center text-[#000000] hover:opacity-80 transition-opacity w-full px-2"
+            to={item.path}
+            className={`flex items-center p-3 mx-3 rounded-md hover:bg-white/20 transition-all duration-300 ${
+              isCollapsed ? "justify-center" : ""
+            }`}
           >
-            <item.icon size={28} strokeWidth={1.5} className="text-[#000000]" />
-            <span className="text-xs mt-1">{item.label}</span>
+            <div className="relative">
+              <FontAwesomeIcon icon={item.icon} className="w-7 h-7" />
+            </div>
+            {!isCollapsed && (
+              <span className="ml-5 text-[#002B36] font-medium">
+                {item.label}
+              </span>
+            )}
           </Link>
         ))}
-      </div>
-
-      {/* Copyright Footer */}
-      <div className="pb-4 text-center">
-        <span className="text-white text-xs">Copyright FPTU©</span>
-      </div>
+      </nav>
     </div>
   );
 };

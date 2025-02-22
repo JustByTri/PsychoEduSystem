@@ -39,7 +39,7 @@ const ProgramTable = () => {
   };
 
   const handleTitleClick = (id) => {
-    navigate(`/student/program/${id}`);
+    navigate(`/students/program/${id}`);
   };
 
   return (

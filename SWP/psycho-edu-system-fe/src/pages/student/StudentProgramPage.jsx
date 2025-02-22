@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';  // Fix the import
 import { Box } from '@mui/material';
 import StudentHeader from "../../components/Header/StudentHeader";
 import StudentSideBar from "../../components/Bar/StudentSideBar";
@@ -6,6 +7,7 @@ import ProgramTable from "../../components/Table/ProgramTable";
 
 const StudentProgramPage = () => {
   const navigate = useNavigate();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
@@ -26,22 +28,20 @@ const StudentProgramPage = () => {
         <StudentHeader userData={studentData} />
       </Box>
 
-      <Box sx={{ 
-        display: 'flex', 
-        pt: '70px', 
-        height: 'calc(100vh - 64px)'
-      }}>
-        <Box sx={{ 
-          position: 'fixed', 
-          left: 0, 
-          top: '64px', 
-          bottom: 0, 
-          width: '100px'
+      <Box sx={{ display: 'flex', pt: '70px', height: 'calc(100vh - 64px)' }}>
+        <Box sx={{ position: 'fixed', left: 0, top: '64px', bottom: 0, width: 'auto'
         }}>
-          <StudentSideBar />
+          <StudentSideBar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
         </Box>
 
-        <Box sx={{ flex: 1, p: 2, height: '100%', maxWidth: '1300px', ml: '165px' }}>
+        <Box sx={{ 
+          flex: 1, 
+          p: 2, 
+          height: '100%', 
+          maxWidth: '1300px', 
+          ml: isCollapsed ? '150px' : '200px', // Adjust margins to match sidebar widths
+          transition: 'margin-left 0.3s' // Add smooth transition
+        }}>
           <ProgramTable />
         </Box>
       </Box>

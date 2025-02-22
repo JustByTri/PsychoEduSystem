@@ -1,8 +1,16 @@
 import React from 'react';
-import { Box, Typography, Paper, LinearProgress, Button, Divider } from '@mui/material';
+import { Box, Typography, Paper, LinearProgress, Button, Divider, Grid } from '@mui/material';
 import { AlertCircle, ArrowRight, Download } from 'lucide-react';
+import { Doughnut } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { useNavigate } from 'react-router-dom';  // Change this line
+
+// Register ChartJS components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const SurveyResultCard = ({ score, onClose }) => {
+  const navigate = useNavigate();  // Add this line
+  
   // Function to determine stress level and recommendations
   const getAssessment = (score) => {
     if (score <= 25) {
@@ -43,69 +51,97 @@ const SurveyResultCard = ({ score, onClose }) => {
 
   const assessment = getAssessment(score);
 
+  // Chart data configuration
+  const chartData = {
+    labels: ['Risk Level', 'Safe Zone'],
+    datasets: [
+      {
+        data: [score, 100 - score],
+        backgroundColor: [assessment.color, '#e0e0e0'],
+        borderWidth: 0,
+        cutout: '70%',
+      },
+    ],
+  };
+
+  const chartOptions = {
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        enabled: false,
+      },
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
   return (
     <Paper elevation={3} sx={{ p: 4, maxWidth: 800, mx: 'auto', borderRadius: 3 }}>
-      {/* Header */}
       <Typography variant="h5" sx={{ mb: 3, textAlign: 'center', fontWeight: 600 }}>
         Your Mental Health Assessment Results
       </Typography>
 
-      {/* Score Display */}
-      <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="body1" sx={{ mb: 1, color: 'text.secondary' }}>
-          Overall Assessment Score
-        </Typography>
-        <Box sx={{ position: 'relative', display: 'inline-block' }}>
-          <Typography 
-            variant="h2" 
-            sx={{ 
-              fontWeight: 'bold',
-              color: assessment.color
-            }}
-          >
-            {score}%
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Risk Level */}
-      <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="subtitle1" sx={{ mb: 1, color: 'text.secondary' }}>
-          Risk Level
-        </Typography>
-        <Typography 
-          variant="h5" 
-          sx={{ 
-            color: assessment.color,
-            fontWeight: 600
-          }}
-        >
-          {assessment.level}
-        </Typography>
-      </Box>
+      {/* Score and Chart Display */}
+      <Grid container spacing={4} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <Box sx={{ height: 200, position: 'relative' }}>
+            <Doughnut data={chartData} options={chartOptions} />
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+              }}
+            >
+              <Typography variant="h3" sx={{ fontWeight: 'bold', color: assessment.color }}>
+                {score}%
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Risk Score
+              </Typography>
+            </Box>
+          </Box>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Typography variant="subtitle1" sx={{ mb: 1, color: 'text.secondary' }}>
+              Risk Level
+            </Typography>
+            <Typography variant="h5" sx={{ color: assessment.color, fontWeight: 600, mb: 2 }}>
+              {assessment.level}
+            </Typography>
+            <Typography variant="body1">
+              {assessment.description}
+            </Typography>
+          </Box>
+        </Grid>
+      </Grid>
 
       <Divider sx={{ my: 3 }} />
-
-      {/* Description */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="body1" sx={{ mb: 2 }}>
-          {assessment.description}
-        </Typography>
-      </Box>
 
       {/* Recommendations */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
           Recommendations:
         </Typography>
-        <Box sx={{ bgcolor: '#f5f5f5', p: 3, borderRadius: 2 }}>
+        <Box sx={{ 
+          bgcolor: '#f5f5f5', 
+          p: 3, 
+          borderRadius: 2,
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }
+        }}>
           {assessment.recommendations.map((rec, index) => (
             <Box 
               key={index} 
               sx={{ 
                 display: 'flex', 
-                alignItems: 'center', 
-                mb: index !== assessment.recommendations.length - 1 ? 2 : 0 
+                alignItems: 'center',
               }}
             >
               <ArrowRight size={20} style={{ marginRight: 8, color: '#82DBC5' }} />
@@ -140,7 +176,8 @@ const SurveyResultCard = ({ score, onClose }) => {
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
         <Button
           variant="outlined"
-          startIcon={<Download size={18} />}
+          startIcon={<ArrowRight size={18} />}
+          onClick={() => navigate('/students/survey/details')}  // This will now work
           sx={{ 
             borderColor: '#82DBC5',
             color: '#82DBC5',
@@ -150,7 +187,7 @@ const SurveyResultCard = ({ score, onClose }) => {
             }
           }}
         >
-          Download Report
+          See Details Results
         </Button>
         <Button
           variant="contained"
@@ -169,4 +206,4 @@ const SurveyResultCard = ({ score, onClose }) => {
   );
 };
 
-export default SurveyResultCard; 
+export default SurveyResultCard;

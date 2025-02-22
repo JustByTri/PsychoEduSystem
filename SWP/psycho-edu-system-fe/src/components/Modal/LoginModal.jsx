@@ -15,7 +15,7 @@ const ROLE_ROUTES = {
   [ROLES.ADMIN]: '/admin',
   [ROLES.COUNSELOR]: '/counselor',
   [ROLES.PARENT]: '/parent',
-  [ROLES.STUDENT]: '/student'
+  [ROLES.STUDENT]: '/students'
 };
 
 const LoginModal = () => {

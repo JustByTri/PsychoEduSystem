@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Button } from '@mui/material';
 import { ArrowLeft } from 'lucide-react';
@@ -9,6 +9,7 @@ import ProgramCounselorCard from "../../components/Card/ProgramCounselorCard";
 
 const StudentProgramDetail = () => {
   const navigate = useNavigate();
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
@@ -38,21 +39,21 @@ const StudentProgramDetail = () => {
           position: 'fixed', 
           left: 0, 
           top: '64px', 
-          bottom: 0, 
-          width: '100px'
+          bottom: 0,
         }}>
-          <StudentSideBar />
+          <StudentSideBar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
         </Box>
 
         <Box sx={{ 
           flex: 1,
-          ml: '100px',
+          transition: 'margin-left 0.3s',
+          ml: isCollapsed ? '80px' : '288px',
           p: 4,
           height: '100%',
           maxWidth: '1500px',
           mx: 'auto'
         }}>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-start', ml: 10, mt: -2, mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', ml: 18, mt: -2, mb: 2 }}>
         <Button
           variant="contained"
           startIcon={<ArrowLeft />}
