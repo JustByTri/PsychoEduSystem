@@ -2,14 +2,18 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
+import SurveyPage from "./pages/survey/SurveyPage";
 import NotFoundPage from "./pages/error/NotFoundPage";
-import ProgramCoursePage from "./pages/student/ProgramPage";
-import PortalLayout from "./components/Layouts/PortalLayout";
-import Dashboard from "./pages/student/Dashboard";
-import StartUpPage from "./pages/student/StartUpPage";
-import SurveyPage from "./pages/student/SurveyPage";
-import SurveyResultPage from "./pages/student/SurveyResultPage";
-import BookingPage from "./pages/booking/BookingPage";
+import ParentPortal from "./pages/parent/ParentPortal";
+import CoursePage from "./pages/student/CoursePage";
+import PrivateRoute from "./components/Authentication/PrivateRoute";
+import AdminPortal from "./pages/admin/AdminPortal";
+import CounselorPortal from "./pages/counselor/CounselorPortal";
+import StudentPortal from "./pages/student/StudentPortal";
+import StudentProgramPage from "./pages/student/StudentProgramPage";
+import StudentProgramDetail from "./pages/student/StudentProgramDetail";
+import StudentSurveyPage from './pages/survey/StudentSurveyPage';
+import StudentSurveyQuestion from './pages/survey/StudentSurveyQuestion';
 
 function App() {
   return (
@@ -19,16 +23,26 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           {/* Nested Routes */}
           <Route index element={<HomePage />} />
-          <Route path="booking/" element={<BookingPage />} />
+          <Route path="/survey" element={<SurveyPage />} />
+          <Route path="/course/*" element={<CoursePage />} />
         </Route>
-        {/* Student */}
-        <Route path="student/" element={<PortalLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="start-up-survey" element={<StartUpPage />} />
-          <Route path="program" element={<ProgramCoursePage />} />
-          <Route path="survey-for-student" element={<SurveyPage />} />
-          <Route path="survey-result" element={<SurveyResultPage />} />
-        </Route>
+
+        {/* Protected Routes */}
+        <Route path="/admin" element={<AdminPortal />} />
+        <Route path="/counselor" element={<CounselorPortal />} />
+        <Route path="/parent" element={<ParentPortal />} />
+
+        <Route path="/students" element={<PrivateRoute><StudentPortal /></PrivateRoute>} />
+        <Route path="/student/program" element={ <PrivateRoute> <StudentProgramPage /> </PrivateRoute> } />
+        <Route path="/student/program/:id" element={
+          <PrivateRoute>
+            <StudentProgramDetail />
+          </PrivateRoute>
+        } />
+        <Route path="/student/survey" element={<PrivateRoute> <StudentSurveyPage /> </PrivateRoute>} />
+        <Route path="/student/survey/questions" element={<PrivateRoute> <StudentSurveyQuestion /> </PrivateRoute>} />
+
+        {/* Other Routes */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
