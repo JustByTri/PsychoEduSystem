@@ -7,6 +7,7 @@ using DAL.Repositories;
 using BLL.Service;
 using DAL.UnitOfWork;
 using BLL.Utilities;
+using BLL.Services;
 
 namespace MIndAid
 {
@@ -29,7 +30,7 @@ namespace MIndAid
             builder.Services.AddScoped<UserUtility>();
             builder.Services.AddScoped<ILoginService, LoginService>();
             builder.Services.AddScoped<ISurveyService, SurveyService>();
-
+            builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
             // Cấu hình Swagger
             builder.Services.AddEndpointsApiExplorer();

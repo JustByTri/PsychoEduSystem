@@ -32,7 +32,7 @@ namespace BLL.Services
         public async Task<bool> SignInWithGoogle(GoogleAuthTokenDTO googleAuthToken)
 
         {
-            // Check if token is valid
+           
             Payload payload;
             try
             {
@@ -62,6 +62,7 @@ namespace BLL.Services
                 Email = payload.Email,
                 PasswordHash = new byte[32],
                 PasswordSalt = new byte[32],
+                RoleId = 1
                 
             };
 
@@ -74,13 +75,6 @@ namespace BLL.Services
 
             _unitOfWork.User.Add(newUser);
 
-            var userRole = new UserRole
-            {
-                UserId = newUser.UserId,
-                RoleId = role.RoleId
-            };
-
-            _unitOfWork.UserRole.Add(userRole);
 
             try
             {
@@ -107,17 +101,7 @@ namespace BLL.Services
             new Claim(JwtConstant.KeyClaim.Username, user.UserName ?? "Unknown")
         };
 
-            if (user.UserRoles != null)
-            {
-                foreach (var userRole in user.UserRoles)
-                {
-                    claims.Add(new Claim(JwtConstant.KeyClaim.Role, userRole.Role?.RoleName ?? "Student"));
-                }
-            }
-            else
-            {
-                claims.Add(new Claim(JwtConstant.KeyClaim.Role, "Student"));
-            }
+          
 
             var fullName = $"{user.FullName}".Trim();
             claims.Add(new Claim(JwtConstant.KeyClaim.fullName, fullName));
@@ -155,7 +139,7 @@ namespace BLL.Services
             {
                 await _unitOfWork.Role.AddAsync(new Role
                 {
-                    RoleId = Guid.NewGuid(),
+                    RoleId = 3,
                     RoleName = "Student"
                 });
             }

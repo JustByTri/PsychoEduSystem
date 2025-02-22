@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -67,18 +68,8 @@ namespace BLL.Service
             var claims = new List<Claim>();
 
             // Thêm vai trò vào claims
-            if (user.UserRoles != null && user.UserRoles.Any())
-            {
-                foreach (var userRole in user.UserRoles)
-                {
-                    var roleName = userRole.Role?.RoleName ?? "Student";
-                    claims.Add(new Claim(JwtConstant.KeyClaim.Role, userRole.Role?.RoleName ?? "Student"));
-                }
-            }
-            else
-            {
-                claims.Add(new Claim(JwtConstant.KeyClaim.Role, "Student")); // Giá trị mặc định nếu không có vai trò
-            }
+            var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+              claims.Add(new Claim(JwtConstant.KeyClaim.Role, role?.RoleName ?? "User"));
             // Thêm email vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
 
@@ -121,7 +112,7 @@ namespace BLL.Service
             {
                 AccessToken = accessTokenKey,
                 RefreshToken = refreshToken.RefreshTokenKey,
-                Roles = string.Join(",", user.UserRoles.Select(ur => ur.Role.RoleName)) // Trả về tất cả vai trò
+                Role = role?.RoleName // Trả về tất cả vai trò
             });
 
 
@@ -165,18 +156,9 @@ namespace BLL.Service
             claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
 
             // Thêm vai trò vào claims
-            if (user.UserRoles != null && user.UserRoles.Any())
-            {
-                foreach (var userRole in user.UserRoles)
-                {
-                    var roleName = userRole.Role?.RoleName ?? "User";
-                    claims.Add(new Claim(JwtConstant.KeyClaim.Role, roleName));
-                }
-            }
-            else
-            {
-                claims.Add(new Claim(JwtConstant.KeyClaim.Role, "User")); // Giá trị mặc định nếu không có vai trò
-            }
+            var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+            claims.Add(new Claim(JwtConstant.KeyClaim.Role, role?.RoleName ?? "User"));
+
 
             // Thêm UserId vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
@@ -211,7 +193,7 @@ namespace BLL.Service
             {
                 NewAccessToken = newAccessToken,
                 RefreshToken = oldRefreshTokenKey,
-                Role = user.UserRoles // Trả về vai trò
+                Role = role?.RoleName
             });
 
         }

@@ -246,88 +246,63 @@ namespace BLL.Service
         }
         public async Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid userId)
         {
-            var user = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
-                u => u.UserId == userId,
-                query => query
-                    .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-            );
+            // Kiểm tra survey response trong tháng
+            var currentMonthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var hasTakenSurvey = await _unitOfWork.SurveyResponse
+                .FindAll(sr => sr.SurveyTakerId == userId && sr.CreateAt >= currentMonthStart)
+                .AnyAsync();
 
-            if (user == null) throw new Exception("User not found.");
-
-
-            if (user.IsSurvey && user.UpdateSurveyAt.HasValue)
-            {
-                var daysSinceLastSurvey = (DateTime.Now - user.UpdateSurveyAt.Value).TotalDays;
-                if (daysSinceLastSurvey >= 30)
-                {
-                    user.IsSurvey = false;
-                    user.UpdateSurveyAt = null;
-                    await _unitOfWork.User.UpdateAsync(user);
-                    await _unitOfWork.SaveChangeAsync();
-                }
-            }
-
-            if (user.IsSurvey) return new SurveyResponseDTO { CanTakeSurvey = false };
-
-
-            var roleNames = user.UserRoles
-                .Where(ur => ur.Role != null)
-                .Select(ur => ur.Role.RoleName.ToLower())
-                .ToList();
-
-
-            var surveyFors = new List<string>();
-            if (roleNames.Contains("student")) surveyFors.Add("student");
-            if (roleNames.Contains("teacher")) surveyFors.Add("teacher");
-            if (roleNames.Contains("parent")) surveyFors.Add("parent");
-
-            if (surveyFors.Count == 0) throw new Exception("User does not have eligible roles.");
-            if (user.IsSurvey)
+            if (hasTakenSurvey)
             {
                 return new SurveyResponseDTO
                 {
                     CanTakeSurvey = false,
-                    Message = "You are done this survey at month"
+                    Message = "Bạn đã hoàn thành survey trong tháng này"
                 };
             }
 
+            // Lấy user với role
+            var user = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
+                u => u.UserId == userId,
+                includes: q => q.Include(u => u.Role));
 
+            if (user?.Role == null) throw new Exception("Không tìm thấy thông tin người dùng");
+
+            // Lấy survey theo role
             var surveys = await _unitOfWork.Survey
-       .FindAll(s => s.IsPublic && surveyFors.Contains(s.SurveyFor.ToLower()))
-       .Include(s => s.Questions)
-       .ThenInclude(q => q.Answers)
-       .ToListAsync();
-
-            // Map sang DTO
-            var surveyDTOs = surveys.Select(s => new SurveyDTO
-            {
-                SurveyId = s.SurveyId,
-                SurveyName = s.SurveyName,
-                Description = s.Description,
-                IsPublic = s.IsPublic,
-                SurveyFor = s.SurveyFor,
-                CreateAt = s.CreateAt,
-                Questions = s.Questions.Select(q => new QuestionDTO
-                {
-                    QuestionID = q.QuestionId,
-                    Content = q.Content,
-                    Answers = q.Answers.Select(a => new AnswerDTO
-                    {
-                        AnswerId = a.AnswerId,
-                        Content = a.Content,
-                        Point = a.Point
-                    }).ToList()
-                }).ToList()
-            }).ToList();
+                .FindAll(s => s.IsPublic &&
+                    s.SurveyFor.Equals(user.Role.RoleName, StringComparison.OrdinalIgnoreCase))
+                .Include(s => s.Questions)
+                .ThenInclude(q => q.Answers)
+                .ToListAsync();
 
             return new SurveyResponseDTO
             {
-                Message = "Please do a survey",
+                Message = "Vui lòng thực hiện khảo sát",
                 CanTakeSurvey = true,
-                Surveys = surveyDTOs
+                Surveys = surveys.Select(s => new SurveyDTO
+                {
+                    SurveyId = s.SurveyId,
+                    SurveyName = s.SurveyName,
+                    Description = s.Description,
+                    IsPublic = s.IsPublic,
+                    SurveyFor = s.SurveyFor,
+                    CreateAt = s.CreateAt,
+                    Questions = s.Questions.Select(q => new QuestionDTO
+                    {
+                        QuestionID = q.QuestionId,
+                        Content = q.Content,
+                        Answers = q.Answers.Select(a => new AnswerDTO
+                        {
+                            AnswerId = a.AnswerId,
+                            Content = a.Content,
+                            Point = a.Point
+                        }).ToList()
+                    }).ToList()
+                }).ToList()
             };
         }
+
         public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(Guid userId, SubmitSurveyRequestDTO request)
         {
            
