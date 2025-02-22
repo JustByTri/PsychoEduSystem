@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SurveyService } from "../../../api/services/surveyService";
-
+import { ToastContainer, toast } from "react-toastify";
 const SurveyList = () => {
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,11 +49,11 @@ const SurveyList = () => {
 
     const success = await SurveyService.importSurvey(data);
     if (success) {
-      alert("Survey imported successfully!");
+      toast.success("Survey imported successfully!");
       setIsModalOpen(false);
       fetchSurveys();
     } else {
-      alert("Failed to import survey.");
+      toast.error("Failed to import survey.");
     }
   };
   const deleteSurvey = (id) => {
@@ -62,6 +62,7 @@ const SurveyList = () => {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen rounded-lg shadow-lg border border-gray-300">
+      <ToastContainer />
       <h1 className="text-2xl font-bold mb-6 text-blue-700">
         Survey Management
       </h1>
@@ -146,25 +147,31 @@ const SurveyList = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4 text-center">
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-md"
+          onClick={() => setIsModalOpen(false)} // Close when clicking outside
+        >
+          <div
+            className="relative bg-gradient-to-br from-white to-gray-100 p-8 rounded-2xl shadow-2xl transform transition-transform hover:scale-[1.02] w-full max-w-lg border border-gray-300"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+          >
+            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-2 rounded-full shadow-md">
               Import Survey
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 font-medium">Title</label>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 font-semibold">Title</label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-gray-700 font-medium">
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 font-semibold">
                   Description
                 </label>
                 <input
@@ -172,44 +179,48 @@ const SurveyList = () => {
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-gray-700 font-medium">
-                  Target
-                </label>
-                <input
-                  type="text"
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 font-semibold">Target</label>
+                <select
                   name="target"
                   value={formData.target}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition bg-white"
                   required
-                />
+                >
+                  <option value="" disabled>
+                    Select Target
+                  </option>
+                  <option value="Student">Student</option>
+                  <option value="Parent">Parent</option>
+                  <option value="Teacher">Teacher</option>
+                </select>
               </div>
-              <div>
-                <label className="block text-gray-700 font-medium">
-                  Upload File
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-700 font-semibold">
+                  Upload File (xlsx)
                 </label>
                 <input
                   type="file"
                   accept=".xlsx"
                   onChange={handleFileChange}
-                  className="w-full px-4 py-2 border rounded-md"
+                  className="w-full px-4 py-3 border rounded-lg shadow-sm bg-gray-50 focus:ring-2 focus:ring-blue-400 focus:outline-none transition cursor-pointer"
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition"
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transform transition-all duration-200 hover:shadow-lg"
               >
                 Import Survey
               </button>
             </form>
             <button
-              className="mt-4 w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              className="mt-6 w-full px-4 py-3 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transform transition-all duration-200 hover:shadow-lg"
               onClick={() => setIsModalOpen(false)}
             >
               Close

@@ -12,7 +12,6 @@ import SurveyResultPage from "./pages/student/SurveyResultPage";
 import BookingPage from "./pages/booking/BookingPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
-import SurveyManagementPage from "./pages/admin/SurveyManagementPage";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
 function App() {
@@ -35,7 +34,6 @@ function App() {
         {/* Admin */}
         <Route path="admin/" element={<AdminPortalLayout />}>
           <Route index element={<AdminDashboard />} />
-          <Route path="survey-management" element={<SurveyManagementPage />} />
           <Route path="survey" element={<SurveyList />} />
           <Route path="survey/:id" element={<SurveyDetail />} />
         </Route>

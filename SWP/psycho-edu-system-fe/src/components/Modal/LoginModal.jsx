@@ -38,6 +38,7 @@ const LoginModal = () => {
       if (response.credential) {
         toast.success("Login success");
         setIsAuthenticated(true);
+        console.log(response.credential);
       } else {
         toast.error("Login failed");
         setIsAuthenticated(false);
