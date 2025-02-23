@@ -1,22 +1,24 @@
 import { useState, useEffect } from "react";
 import Loading from "../../components/Loadings/Loading";
-import data from "../../data/data.json";
 import { useNavigate } from "react-router-dom";
-
+import { SurveyService } from "../../api/services/surveyService";
 const StartUpPage = () => {
   const [isLoading, setLoading] = useState(true);
   const [fetchedData, setFetchedData] = useState(null);
   const navigate = useNavigate();
-
+  const fetchSurvey = async () => {
+    const response = await SurveyService.getSurveyContent(
+      "c2f81325-cf14-4e6c-bda8-54ec317cbdf8"
+    );
+    setFetchedData(response);
+    localStorage.setItem("questions", JSON.stringify(fetchedData));
+  };
   useEffect(() => {
-    setFetchedData(data);
-    if (fetchedData) {
-      localStorage.setItem("questions", JSON.stringify(fetchedData));
-    }
+    fetchSurvey();
     setTimeout(() => {
       setLoading(false);
     }, 2000);
-  }, [fetchedData]);
+  });
 
   if (isLoading) {
     return <Loading />;

@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 const ProgressBar = ({ progressPercentage }) => {
   return (
     <div className="relative pt-1">
