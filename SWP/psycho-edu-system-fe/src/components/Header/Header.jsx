@@ -11,20 +11,37 @@ const Header = () => {
   const navigate = useNavigate();
   const handleLogout = () => {
     Swal.fire({
-      title: "Are you sure",
-      text: "Do you want to log out?",
+      title: "Are you sure?",
+      text: "You will be logged out from your account.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, logout!",
-      cancelButtonText: "No, cancel",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Log Out",
+      cancelButtonText: "No, Stay Logged In",
+      confirmButtonColor: "#E63946",
+      cancelButtonColor: "#3085d6",
       reverseButtons: true,
+      focusCancel: true,
+      customClass: {
+        popup: "rounded-xl shadow-md",
+        title: "text-lg font-semibold",
+        confirmButton: "px-4 py-2 text-sm font-medium",
+        cancelButton: "px-4 py-2 text-sm font-medium",
+      },
     }).then((result) => {
       if (result.isConfirmed) {
+        // Perform logout process
         localStorage.removeItem("isLoggedIn");
-        Swal.fire("You logged out!", "success").then(() => {
-          navigate("/");
+
+        // Show success message with auto-close
+        Swal.fire({
+          title: "Logged Out",
+          text: "You have successfully logged out.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+          willClose: () => {
+            navigate("/");
+          },
         });
       }
     });
