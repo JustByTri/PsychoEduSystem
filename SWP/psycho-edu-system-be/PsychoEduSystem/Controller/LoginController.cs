@@ -42,11 +42,11 @@ namespace PsychoEduSystem.Controller
 				  [HttpPost("signin-google")]
         public async Task<IActionResult> SignInGoogle([FromBody] GoogleAuthTokenDTO googleAuthToken)
         {
-            var result = await _googleAuthService.SignInWithGoogle(googleAuthToken);
+            var result = await _googleAuthService.GoogleSignIn(googleAuthToken);
 
-            if (result)
+            if (result.IsSuccess)
             {
-                return Ok(new { message = "Login successful" });
+                return Ok(result);
             }
             return BadRequest(new { message = "Login failed" });
         }

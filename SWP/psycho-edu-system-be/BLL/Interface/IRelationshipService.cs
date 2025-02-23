@@ -1,4 +1,4 @@
-﻿using Common.DTO;
+﻿using DAL.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace BLL.Interface
 {
-    public interface IGoogleAuthService
+    public interface IRelationshipService
     {
-        Task<ResponseDTO> GoogleSignIn(GoogleAuthTokenDTO googleAuthToken);
+        Task<IEnumerable<Relationship>> GetRelationshipsByParentIdAsync(Guid parentId);
     }
 }

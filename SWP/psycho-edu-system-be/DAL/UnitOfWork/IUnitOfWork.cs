@@ -17,7 +17,7 @@ namespace DAL.UnitOfWork
         IRoleRepository Role { get; }
         ISlotRepository Slot { get; }
         IUserRepository User { get; }
-        IUserRoleRepository UserRole { get; }
+      
         
         IUserTokenRepository UserToken { get; }
 
@@ -28,6 +28,8 @@ namespace DAL.UnitOfWork
         ISurveyRepository Survey { get; }
         ISurveyResponseRepository SurveyResponse { get; }
         ISurveyAnswerUserRepository SurveyAnswerUser { get; }
+        IRelationshipRepository Relationship { get; }
+        IClassRepository Class { get; }
         IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel);
         // Dispose method để giải phóng tài nguyên
         void Dispose();

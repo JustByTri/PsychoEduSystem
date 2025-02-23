@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories
 {
-    public class UserRoleRepository : GenericRepository<UserRole>, IUserRoleRepository
+    public class RelationshipRepository : GenericRepository<Relationship>, IRelationshipRepository
     {
-        public UserRoleRepository(MindAidContext context) : base(context) { }
+        public RelationshipRepository(MindAidContext context) : base(context) { }
     }
 }

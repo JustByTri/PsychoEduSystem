@@ -26,7 +26,7 @@ namespace DAL.UnitOfWork
             Role = new RoleRepository(_context);
             Slot = new SlotRepository(_context);
             User = new UserRepository(_context);
-            UserRole = new UserRoleRepository(_context);
+        
             UserToken = new UserTokenRepository(_context);
             Answer = new AnswerRepository(_context);
             RefreshToken = new RefreshTokenRepository(_context);
@@ -34,6 +34,8 @@ namespace DAL.UnitOfWork
             Survey = new SurveyRepository(_context);
             SurveyResponse = new SurveyResponseRepository(_context);
             SurveyAnswerUser = new SurveyAnswerUserRepository(_context);
+            Relationship = new RelationshipRepository(_context);    
+            Class = new ClassRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
@@ -46,7 +48,7 @@ namespace DAL.UnitOfWork
         public IRoleRepository Role { get; private set; }
         public ISlotRepository Slot { get; private set; }
         public IUserRepository User { get; private set; }
-        public IUserRoleRepository UserRole { get; private set; }
+        
 
         public IUserTokenRepository UserToken { get; private set; }
 
@@ -59,6 +61,8 @@ namespace DAL.UnitOfWork
         public ISurveyRepository Survey { get; private set; }
         public ISurveyResponseRepository SurveyResponse { get; private set; }
         public ISurveyAnswerUserRepository  SurveyAnswerUser { get; private set; }
+        public IRelationshipRepository Relationship { get; private set; }
+        public IClassRepository Class { get; private set; }
         public IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel)
         {
             return _context.Database.BeginTransaction(isolationLevel);

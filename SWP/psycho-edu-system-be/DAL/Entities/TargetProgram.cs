@@ -14,8 +14,7 @@ namespace DAL.Entities
         public Guid ProgramId { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public DateTime StartDate { get; set; }    
         public int MinPoint { get; set; }
         public int Capacity { get; set; }
         public Guid CreateBy { get; set; }
@@ -23,6 +22,9 @@ namespace DAL.Entities
 
         [ForeignKey("CreateBy")]
         public User CreatedByUser { get; set; }
+        [ForeignKey("Demension")]
+        public int DemensionId  { get; set; }
+        public DimensionHealth Demension { get; set; }
     }
 
 }

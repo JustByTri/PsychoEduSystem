@@ -178,6 +178,8 @@ namespace BLL.Service
 
             survey.IsPublic = updateDto.IsPublic;
             survey.SurveyFor = updateDto.SurveyFor;
+            survey.SurveyName = updateDto.Title;
+            survey.Description = updateDto.Description;
             survey.UpdateAt = DateTime.Now;
 
             _unitOfWork.Survey.UpdateAsync(survey);
@@ -246,88 +248,63 @@ namespace BLL.Service
         }
         public async Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid userId)
         {
-            var user = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
-                u => u.UserId == userId,
-                query => query
-                    .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-            );
+            // Kiểm tra survey response trong tháng
+            var currentMonthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var hasTakenSurvey = await _unitOfWork.SurveyResponse
+                .FindAll(sr => sr.SurveyTakerId == userId && sr.CreateAt >= currentMonthStart)
+                .AnyAsync();
 
-            if (user == null) throw new Exception("User not found.");
-
-
-            if (user.IsSurvey && user.UpdateSurveyAt.HasValue)
-            {
-                var daysSinceLastSurvey = (DateTime.Now - user.UpdateSurveyAt.Value).TotalDays;
-                if (daysSinceLastSurvey >= 30)
-                {
-                    user.IsSurvey = false;
-                    user.UpdateSurveyAt = null;
-                    await _unitOfWork.User.UpdateAsync(user);
-                    await _unitOfWork.SaveChangeAsync();
-                }
-            }
-
-            if (user.IsSurvey) return new SurveyResponseDTO { CanTakeSurvey = false };
-
-
-            var roleNames = user.UserRoles
-                .Where(ur => ur.Role != null)
-                .Select(ur => ur.Role.RoleName.ToLower())
-                .ToList();
-
-
-            var surveyFors = new List<string>();
-            if (roleNames.Contains("student")) surveyFors.Add("student");
-            if (roleNames.Contains("teacher")) surveyFors.Add("teacher");
-            if (roleNames.Contains("parent")) surveyFors.Add("parent");
-
-            if (surveyFors.Count == 0) throw new Exception("User does not have eligible roles.");
-            if (user.IsSurvey)
+            if (hasTakenSurvey)
             {
                 return new SurveyResponseDTO
                 {
                     CanTakeSurvey = false,
-                    Message = "You are done this survey at month"
+                    Message = "Bạn đã hoàn thành survey trong tháng này"
                 };
             }
 
+            // Lấy user với role
+            var user = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
+                u => u.UserId == userId,
+                includes: q => q.Include(u => u.Role));
 
+            if (user?.Role == null) throw new Exception("Không tìm thấy thông tin người dùng");
+
+            // Lấy survey theo role
             var surveys = await _unitOfWork.Survey
-       .FindAll(s => s.IsPublic && surveyFors.Contains(s.SurveyFor.ToLower()))
-       .Include(s => s.Questions)
-       .ThenInclude(q => q.Answers)
-       .ToListAsync();
-
-            // Map sang DTO
-            var surveyDTOs = surveys.Select(s => new SurveyDTO
-            {
-                SurveyId = s.SurveyId,
-                SurveyName = s.SurveyName,
-                Description = s.Description,
-                IsPublic = s.IsPublic,
-                SurveyFor = s.SurveyFor,
-                CreateAt = s.CreateAt,
-                Questions = s.Questions.Select(q => new QuestionDTO
-                {
-                    QuestionID = q.QuestionId,
-                    Content = q.Content,
-                    Answers = q.Answers.Select(a => new AnswerDTO
-                    {
-                        AnswerId = a.AnswerId,
-                        Content = a.Content,
-                        Point = a.Point
-                    }).ToList()
-                }).ToList()
-            }).ToList();
+                .FindAll(s => s.IsPublic &&
+                    s.SurveyFor.Equals(user.Role.RoleName, StringComparison.OrdinalIgnoreCase))
+                .Include(s => s.Questions)
+                .ThenInclude(q => q.Answers)
+                .ToListAsync();
 
             return new SurveyResponseDTO
             {
-                Message = "Please do a survey",
+                Message = "Vui lòng thực hiện khảo sát",
                 CanTakeSurvey = true,
-                Surveys = surveyDTOs
+                Surveys = surveys.Select(s => new SurveyDTO
+                {
+                    SurveyId = s.SurveyId,
+                    SurveyName = s.SurveyName,
+                    Description = s.Description,
+                    IsPublic = s.IsPublic,
+                    SurveyFor = s.SurveyFor,
+                    CreateAt = s.CreateAt,
+                    Questions = s.Questions.Select(q => new QuestionDTO
+                    {
+                        QuestionID = q.QuestionId,
+                        Content = q.Content,
+                        Answers = q.Answers.Select(a => new AnswerDTO
+                        {
+                            AnswerId = a.AnswerId,
+                            Content = a.Content,
+                            Point = a.Point
+                        }).ToList()
+                    }).ToList()
+                }).ToList()
             };
         }
+
         public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(Guid userId, SubmitSurveyRequestDTO request)
         {
            
@@ -501,6 +478,131 @@ namespace BLL.Service
                     DimensionName = a.Question?.Dimension?.DimensionName ?? "N/A"
                 }).ToList()
             };
+        }
+        public async Task<SurveyWithQuestionsAndAnswersDTO> AdjustSurveyAsync(Guid surveyId)
+        {
+            
+            var survey = await _unitOfWork.Survey.GetByConditionWithIncludesAsync(
+                s => s.SurveyId == surveyId,
+                s => s.Questions);
+
+            if (survey == null)
+                throw new Exception("Survey không tồn tại.");
+
+            
+            var questionIds = survey.Questions.Select(q => q.QuestionId).ToList();
+            var answers = await _unitOfWork.Answer.FindAll(a => questionIds.Contains(a.QuestionId)).ToListAsync();
+
+          
+            var categoryIds = survey.Questions.Select(q => q.DimensionId).Distinct().ToList();
+            var categories = await _unitOfWork.DimensionHealth.FindAll(c => categoryIds.Contains(c.DimensionId)).ToListAsync();
+
+       
+            foreach (var question in survey.Questions)
+            {
+                question.Answers = answers.Where(a => a.QuestionId == question.QuestionId).ToList();
+            }
+
+            // Trả về thông tin survey dưới dạng DTO
+            return new SurveyWithQuestionsAndAnswersDTO
+            {
+                SurveyId = survey.SurveyId,
+                Title = survey.SurveyName,
+                Description = survey.Description,
+                IsPublic = survey.IsPublic,
+                Target = survey.SurveyFor,
+                CreateAt = survey.CreateAt,
+                UpdateAt = survey.UpdateAt,
+                Questions = survey.Questions.Select(q => new QuestionWithAnswersDTO
+                {
+                    QuestionId = q.QuestionId,
+                    Content = q.Content,
+                    CategoryId = q.DimensionId, 
+                    CategoryName = categories.FirstOrDefault(c => c.DimensionId == q.DimensionId)?.DimensionName,
+                    Answers = q.Answers.Select(a => new AnswerDTO
+                    {
+                        AnswerId = a.AnswerId,
+                        Content = a.Content,
+                        Point = a.Point
+                    }).ToList()
+                }).ToList()
+            };
+        }
+        public async Task<ResponseDTO> UpdateSurveyWithValidationAsync(Guid surveyId, SurveyWithQuestionsAndAnswersDTO updatedSurvey)
+        {
+          
+            var survey = await _unitOfWork.Survey.GetByIdAsync(surveyId);
+            if (survey == null)
+                return new ResponseDTO("Survey không tồn tại.", 404, false);
+
+           
+            if (updatedSurvey.Questions.Count != 21)
+                return new ResponseDTO("Survey phải có đúng 21 câu hỏi.", 400, false);
+
+           
+            foreach (var question in updatedSurvey.Questions)
+            {
+                if (string.IsNullOrWhiteSpace(question.Content))
+                    return new ResponseDTO("Câu hỏi không được trống.", 400, false);
+
+                if (question.Answers == null || question.Answers.Count == 0)
+                    return new ResponseDTO("Mỗi câu hỏi phải có ít nhất một câu trả lời.", 400, false);
+
+                foreach (var answer in question.Answers)
+                {
+                    if (string.IsNullOrWhiteSpace(answer.Content))
+                        return new ResponseDTO("Câu trả lời không được trống.", 400, false);
+                }
+            }
+
+        
+            survey.SurveyName = updatedSurvey.Title;
+            survey.Description = updatedSurvey.Description;
+            survey.IsPublic = updatedSurvey.IsPublic;
+            survey.SurveyFor = updatedSurvey.Target;
+            survey.UpdateAt = DateTime.Now;
+
+         
+            var existingQuestions = await _unitOfWork.Question.FindAll(q => q.SurveyId == surveyId).ToListAsync();
+            foreach (var question in existingQuestions)
+            {
+                var existingAnswers = await _unitOfWork.Answer.FindAll(a => a.QuestionId == question.QuestionId).ToListAsync();
+          await      _unitOfWork.Answer.DeleteRangeAsync(existingAnswers);
+            }
+          await  _unitOfWork.Question.DeleteRangeAsync(existingQuestions);
+
+        
+            foreach (var questionDto in updatedSurvey.Questions)
+            {
+                var question = new Question
+                {
+                    QuestionId = Guid.NewGuid(),
+                    DimensionId = questionDto.CategoryId,
+                    Content = questionDto.Content,
+                    SurveyId = surveyId,
+                    CreateAt = DateTime.Now
+                    
+                };
+                await _unitOfWork.Question.AddAsync(question);
+
+                foreach (var answerDto in questionDto.Answers)
+                {
+                    var answer = new Answer
+                    {
+                        AnswerId = Guid.NewGuid(),
+                        Content = answerDto.Content,
+                        Point = answerDto.Point,
+                        QuestionId = question.QuestionId,
+                        CreateAt = DateTime.Now
+                    };
+                    await _unitOfWork.Answer.AddAsync(answer);
+                }
+            }
+
+         
+            await _unitOfWork.SaveChangeAsync();
+
+            return new ResponseDTO("Cập nhật survey thành công.", 200, true);
         }
     }
 }

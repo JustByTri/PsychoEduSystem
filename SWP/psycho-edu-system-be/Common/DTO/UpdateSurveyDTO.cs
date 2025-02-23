@@ -10,6 +10,8 @@ namespace Common.DTO
     {
         public bool IsPublic { get; set; }
         public string SurveyFor { get; set; }
+        public string Title { get; set; }
+        public string Description {get; set; }
     }
 
 }

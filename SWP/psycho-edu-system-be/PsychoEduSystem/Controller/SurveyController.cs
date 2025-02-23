@@ -98,5 +98,39 @@ namespace PsychoEduSystem.Controller
                 return BadRequest(ex.Message);
             }
         }
+        [HttpGet("adjust/{surveyId}")]
+        public async Task<IActionResult> AdjustSurvey(Guid surveyId)
+        {
+            try
+            {
+                var survey = await _surveyService.AdjustSurveyAsync(surveyId);
+                if (survey == null)
+                    return NotFound("Survey không tồn tại.");
+
+                return Ok(survey);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi: {ex.Message}");
+            }
+        }
+
+        // Endpoint để cập nhật survey với validation
+        [HttpPut("update/{surveyId}")]
+        public async Task<IActionResult> UpdateSurvey(Guid surveyId, [FromBody] SurveyWithQuestionsAndAnswersDTO updatedSurvey)
+        {
+            try
+            {
+                var result = await _surveyService.UpdateSurveyWithValidationAsync(surveyId, updatedSurvey);
+                if (!result.IsSuccess)
+                    return BadRequest(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi: {ex.Message}");
+            }
+        }
     }
 }
