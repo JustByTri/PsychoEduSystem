@@ -5,7 +5,7 @@ import "./App.css";
 import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
 import NotFoundPage from "./pages/error/NotFoundPage";
-import ProgramCoursePage from "./pages/student/CoursePage";
+import ProgramCoursePage from "./pages/student/ProgramPage";
 import PortalLayout from "./components/Layouts/PortalLayout";
 import Dashboard from "./pages/student/Dashboard";
 import StartUpPage from "./pages/student/StartUpPage";

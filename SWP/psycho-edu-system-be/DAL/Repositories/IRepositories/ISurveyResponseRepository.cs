@@ -1,14 +1,14 @@
-﻿using DAL.Entities;
-using DAL.Repositories.IRepositories;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DAL.Entities;
 
 namespace DAL.Repositories.IRepositories
 {
-    public interface IUserRoleRepository : IGenericRepository<UserRole>
+    public interface ISurveyResponseRepository : IGenericRepository<SurveyResponse>
     {
+     
     }
 }

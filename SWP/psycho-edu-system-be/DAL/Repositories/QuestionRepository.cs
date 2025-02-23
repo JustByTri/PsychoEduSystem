@@ -13,6 +13,11 @@ namespace DAL.Repositories
     public class QuestionRepository : GenericRepository<Question>, IQuestionRepository
     {
         public QuestionRepository(MindAidContext context) : base(context) { }
+        public async Task DeleteRangeAsync(IEnumerable<Question> entities)
+        {
+            _dbSet.RemoveRange(entities);
+            await _context.SaveChangesAsync();
+        }
     }
 }
 

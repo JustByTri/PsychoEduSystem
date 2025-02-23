@@ -34,6 +34,103 @@ namespace PsychoEduSystem.Controller
 
             return Ok(result);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateSurvey(Guid id, [FromBody] UpdateSurveyDTO updateDto)
+        {
+            var result = await _surveyService.UpdateSurveyAsync(id, updateDto);
+            if (!result)
+                return NotFound();
+            return NoContent();
+        }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllSurveys()
+        {
+            var surveys = await _surveyService.GetAllSurveysAsync();
+            return Ok(surveys);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetSurveyById(Guid id)
+        {
+            var survey = await _surveyService.GetSurveyByIdAsync(id);
+            if (survey == null)
+                return NotFound();
+            return Ok(survey);
+        }
+
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetSurveyByUserId(Guid userId)
+        {
+            try
+            {
+                var result = await _surveyService.GetSurveyByUserIdAsync(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpPost("submit/{userId}")]
+        public async Task<IActionResult> SubmitSurvey(Guid userId, [FromBody] SubmitSurveyRequestDTO request)
+        {
+            try
+            {
+                var result = await _surveyService.SubmitSurveyAsync(userId, request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpGet("user/{userId}/survey/{surveyId}/answers")]
+        public async Task<IActionResult> GetUserSurveyAnswers(Guid userId, Guid surveyId)
+        {
+            try
+            {
+                var result = await _surveyService.GetUserSurveyAnswersAsync(userId, surveyId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpGet("adjust/{surveyId}")]
+        public async Task<IActionResult> AdjustSurvey(Guid surveyId)
+        {
+            try
+            {
+                var survey = await _surveyService.AdjustSurveyAsync(surveyId);
+                if (survey == null)
+                    return NotFound("Survey không tồn tại.");
+
+                return Ok(survey);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi: {ex.Message}");
+            }
+        }
+
+        // Endpoint để cập nhật survey với validation
+        [HttpPut("update/{surveyId}")]
+        public async Task<IActionResult> UpdateSurvey(Guid surveyId, [FromBody] SurveyWithQuestionsAndAnswersDTO updatedSurvey)
+        {
+            try
+            {
+                var result = await _surveyService.UpdateSurveyWithValidationAsync(surveyId, updatedSurvey);
+                if (!result.IsSuccess)
+                    return BadRequest(result.Message);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi: {ex.Message}");
+            }
+        }
     }
 }

@@ -9,6 +9,6 @@ namespace BLL.Interface
 {
     public interface IGoogleAuthService
     {
-        Task<bool> SignInWithGoogle(GoogleAuthTokenDTO googleAuthToken);
+        Task<ResponseDTO> GoogleSignIn(GoogleAuthTokenDTO googleAuthToken);
     }
 }

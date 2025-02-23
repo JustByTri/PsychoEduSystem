@@ -9,6 +9,6 @@ namespace DAL.Repositories.IRepositories
 {
     public interface IQuestionRepository : IGenericRepository<Question>
     {
-     
+        Task DeleteRangeAsync(IEnumerable<Question> entities);
     }
 }

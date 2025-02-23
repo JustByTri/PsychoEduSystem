@@ -1,5 +1,4 @@
 ﻿using DAL.Entities;
-using DAL.Repositories.IRepositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories.IRepositories
 {
-    public interface IMentalHealthPointRepository : IGenericRepository<MentalHealthPoint>
+    public interface IClassRepository : IGenericRepository<Class>
     {
     }
 }

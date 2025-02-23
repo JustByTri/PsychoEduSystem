@@ -18,10 +18,10 @@ namespace DAL.Entities
         public DateTime? UpdateTime     { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
-  public virtual ICollection<Answer> Answers { get; set;}
+    public virtual ICollection<Answer> Answers { get; set;}
         public virtual Survey Survey { get; set; }
         public Guid SurveyId { get; set; }
-        public Category Category { get; set; }
-        public int CategoryId { get; set; }    
+        public DimensionHealth Dimension { get; set; }
+        public int DimensionId { get; set; }
     }
 }
