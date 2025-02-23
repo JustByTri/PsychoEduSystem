@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { SurveyService } from "../../../api/services/surveyService";
-
+import { ToastContainer, toast } from "react-toastify";
 const SurveyDetail = () => {
   const { id } = useParams();
   const [survey, setSurvey] = useState(null);
@@ -10,12 +10,15 @@ const SurveyDetail = () => {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editedAnswers, setEditedAnswers] = useState({});
+  const [editedQuestionContent, setEditedQuestionContent] = useState("");
+  const [editedSurvey, setEditedSurvey] = useState(null);
 
   useEffect(() => {
     async function fetchSurvey() {
       const data = await SurveyService.getSurveyContent(id);
       if (data) {
         setSurvey(data);
+        setEditedSurvey(data);
       }
     }
     fetchSurvey();
@@ -29,6 +32,7 @@ const SurveyDetail = () => {
         return acc;
       }, {})
     );
+    setEditedQuestionContent(question.content);
     setIsModalOpen(true);
   };
 
@@ -36,24 +40,39 @@ const SurveyDetail = () => {
     setEditedAnswers({ ...editedAnswers, [answerId]: newContent });
   };
 
-  const saveAnswers = async () => {
+  const saveAnswers = () => {
+    if (!selectedQuestion) return;
+
     const updatedAnswers = selectedQuestion.answers.map((answer) => ({
       ...answer,
       content: editedAnswers[answer.answerId],
     }));
 
-    await SurveyService.updateAnswers(updatedAnswers);
+    const updatedQuestions = editedSurvey.questions.map((q) =>
+      q.questionId === selectedQuestion.questionId
+        ? { ...q, content: editedQuestionContent, answers: updatedAnswers }
+        : q
+    );
 
-    setSurvey((prevSurvey) => {
-      const updatedQuestions = prevSurvey.questions.map((q) =>
-        q.questionId === selectedQuestion.questionId
-          ? { ...q, answers: updatedAnswers }
-          : q
-      );
-      return { ...prevSurvey, questions: updatedQuestions };
-    });
+    setEditedSurvey({ ...editedSurvey, questions: updatedQuestions });
 
     setIsModalOpen(false);
+  };
+
+  const handleSaveSurvey = async () => {
+    try {
+      const updatedSurvey = {
+        ...editedSurvey,
+        updateAt: new Date().toISOString(),
+        createAt: survey.createAt,
+      };
+
+      console.log("Final JSON Data:", JSON.stringify(updatedSurvey, null, 2));
+      await SurveyService.updateSurvey(id, updatedSurvey);
+      toast.success("Survey updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update survey. Check console for details.", error);
+    }
   };
 
   if (!survey) {
@@ -63,13 +82,14 @@ const SurveyDetail = () => {
   }
 
   const totalPages = Math.ceil(survey.questions.length / questionsPerPage);
-  const currentQuestions = survey.questions.slice(
+  const currentQuestions = editedSurvey.questions.slice(
     (currentPage - 1) * questionsPerPage,
     currentPage * questionsPerPage
   );
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-gradient-to-br from-white to-gray-100 shadow-2xl rounded-xl transform transition-all duration-300 hover:shadow-3xl">
+    <div className="p-6 max-w-2xl mx-auto bg-gradient-to-br from-white to-gray-100 shadow-2xl rounded-xl">
+      <ToastContainer />
       <h1 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">
         📝 Edit Survey
       </h1>
@@ -80,7 +100,7 @@ const SurveyDetail = () => {
         {currentQuestions.map((question) => (
           <div
             key={question.questionId}
-            className="border border-gray-300 bg-white shadow-lg rounded-lg p-4 hover:shadow-2xl transition-all transform hover:-translate-y-1"
+            className="border border-gray-300 bg-white shadow-lg rounded-lg p-4 hover:shadow-2xl"
           >
             <p
               className="cursor-pointer text-blue-600 hover:underline font-medium"
@@ -97,7 +117,7 @@ const SurveyDetail = () => {
         <button
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
-          className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 shadow-lg"
         >
           ◀ Previous
         </button>
@@ -109,38 +129,54 @@ const SurveyDetail = () => {
             setCurrentPage((prev) => Math.min(prev + 1, totalPages))
           }
           disabled={currentPage === totalPages}
-          className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 shadow-lg"
         >
           Next ▶
+        </button>
+      </div>
+
+      {/* Save Survey Button */}
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={handleSaveSurvey}
+          className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md transition-all"
+        >
+          Save Survey
         </button>
       </div>
 
       {/* Answer Modal */}
       {isModalOpen && selectedQuestion && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50"
+          className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 p-4"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="bg-white p-6 rounded-2xl shadow-2xl transform transition-all scale-105 max-w-lg border border-gray-200 relative"
+            className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg border relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-3 w-5 h-5 flex items-center justify-center shadow-lg transition-transform transform hover:scale-110"
+              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 w-8 h-8 flex items-center justify-center text-sm"
             >
               ✖
             </button>
 
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-              {selectedQuestion.content}
+            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+              <input
+                type="text"
+                value={editedQuestionContent}
+                onChange={(e) => setEditedQuestionContent(e.target.value)}
+                className="border px-3 py-2 rounded-lg w-full shadow-inner"
+              />
             </h2>
-            <ul className="space-y-3">
+
+            <ul className="space-y-3 max-h-80 overflow-y-auto">
               {selectedQuestion.answers.length > 0 ? (
                 selectedQuestion.answers.map((answer) => (
                   <li
                     key={answer.answerId}
-                    className="border border-gray-300 bg-gray-100 p-3 rounded-lg shadow-sm flex items-center justify-between"
+                    className="border border-gray-300 bg-gray-100 p-3 rounded-lg flex items-center justify-between"
                   >
                     <input
                       type="text"
@@ -161,18 +197,19 @@ const SurveyDetail = () => {
                 </p>
               )}
             </ul>
+
             <div className="mt-6 flex justify-between">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 shadow-md transition-all"
+                className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
               >
                 Cancel
               </button>
               <button
                 onClick={saveAnswers}
-                className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow-md transition-all"
+                className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
-                Save
+                Save Answers
               </button>
             </div>
           </div>

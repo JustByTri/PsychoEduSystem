@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SurveyService } from "../../../api/services/surveyService";
@@ -17,8 +18,27 @@ const SurveyList = () => {
   const fetchSurveys = async () => {
     setLoading(true);
     const data = await SurveyService.getSurveys();
-    setSurveys(data);
+    setSurveys(data.map((survey) => ({ ...survey, isEditing: false })));
     setLoading(false);
+  };
+  const handleChangeSurvey = (id, field, value) => {
+    setSurveys((prevSurveys) =>
+      prevSurveys.map((survey) =>
+        survey.surveyId === id ? { ...survey, [field]: value } : survey
+      )
+    );
+  };
+  const handleSaveSurvey = async (surveyId) => {
+    const surveyToUpdate = surveys.find((s) => s.surveyId === surveyId);
+    if (!surveyToUpdate) return;
+
+    try {
+      await SurveyService.updateSurveyProperty(surveyId, surveyToUpdate);
+      toast.success("Survey updated successfully!");
+      fetchSurveys();
+    } catch (error) {
+      toast.error("Failed to update survey.");
+    }
   };
 
   useEffect(() => {
@@ -75,73 +95,117 @@ const SurveyList = () => {
       {loading ? (
         <p className="text-center text-gray-600">Loading surveys...</p>
       ) : surveys.length > 0 ? (
-        <table className="w-full border text-left bg-white shadow-md rounded-lg overflow-hidden">
-          <thead className="bg-gradient-to-r from-blue-400 to-blue-600 text-white">
-            <tr>
-              <th className="border p-3">Survey Name</th>
-              <th className="border p-3">Description</th>
-              <th className="border p-3">Public</th>
-              <th className="border p-3">Target</th>
-              <th className="border p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {surveys.map((survey) => (
-              <tr
-                key={survey.surveyId}
-                className="hover:bg-gray-100 transition duration-200"
-              >
-                <td className="border p-3">
-                  <input
-                    type="text"
-                    value={survey.surveyName}
-                    className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
-                  />
-                </td>
-                <td className="border p-3">
-                  <input
-                    type="text"
-                    value={survey.description}
-                    className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
-                  />
-                </td>
-                <td className="border p-3">
-                  <select
-                    value={survey.isPublic ? "true" : "false"}
-                    className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
-                  >
-                    <option value="true">True</option>
-                    <option value="false">False</option>
-                  </select>
-                </td>
-                <td className="border p-3">
-                  <select
-                    value={survey.target}
-                    className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
-                  >
-                    <option value="Student">Student</option>
-                    <option value="Parent">Parent</option>
-                    <option value="Teacher">Teacher</option>
-                  </select>
-                </td>
-                <td className="border p-3 flex justify-center space-x-4">
-                  <button
-                    onClick={() => navigate(`/admin/survey/${survey.surveyId}`)}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow-lg transition duration-300 ease-in-out"
-                  >
-                    View
-                  </button>
-                  <button
-                    onClick={() => deleteSurvey(survey.surveyId)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full shadow-lg transition duration-300 ease-in-out"
-                  >
-                    Delete
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border text-left bg-white shadow-md rounded-lg">
+            <thead className="bg-gradient-to-r from-blue-400 to-blue-600 text-white">
+              <tr>
+                <th className="border p-3">Survey Name</th>
+                <th className="border p-3">Description</th>
+                <th className="border p-3">Public</th>
+                <th className="border p-3">Target</th>
+                <th className="border p-3">Create At</th>
+                <th className="border p-3">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {surveys.map((survey) => (
+                <tr
+                  key={survey.surveyId}
+                  className="hover:bg-gray-100 transition duration-200"
+                >
+                  <td className="border p-3">
+                    <input
+                      type="text"
+                      value={survey.surveyName}
+                      onChange={(e) =>
+                        handleChangeSurvey(
+                          survey.surveyId,
+                          "surveyName",
+                          e.target.value
+                        )
+                      }
+                      className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+                    />
+                  </td>
+                  <td className="border p-3">
+                    <input
+                      type="text"
+                      value={survey.description}
+                      onChange={(e) =>
+                        handleChangeSurvey(
+                          survey.surveyId,
+                          "description",
+                          e.target.value
+                        )
+                      }
+                      className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+                    />
+                  </td>
+                  <td className="border p-3">
+                    <select
+                      value={survey.isPublic.toString()}
+                      onChange={(e) =>
+                        handleChangeSurvey(
+                          survey.surveyId,
+                          "isPublic",
+                          e.target.value === "true"
+                        )
+                      }
+                      className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+                    >
+                      <option value="true">True</option>
+                      <option value="false">False</option>
+                    </select>
+                  </td>
+                  <td className="border p-3">
+                    <select
+                      value={survey.surveyFor}
+                      onChange={(e) =>
+                        handleChangeSurvey(
+                          survey.surveyId,
+                          "surveyFor",
+                          e.target.value
+                        )
+                      }
+                      className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+                    >
+                      <option value="Student">Student</option>
+                      <option value="Parent">Parent</option>
+                      <option value="Teacher">Teacher</option>
+                    </select>
+                  </td>
+                  <td className="border p-3">
+                    <span>
+                      {new Date(survey.createAt).toLocaleDateString("en-GB")}
+                    </span>
+                  </td>
+                  <td className="border p-3 flex justify-center space-x-4">
+                    <button
+                      onClick={() =>
+                        navigate(`/admin/survey/${survey.surveyId}`)
+                      }
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow-lg transition duration-300 ease-in-out"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleSaveSurvey(survey.surveyId)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-full shadow-lg transition duration-300 ease-in-out"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => deleteSurvey(survey.surveyId)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full shadow-lg transition duration-300 ease-in-out"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <p className="text-center text-gray-600">No surveys available.</p>
       )}
