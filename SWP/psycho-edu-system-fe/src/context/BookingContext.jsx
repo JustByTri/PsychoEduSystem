@@ -1,42 +1,80 @@
+// context/BookingContext.js
 import { createContext, useContext, useState } from "react";
 
 const BookingContext = createContext();
 
-export const BookingProvider = ({ children }) => {
-  const [role, setRole] = useState(null);
-  const [selectedConsultant, setSelectedConsultant] = useState(null);
-  const [selectedChild, setSelectedChild] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
-  const [appointmentType, setAppointmentType] = useState(null);
-  const [userInfo, setUserInfo] = useState({ name: "", phone: "", email: "" });
+export const useBooking = () => {
+  return useContext(BookingContext);
+};
 
-  const value = {
-    role,
-    setRole,
-    selectedConsultant,
-    setSelectedConsultant,
-    selectedChild,
-    setSelectedChild,
-    selectedDate,
-    setSelectedDate,
-    selectedTime,
-    setSelectedTime,
-    appointmentType,
-    setAppointmentType,
-    userInfo,
-    setUserInfo,
+export const BookingProvider = ({ children }) => {
+  const [bookingData, setBookingData] = useState({
+    // User info
+    userId: "",
+    userName: "",
+    userRole: "",
+
+    // Child info (for parents)
+    childId: "",
+    childName: "",
+
+    // Consultant info
+    consultantType: "", // "counselor" or "homeroom"
+    consultantId: "",
+    consultantName: "",
+    isHomeroomTeacher: false,
+
+    // Booking details
+    date: "",
+    time: "",
+    duration: 30, // default duration in minutes
+
+    // Additional info
+    reasonForBooking: "",
+    additionalNotes: "",
+
+    // Contact info (for confirmation)
+    email: "",
+    phone: "",
+  });
+
+  const updateBookingData = (newData) => {
+    setBookingData((prev) => ({
+      ...prev,
+      ...newData,
+    }));
+  };
+
+  const resetBookingData = () => {
+    setBookingData({
+      userId: "",
+      userName: "",
+      userRole: "",
+      childId: "",
+      childName: "",
+      consultantType: "",
+      consultantId: "",
+      consultantName: "",
+      isHomeroomTeacher: false,
+      date: "",
+      time: "",
+      duration: 30,
+      reasonForBooking: "",
+      additionalNotes: "",
+      email: "",
+      phone: "",
+    });
   };
 
   return (
-    <BookingContext.Provider value={value}>{children}</BookingContext.Provider>
+    <BookingContext.Provider
+      value={{
+        bookingData,
+        updateBookingData,
+        resetBookingData,
+      }}
+    >
+      {children}
+    </BookingContext.Provider>
   );
-};
-
-export const useBooking = () => {
-  const context = useContext(BookingContext);
-  if (!context) {
-    throw new Error("useBooking must be used within a BookingProvider");
-  }
-  return context;
 };

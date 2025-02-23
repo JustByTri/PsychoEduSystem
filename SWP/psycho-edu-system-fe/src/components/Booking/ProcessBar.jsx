@@ -1,13 +1,7 @@
 import { FaCheckCircle } from "react-icons/fa";
 
 export const ProgressBar = ({ currentStep }) => {
-  const steps = [
-    "Select Role",
-    "Select Date & Time",
-    "Select Consultant",
-    "Your Info",
-    "Confirm",
-  ];
+  const steps = ["Consultant", "Date&Time", "Your Info", "Confirm Step"];
 
   return (
     <div className="mb-8">
