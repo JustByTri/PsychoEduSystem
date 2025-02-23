@@ -2,10 +2,12 @@ import LogoHeader from "../../assets/logo-header.png";
 import Avatar from "../../assets/avatar.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import AuthContext from "../../context/auth/AuthContext";
 const Header = () => {
+  const { logout } = useContext(AuthContext) || {};
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
   const navigate = useNavigate();
@@ -29,9 +31,7 @@ const Header = () => {
       },
     }).then((result) => {
       if (result.isConfirmed) {
-        // Perform logout process
-        localStorage.removeItem("isLoggedIn");
-
+        logout();
         // Show success message with auto-close
         Swal.fire({
           title: "Logged Out",
