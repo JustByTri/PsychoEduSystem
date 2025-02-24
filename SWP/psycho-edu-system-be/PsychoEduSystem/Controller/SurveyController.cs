@@ -73,12 +73,12 @@ namespace PsychoEduSystem.Controller
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPost("submit/{userId}")]
-        public async Task<IActionResult> SubmitSurvey(Guid userId, [FromBody] SubmitSurveyRequestDTO request)
+        [HttpPost("submit")]
+        public async Task<IActionResult> SubmitSurvey( [FromBody] SubmitSurveyRequestDTO request)
         {
             try
             {
-                var result = await _surveyService.SubmitSurveyAsync(userId, request);
+                var result = await _surveyService.SubmitSurveyAsync( request);
                 return Ok(result);
             }
             catch (Exception ex)

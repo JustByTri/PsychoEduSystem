@@ -322,7 +322,7 @@ using System.Text;
             };
         }
 
-        public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(Guid userId, SubmitSurveyRequestDTO request)
+        public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync( SubmitSurveyRequestDTO request)
             {
            
                 var healthPoints = 0;
@@ -341,16 +341,22 @@ using System.Text;
                             throw new Exception("Survey is not public");
 
                   
-                        var user = await _unitOfWork.User.GetByIdAsync(userId);
-                        if (user == null)
-                            throw new Exception("User not found");
+                     
+                    var surveyTaker = await _unitOfWork.User.GetByIdAsync(request.SurveyTakerId);
+                    if (surveyTaker == null)
+                        throw new Exception("SurveyTaker not found");
 
-               
-                        surveyResponse = new SurveyResponse
+                    // Kiểm tra người được khảo sát (SurveyTarget)
+                    var surveyTarget = await _unitOfWork.User.GetByIdAsync(request.SurveyTargetId);
+                    if (surveyTarget == null)
+                        throw new Exception("SurveyTarget not found");
+
+
+                    surveyResponse = new SurveyResponse
                         {
                             SurveyResponseId = Guid.NewGuid(),
-                            SurveyTakerId = userId,
-                            SurveyTargetId = userId,
+                            SurveyTakerId = request.SurveyTakerId,
+                            SurveyTargetId = request.SurveyTargetId,
                             HealthPoints = 0, 
                             CreateAt = DateTime.Now,
                             SurveyId = request.SurveyId
@@ -393,7 +399,7 @@ using System.Text;
                             var surveyAnswerUser = new SurveyAnswerUser
                             {
                                 SurveyAnswerUserId = Guid.NewGuid(),
-                                UserId = userId,
+                                UserId = request.SurveyTargetId,
                                 SurveyId = request.SurveyId,
                                 SurveyResponseId = surveyResponse.SurveyResponseId, 
                                 QuestionId = question.QuestionId,
