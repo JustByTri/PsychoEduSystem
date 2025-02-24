@@ -609,17 +609,18 @@ using System.Text;
 
                 return new ResponseDTO("Cập nhật survey thành công.", 200, true);
             }
-        public async Task<List<SurveyResultDTO>> GetSurveyResults(SurveyResultFilterDTO filter)
+        public async Task<List<SurveyResultDTO>> GetSurveyResults(Guid userId, SurveyResultFilterDTO filter)
         {
-            var currentUserId = GetUserIdFromToken();
+
             var currentUser = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
-       u => u.UserId == currentUserId,
-       includes: q => q.Include(u => u.Role));
+         u => u.UserId == userId,
+         includes: q => q.Include(u => u.Role));
 
             if (currentUser?.Role == null)
             {
                 throw new UnauthorizedAccessException("Invalid user role");
             }
+
             var results = new List<SurveyResultDTO>();
 
             // Base query

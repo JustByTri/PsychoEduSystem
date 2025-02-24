@@ -61,43 +61,26 @@ namespace MIndAid
             builder.Services.AddScoped<IJwtProvider,JwtProvider>();
             builder.Services.AddScoped<IClassService, ClassService>();
             builder.Services.AddScoped<IRelationshipService, RelationshipService>();
-            // Cấu hình Swagger
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
                 c.OperationFilter<SecurityRequirementsOperationFilter>();
-                // Thêm security definition
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+  
+                c.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
                 {
                     Description =
         "JWT Authorization header using the Bearer scheme. \r\n\r\n " +
         "Enter 'Bearer' [space] and then your token in the text input below. \r\n\r\n" +
         "Example: \"Bearer 12345abcdef\"",
-                    Name = "Authorization",
+                    Name = "authorization",
                     In = ParameterLocation.Header,
-                    Scheme = "Bearer",
+                    Scheme = "bearer",
                     Type = SecuritySchemeType.ApiKey
                 });
 
-                // Thêm security requirement
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement
-{
-    {
-        new OpenApiSecurityScheme
-        {
-            Reference = new OpenApiReference
-            {
-                Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
-            },
-            Scheme = "oauth2",
-            Name = "Bearer",
-            In = ParameterLocation.Header,
-        },
-        new List<string>()
-    }
-});
+      
             });
 
 
@@ -121,7 +104,7 @@ namespace MIndAid
                     policy.RequireRole("Student", "Parent", "Teacher", "Psychologist")
                           .RequireAuthenticatedUser());
             });
-
+            builder.Logging.AddConsole();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -130,11 +113,6 @@ namespace MIndAid
                 app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-                    c.OAuthConfigObject = new OAuthConfigObject
-                    {
-                        ClientId = "swagger-ui",
-                        AppName = "Swagger UI",
-                    };
                 });
                 app.UseSwagger();
             }
