@@ -18,9 +18,31 @@ const mockDimensions = [
   { id: 5, name: "Personal Growth" },
 ];
 
+// Move mockPrograms before the component
+const mockPrograms = [
+  {
+    id: 1,
+    name: "Academic Excellence Program",
+    startDate: "2024-03-01",
+    minimumScore: 70,
+    participantLimit: 30,
+    counselorName: "Dr. Sarah Johnson",
+    dimensionName: "Academic Performance",
+  },
+  {
+    id: 2,
+    name: "Stress Management Workshop",
+    startDate: "2024-03-15",
+    minimumScore: 60,
+    participantLimit: 25,
+    counselorName: "Dr. Emily Parker",
+    dimensionName: "Mental Health",
+  },
+];
+
 const ProgramList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [programs, setPrograms] = useState([]);
+  const [programs, setPrograms] = useState(mockPrograms);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -30,35 +52,57 @@ const ProgramList = () => {
     counselorId: "",
     dimensionId: "",
   });
+  const getCurrentDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Validation for minimum score
+    if (name === 'minimumScore') {
+      const score = parseInt(value);
+      if (score < 0) return;
+      if (score > 100) return;
+    }
+  
+    // Validation for program name
+    if (name === 'name' && value.length > 150) return;
+  
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     // Add API call here
+    const newProgram = {
+      id: programs.length + 1,
+      name: formData.name,
+      startDate: formData.startDate,
+      minimumScore: formData.minimumScore,
+      participantLimit: formData.participantLimit,
+      counselorName: mockCounselors.find(c => c.id === parseInt(formData.counselorId))?.name || '',
+      dimensionName: mockDimensions.find(d => d.id === parseInt(formData.dimensionId))?.name || '',
+    };
+    
+    setPrograms([...programs, newProgram]);
     toast.success("Program created successfully!");
     setIsModalOpen(false);
+    setFormData({
+      name: "",
+      description: "",
+      startDate: "",
+      minimumScore: 0,
+      participantLimit: 0,
+      counselorId: "",
+      dimensionId: "",
+    });
   };
-  // Add some mock programs data
-  const mockPrograms = [
-    {
-      id: 1,
-      name: "Academic Excellence Program",
-      startDate: "2024-03-01",
-      minimumScore: 70,
-      participantLimit: 30,
-      counselorName: "Dr. Sarah Johnson",
-      dimensionName: "Academic Performance",
-    },
-    {
-      id: 2,
-      name: "Stress Management Workshop",
-      startDate: "2024-03-15",
-      minimumScore: 60,
-      participantLimit: 25,
-      counselorName: "Dr. Emily Parker",
-      dimensionName: "Mental Health",
-    },
-  ];
-  // Update your form section to include the mock data in selects
+
   return (
     <div className="p-8 text-white">
       <ToastContainer />
@@ -128,14 +172,25 @@ const ProgramList = () => {
                   <label className="block mb-1">Program Name</label>
                   <input
                     type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    maxLength={150}
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg"
                     required
                   />
+                  <span className="text-xs text-gray-400">
+                    {formData.name.length}/150 characters
+                  </span>
                 </div>
                 <div>
                   <label className="block mb-1">Start Date</label>
                   <input
                     type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleInputChange}
+                    min={getCurrentDate()}
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg"
                     required
                   />
@@ -144,26 +199,36 @@ const ProgramList = () => {
                   <label className="block mb-1">Minimum Score</label>
                   <input
                     type="number"
+                    name="minimumScore"
+                    value={formData.minimumScore}
+                    onChange={handleInputChange}
+                    min="0"
+                    max="100"
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg"
                     required
                   />
+                  <span className="text-xs text-gray-400">Score range: 0-100</span>
                 </div>
                 <div>
                   <label className="block mb-1">Participant Limit</label>
                   <input
                     type="number"
+                    name="participantLimit"
+                    value={formData.participantLimit}
+                    onChange={handleInputChange}
+                    min="1"
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg"
                     required
                   />
                 </div>
-                {/* Update the Counselor select in your modal form */}
                 <div>
                   <label className="block mb-1">Counselor</label>
                   <select 
+                    name="counselorId"
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg" 
                     required
                     value={formData.counselorId}
-                    onChange={(e) => setFormData({...formData, counselorId: e.target.value})}
+                    onChange={handleInputChange}
                   >
                     <option value="">Select Counselor</option>
                     {mockCounselors.map(counselor => (
@@ -173,14 +238,14 @@ const ProgramList = () => {
                     ))}
                   </select>
                 </div>
-                {/* Update the Dimension select in your modal form */}
                 <div>
                   <label className="block mb-1">Dimension</label>
                   <select 
+                    name="dimensionId"
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg" 
                     required
                     value={formData.dimensionId}
-                    onChange={(e) => setFormData({...formData, dimensionId: e.target.value})}
+                    onChange={handleInputChange}
                   >
                     <option value="">Select Dimension</option>
                     {mockDimensions.map(dimension => (
@@ -193,6 +258,9 @@ const ProgramList = () => {
                 <div className="col-span-2">
                   <label className="block mb-1">Description</label>
                   <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
                     className="w-full px-3 py-2 bg-gray-700 rounded-lg"
                     rows="4"
                     required
