@@ -6,7 +6,6 @@ import PortalLayout from "./components/Layouts/PortalLayout";
 import "./App.css";
 import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
-import SurveyPage from "./pages/survey/SurveyPage";
 import NotFoundPage from "./pages/error/NotFoundPage";
 import BookingPage from "./pages/booking/BookingPage";
 //StudentPage
@@ -32,6 +31,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
 import AdminPortal from "./pages/admin/AdminPortal";
+import ProgramList from "./pages/admin/program/ProgramList";
 
 //CounselorPage
 import CounselorPortal from "./pages/counselor/CounselorPortal";
@@ -49,67 +49,36 @@ function App() {
           </Route>
 
           {/* Student Routes */}
-          <Route
-            element={<ProtectedRoute allowedRoles={["Student", "Parent"]} />}
-          >
-            <Route path="student/" element={<PortalLayout />}>
+          {/*<Route element={<ProtectedRoute allowedRoles={["Student", "Parent"]} />}>*/}
+          <Route>
+            <Route path="/student" element={<PortalLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="start-up-survey" element={<StartUpPage />} />
               <Route path="program" element={<ProgramCoursePage />} />
               <Route path="survey-for-student" element={<SurveyPage />} />
               <Route path="survey-result" element={<SurveyResultPage />} />
-
-              //HUY
-              <Route path="/students" element={<StudentPortal />} />
-              <Route path="/students/program" element={ <StudentProgramPage /> } />
-              <Route path="/students/program/:id" element={  <StudentProgramDetail /> } />
-              <Route path="/students/survey" element={ <StudentSurveyPage /> } />
-              <Route path="/students/survey/questions" element={ <StudentSurveyQuestion /> } />
-              <Route path="/students/survey/details" element={ <SurveyDetailsPage /> } />
             </Route>
           </Route>
 
+            <Route path="/students" element={<StudentPortal />} />
+            <Route path="/students/program" element={<StudentProgramPage />} />
+            <Route path="/students/program/:id" element={<StudentProgramDetail />} />
+            <Route path="/students/survey" element={<StudentSurveyPage />} />
+            <Route path="/students/survey/questions" element={<StudentSurveyQuestion />} />
+            <Route path="/students/survey/details" element={<SurveyDetailsPage />} />
+
           {/* Admin Routes */}
-          <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
-            {/*<Route path="/admin" element={<AdminPortal />} />*/}
-            <Route path="admin/" element={<AdminPortalLayout />}>
+          {/*<Route element={<ProtectedRoute allowedRoles={["Admin"]} />}></Route>*/}
+          <Route>
+            <Route path="/admin" element={<AdminPortalLayout />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="programs" element={<ProgramList />} />
               <Route path="survey" element={<SurveyList />} />
               <Route path="survey/:id" element={<SurveyDetail />} />
             </Route>
           </Route>
 
-          {/* Counselor Routes */}
-          <Route element={<ProtectedRoute allowedRoles={["Counselor"]} />}>
-            <Route
-              path="counselor-dashboard"
-              element={<div>Counselor Dashboard</div>}
-            />
-          </Route>
-
-          {/* Teacher Routes */}
-          <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
-            <Route
-              path="teacher-dashboard"
-              element={<div>Teacher Dashboard</div>}
-            />
-          </Route>
-
-          <Route path="booking/" element={<BookingPage />} />
-          {/* Student */}
-          <Route path="student/" element={<PortalLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="start-up-survey" element={<StartUpPage />} />
-            <Route path="program" element={<ProgramCoursePage />} />
-            <Route path="survey-for-student" element={<SurveyPage />} />
-            <Route path="survey-result" element={<SurveyResultPage />} />
-          </Route>
-          {/* Admin */}
-          <Route path="admin/" element={<AdminPortalLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="survey" element={<SurveyList />} />
-            <Route path="survey/:id" element={<SurveyDetail />} />
-          </Route>
+          {/* Other Routes */}
           <Route path="booking/" element={<BookingPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

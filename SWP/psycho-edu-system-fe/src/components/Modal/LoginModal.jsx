@@ -1,20 +1,15 @@
-/* eslint-disable no-unused-vars */
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { ToastContainer, toast } from "react-toastify";
-import AuthContext from "../../context/auth/AuthContext";
-import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
+import LogoutModal from "./LogoutModal";
 const LoginModal = () => {
-  const { isAuthenticated, user, login, logout, loginGoogle } =
-    useContext(AuthContext) || {};
-  const role = user?.role || "";
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoginModal, setIsLoginModal] = useState(false);
+  const [isLogoutModal, setIsLogoutModal] = useState(false);
   const [isOpenMenu, setIsOpenMenu] = useState(false);
-  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    return isLoggedIn ? JSON.parse(isLoggedIn) : false;
+  });
   const modalRef = useRef(null);
 
   const handleOutsideClick = (event) => {
@@ -34,19 +29,24 @@ const LoginModal = () => {
     };
   }, [isLoginModal]);
 
-  const handleGoogleSuccess = async (response) => {
+  useEffect(() => {
+    localStorage.setItem("isLoggedIn", JSON.stringify(isAuthenticated));
+  }, [isAuthenticated]);
+
+  const handleGoogleSuccess = (response) => {
     try {
-      const role = await loginGoogle(response.credential);
-      if (role === "Admin") {
-        navigate("/admin");
-      } else if (role === "Student") {
-        navigate("/student");
+      if (response.credential) {
+        toast.success("Login success");
+        setIsAuthenticated(true);
+        console.log(response.credential);
       } else {
-        navigate("/");
+        toast.error("Login failed");
+        setIsAuthenticated(false);
       }
-      setIsLoginModal(false);
     } catch (error) {
-      toast.error(error);
+      toast.error(`Login failed: ${error.message}`);
+    } finally {
+      setIsLoginModal(false);
     }
   };
 
@@ -61,59 +61,9 @@ const LoginModal = () => {
       setIsOpenMenu(true);
     }
   };
-
-  const handleLogout = () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You will be logged out from your account.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, Log Out",
-      cancelButtonText: "No, Stay Logged In",
-      confirmButtonColor: "#E63946",
-      cancelButtonColor: "#3085d6",
-      reverseButtons: true,
-      focusCancel: true,
-      customClass: {
-        popup: "rounded-xl shadow-md",
-        title: "text-lg font-semibold",
-        confirmButton: "px-4 py-2 text-sm font-medium",
-        cancelButton: "px-4 py-2 text-sm font-medium",
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        logout();
-        // Show success message with auto-close
-        Swal.fire({
-          title: "Logged Out",
-          text: "You have successfully logged out.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-          willClose: () => {
-            navigate("/");
-          },
-        });
-      }
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      const role = await login(email, password);
-      if (role === "Admin") {
-        navigate("/admin");
-      } else if (role === "Student") {
-        navigate("/student");
-      } else {
-        navigate("/");
-      }
-      setIsLoginModal(false);
-    } catch (error) {
-      toast.error(error);
-    }
+  const handleLogoutModal = () => {
+    setIsLogoutModal(true);
+    setIsOpenMenu(false);
   };
   return (
     <>
@@ -141,7 +91,7 @@ const LoginModal = () => {
               >
                 <li>
                   <a
-                    href={role}
+                    href="/students"
                     className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
                   >
                     Portal
@@ -167,7 +117,7 @@ const LoginModal = () => {
                   <a
                     href="#"
                     className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-md"
-                    onClick={handleLogout}
+                    onClick={handleLogoutModal}
                   >
                     Sign out
                   </a>
@@ -177,7 +127,14 @@ const LoginModal = () => {
           )}
         </div>
       )}
-
+      {isLogoutModal && (
+        <>
+          <LogoutModal
+            isLogoutModal={isLogoutModal}
+            setIsLogoutModal={setIsLogoutModal}
+          />
+        </>
+      )}
       {isLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg">
@@ -215,14 +172,14 @@ const LoginModal = () => {
               </h5>
 
               <div className="p-4 md:p-5">
-                <form className="space-y-4" onSubmit={handleSubmit}>
+                <form className="space-y-4" action="#">
                   <div>
                     <input
-                      type="text"
+                      type="email"
+                      name="email"
+                      id="email"
                       className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
-                      placeholder="Username"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email"
                       required
                     />
                   </div>
@@ -234,8 +191,6 @@ const LoginModal = () => {
                       id="password"
                       placeholder="Password"
                       className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
                       required
                     />
                     <hr className="h-px my-8 bg-gray-200 border-0"></hr>
@@ -248,6 +203,7 @@ const LoginModal = () => {
                           type="checkbox"
                           value=""
                           className="w-4 h-4"
+                          required
                         />
                       </div>
                       <label

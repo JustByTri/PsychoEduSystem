@@ -81,9 +81,13 @@ export const AuthProvider = ({ children }) => {
   if (loading) {
     return <div>Loading...</div>;
   }
-
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, loginGoogle }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated: state.isAuthenticated, 
+      user: state.user, 
+      loginGoogle, 
+      logout 
+    }}>
       {children}
     </AuthContext.Provider>
   );
