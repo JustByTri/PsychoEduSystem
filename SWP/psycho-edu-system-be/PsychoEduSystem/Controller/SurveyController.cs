@@ -1,6 +1,7 @@
 ﻿using BLL.Interface;
 using BLL.Service;
 using Common.DTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -130,6 +131,20 @@ namespace PsychoEduSystem.Controller
             catch (Exception ex)
             {
                 return StatusCode(500, $"Lỗi: {ex.Message}");
+            }
+        }
+        [HttpGet("results")]
+        [Authorize(Policy = "SurveyResultsPolicy")]
+        public async Task<IActionResult> GetSurveyResults([FromQuery] SurveyResultFilterDTO filter)
+        {
+            try
+            {
+                var results = await _surveyService.GetSurveyResults(filter);
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
             }
         }
     }

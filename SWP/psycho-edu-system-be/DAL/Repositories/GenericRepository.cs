@@ -180,5 +180,16 @@
         {
             return await _dbSet.Where(expression).ToListAsync();
         }
+        public async Task<T> GetByIdWithIncludesAsync(Guid id, params Expression<Func<T, object>>[] includes)
+        {
+            var query = _dbSet.AsQueryable();
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.FirstOrDefaultAsync(e => EF.Property<Guid>(e, "UserId") == id);
+        }
     }
     }

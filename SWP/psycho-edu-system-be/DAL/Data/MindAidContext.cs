@@ -65,6 +65,9 @@ namespace DAL.Data
                 Status = true,
                 CreateAt = DateTime.Now,
                 RoleId =  1 ,
+                IsEmailConfirmed = true
+                
+                
 
             };
         }
