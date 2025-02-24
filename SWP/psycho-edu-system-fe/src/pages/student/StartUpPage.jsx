@@ -1,39 +1,53 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Loading from "../../components/Loadings/Loading";
-import { useNavigate } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import { SurveyService } from "../../api/services/surveyService";
-const StartUpPage = () => {
-  const [isLoading, setLoading] = useState(true);
-  const [isPublic, setIsPublic] = useState(false);
-  const navigate = useNavigate();
-  const fetchSurvey = async () => {
-    try {
-      const response = await SurveyService.getSurveyContent(
-        "450073b0-9a97-4ab9-abda-b766b7d9bebb"
-      );
-      if (response) {
-        setIsPublic(response?.isPublic ?? false);
-        localStorage.setItem("questions", JSON.stringify(response));
-      } else {
-        throw new Error("Empty response received");
-      }
-    } catch (error) {
-      console.error("Error fetching survey:", error);
-      localStorage.setItem("questions", JSON.stringify(null));
-    }
-  };
-  useEffect(() => {
-    fetchSurvey();
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-  }, []);
 
-  if (isLoading) {
-    return <Loading />;
-  } else if (isPublic === false) {
-    return <div className="">Bạn đã làm rồi! Hẹn gặp lại</div>;
+const StartUpPage = () => {
+  const location = useLocation();
+  const context = useOutletContext() || {};
+  const navigate = useNavigate();
+
+  const surveyData = location.state?.surveyData ?? context.surveyData;
+
+  const [isLoading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSurveyData = async () => {
+      if (!surveyData) {
+        setLoading(false);
+        return;
+      }
+
+      console.log("Survey Data received:", surveyData);
+
+      try {
+        const response = await SurveyService.getSurveyContent(surveyData);
+        console.log("Survey response:", response);
+        localStorage.setItem("questions", JSON.stringify(response));
+        console.log("Survey data saved to localStorage ✅");
+      } catch (error) {
+        console.error("Lỗi khi lưu survey vào localStorage:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSurveyData();
+  }, [surveyData]);
+
+  if (isLoading) return <Loading />;
+
+  if (!surveyData) {
+    return (
+      <div className="text-center text-lg font-semibold mt-10">
+        Bạn đã làm khảo sát rồi! Hẹn gặp lại 🎉
+      </div>
+    );
   }
+
   return (
     <div className="h-screen w-full flex items-center justify-center bg-cover bg-center">
       <div className="flex flex-col justify-center items-center gap-4 text-white text-center">
@@ -43,12 +57,6 @@ const StartUpPage = () => {
         >
           Start to survey
         </button>
-        <a
-          href="#"
-          className="text-blue-400 hover:underline text-sm md:text-base mt-2"
-        >
-          Skip the survey
-        </a>
       </div>
     </div>
   );

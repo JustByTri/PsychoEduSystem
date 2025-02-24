@@ -49,7 +49,7 @@ const SurveyPage = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     Swal.fire({
       title: "Are you sure?",
       text: "Do you want to submit the survey?",
@@ -60,8 +60,9 @@ const SurveyPage = () => {
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       reverseButtons: true,
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
+        // Khởi tạo điểm số ban đầu
         const scores = {
           "Lo Âu": 0,
           "Căng Thẳng": 0,
@@ -69,22 +70,20 @@ const SurveyPage = () => {
           date: new Date().toISOString(),
         };
 
+        // Tính điểm từ các câu trả lời
         answeredQuestions.forEach(({ questionId, answerPoint }) => {
           const question = questionsData.questions.find(
             (q) => q.questionId === questionId
           );
           if (question) {
-            if (question.categoryName === "Lo Âu") {
-              scores["Lo Âu"] += answerPoint;
-            } else if (question.categoryName === "Căng Thẳng") {
-              scores["Căng Thẳng"] += answerPoint;
-            } else if (question.categoryName === "Trầm Cảm") {
-              scores["Trầm Cảm"] += answerPoint;
-            }
+            scores[question.categoryName] += answerPoint;
           }
         });
 
+        // Lưu điểm số vào localStorage
         localStorage.setItem("surveyScores", JSON.stringify(scores));
+
+        // Chuẩn bị dữ liệu gửi lên server
         const surveyId = questionsData.surveyId;
         const responses = answeredQuestions
           .map(({ questionId, answerPoint }) => {
@@ -104,25 +103,41 @@ const SurveyPage = () => {
             };
           })
           .filter(Boolean);
+
         const surveyResult = {
           surveyId: surveyId,
           responses: responses,
         };
 
+        // Lưu dữ liệu khảo sát vào localStorage
         localStorage.setItem("surveyResponses", JSON.stringify(surveyResult));
+
         try {
-          const res = SurveyService.submitSurvey(surveyResult);
-          if (res) {
-            alert("success");
-          }
-        } catch (error) {}
-        Swal.fire(
-          "Survey submitted!",
-          "Your responses have been saved.",
-          "success"
-        );
-        setAnsweredQuestions([]);
-        navigate("/student/survey-result");
+          // Gửi dữ liệu lên server
+          await SurveyService.submitSurvey(surveyResult);
+
+          // Hiển thị thông báo thành công bằng SweetAlert
+          Swal.fire(
+            "Survey submitted!",
+            "Your responses have been saved.",
+            "success"
+          ).then(() => {
+            // Chuyển hướng đến trang kết quả + truyền thông báo
+            navigate("/student/survey-result", {
+              state: { message: "Khảo sát đã được gửi thành công!" },
+            });
+
+            // Reset câu trả lời
+            setAnsweredQuestions([]);
+          });
+        } catch (error) {
+          console.error("Survey submission failed:", error);
+          Swal.fire(
+            "Error",
+            "There was an issue submitting your survey.",
+            "error"
+          );
+        }
       }
     });
   };

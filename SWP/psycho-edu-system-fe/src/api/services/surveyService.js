@@ -116,4 +116,25 @@ export const SurveyService = {
       throw error;
     }
   },
+  checkUserSurveyStatus: async () => {
+    try {
+      const token = localStorage.getItem("user");
+      const formattedToken = JSON.parse(token);
+      const accessToken = formattedToken.accessToken;
+      const userData = DecodeJWT(accessToken);
+      const response = await axios.get(
+        `${BASE_URL}api/Survey/user/${userData.userId}`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        console.error("API Error:", error.response.status, error.response.data);
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+      } else {
+        console.error("Error setting up request:", error.message);
+      }
+      throw error;
+    }
+  },
 };

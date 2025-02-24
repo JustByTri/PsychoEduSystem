@@ -9,7 +9,6 @@ import {
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import { useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 
 ChartJS.register(
   CategoryScale,
@@ -19,13 +18,19 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
+import { useLocation } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 const SurveyResultPage = () => {
+  const location = useLocation();
   const [chartData, setChartData] = useState(null);
   const [status, setStatus] = useState("");
   const [surveyDate, setSurveyDate] = useState("");
 
   useEffect(() => {
+    if (location.state?.message) {
+      toast.success(location.state.message, { autoClose: 3000 });
+    }
     const fetchedData = localStorage.getItem("surveyScores");
     if (fetchedData) {
       const parsedData = JSON.parse(fetchedData);
@@ -90,6 +95,7 @@ const SurveyResultPage = () => {
 
   return (
     <div className="container mx-auto p-6 bg-gradient-to-b from-gray-50 to-gray-100 shadow-xl rounded-lg flex flex-col min-h-screen">
+      <ToastContainer />
       <div className="text-center text-2xl font-bold text-gray-700 mb-4">
         Survey Results
       </div>

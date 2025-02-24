@@ -16,7 +16,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
-
+import RequireSurvey from "./components/Survey/RequireSurvey";
 function App() {
   return (
     <AuthProvider>
@@ -30,12 +30,16 @@ function App() {
           <Route
             element={<ProtectedRoute allowedRoles={["Student", "Parent"]} />}
           >
-            <Route path="student/" element={<PortalLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="start-up-survey" element={<StartUpPage />} />
-              <Route path="program" element={<ProgramCoursePage />} />
-              <Route path="survey-for-student" element={<SurveyPage />} />
-              <Route path="survey-result" element={<SurveyResultPage />} />
+            {/* Route riêng cho StartUpPage, không bị RequireSurvey chặn */}
+            <Route path="student/start-up-survey" element={<StartUpPage />} />
+            <Route path="student/survey-for-student" element={<SurveyPage />} />
+            {/* Các route yêu cầu kiểm tra khảo sát */}
+            <Route element={<RequireSurvey />}>
+              <Route path="student/" element={<PortalLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="program" element={<ProgramCoursePage />} />
+                <Route path="survey-result" element={<SurveyResultPage />} />
+              </Route>
             </Route>
           </Route>
 
