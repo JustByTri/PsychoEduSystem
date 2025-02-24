@@ -3,6 +3,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ToastContainer, toast } from "react-toastify";
 
+const mockCounselors = [
+  { id: 1, name: "Dr. Sarah Johnson", specialization: "Anxiety & Depression" },
+  { id: 2, name: "Dr. Michael Chen", specialization: "Academic Counseling" },
+  { id: 3, name: "Dr. Emily Parker", specialization: "Behavioral Therapy" },
+  { id: 4, name: "Dr. James Wilson", specialization: "Career Guidance" },
+];
+
+const mockDimensions = [
+  { id: 1, name: "Academic Performance" },
+  { id: 2, name: "Mental Health" },
+  { id: 3, name: "Social Skills" },
+  { id: 4, name: "Career Development" },
+  { id: 5, name: "Personal Growth" },
+];
+
 const ProgramList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [programs, setPrograms] = useState([]);
@@ -22,7 +37,28 @@ const ProgramList = () => {
     toast.success("Program created successfully!");
     setIsModalOpen(false);
   };
-
+  // Add some mock programs data
+  const mockPrograms = [
+    {
+      id: 1,
+      name: "Academic Excellence Program",
+      startDate: "2024-03-01",
+      minimumScore: 70,
+      participantLimit: 30,
+      counselorName: "Dr. Sarah Johnson",
+      dimensionName: "Academic Performance",
+    },
+    {
+      id: 2,
+      name: "Stress Management Workshop",
+      startDate: "2024-03-15",
+      minimumScore: 60,
+      participantLimit: 25,
+      counselorName: "Dr. Emily Parker",
+      dimensionName: "Mental Health",
+    },
+  ];
+  // Update your form section to include the mock data in selects
   return (
     <div className="p-8 text-white">
       <ToastContainer />
@@ -120,16 +156,38 @@ const ProgramList = () => {
                     required
                   />
                 </div>
+                {/* Update the Counselor select in your modal form */}
                 <div>
                   <label className="block mb-1">Counselor</label>
-                  <select className="w-full px-3 py-2 bg-gray-700 rounded-lg" required>
+                  <select 
+                    className="w-full px-3 py-2 bg-gray-700 rounded-lg" 
+                    required
+                    value={formData.counselorId}
+                    onChange={(e) => setFormData({...formData, counselorId: e.target.value})}
+                  >
                     <option value="">Select Counselor</option>
+                    {mockCounselors.map(counselor => (
+                      <option key={counselor.id} value={counselor.id}>
+                        {counselor.name} - {counselor.specialization}
+                      </option>
+                    ))}
                   </select>
                 </div>
+                {/* Update the Dimension select in your modal form */}
                 <div>
                   <label className="block mb-1">Dimension</label>
-                  <select className="w-full px-3 py-2 bg-gray-700 rounded-lg" required>
+                  <select 
+                    className="w-full px-3 py-2 bg-gray-700 rounded-lg" 
+                    required
+                    value={formData.dimensionId}
+                    onChange={(e) => setFormData({...formData, dimensionId: e.target.value})}
+                  >
                     <option value="">Select Dimension</option>
+                    {mockDimensions.map(dimension => (
+                      <option key={dimension.id} value={dimension.id}>
+                        {dimension.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="col-span-2">
