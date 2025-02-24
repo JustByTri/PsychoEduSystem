@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -20,12 +21,13 @@ namespace BLL.Service
         private readonly IUnitOfWork _unitOfWork;
 
         private readonly UserUtility _userUtility;
+        private readonly IJwtProvider _jwtProvider;
 
-        public LoginService(IUnitOfWork unitOfWork, UserUtility userUtility)
+        public LoginService(IUnitOfWork unitOfWork, UserUtility userUtility, IJwtProvider jwtProvider)
         {
             _unitOfWork = unitOfWork;
             _userUtility = userUtility;
-
+            _jwtProvider=jwtProvider;   
         }
 
         public async Task<ResponseDTO> LoginAsync(string emailOrUserName, string password)
@@ -33,9 +35,7 @@ namespace BLL.Service
             if (_unitOfWork.User == null)
             {
                 return new ResponseDTO("User repository is not available", 500, false);
-
             }
-            
 
             // Tìm người dùng theo email
             var user = await _unitOfWork.User.GetByEmailOrUserNameAsync(emailOrUserName);
@@ -67,23 +67,14 @@ namespace BLL.Service
             var claims = new List<Claim>();
 
             // Thêm vai trò vào claims
-            if (user.UserRoles != null && user.UserRoles.Any())
-            {
-                foreach (var userRole in user.UserRoles)
-                {
-                    var roleName = userRole.Role?.RoleName ?? "Student";
-                    claims.Add(new Claim(JwtConstant.KeyClaim.Role, userRole.Role?.RoleName ?? "Student"));
-                }
-            }
-            else
-            {
-                claims.Add(new Claim(JwtConstant.KeyClaim.Role, "Student")); // Giá trị mặc định nếu không có vai trò
-            }
+            var Role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+            claims.Add(new Claim(ClaimTypes.Role, Role?.RoleName ?? "User"));
             // Thêm email vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
 
             // Thêm UserId vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, user.FullName.ToString()));
 
             // Thêm UserName vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.Username, user.UserName));
@@ -92,11 +83,10 @@ namespace BLL.Service
             var fullName = $"{user.LastName} {user.FirstName}".Trim();
             claims.Add(new Claim(JwtConstant.KeyClaim.fullName, fullName));
 
-
             // Tạo refresh token mới
-            var refreshTokenKey = JwtProvider.GenerateRefreshToken(claims);
-            // Tạo access token
-            var accessTokenKey = JwtProvider.GenerateAccessToken(claims);
+            var refreshTokenKey = _jwtProvider.GenerateRefreshToken(claims); // Sử dụng _jwtProvider
+                                                                             // Tạo access token
+            var accessTokenKey = _jwtProvider.GenerateAccessToken(claims); // Sử dụng _jwtProvider
 
             var refreshToken = new RefreshToken
             {
@@ -121,18 +111,15 @@ namespace BLL.Service
             {
                 AccessToken = accessTokenKey,
                 RefreshToken = refreshToken.RefreshTokenKey,
-                Roles = string.Join(",", user.UserRoles.Select(ur => ur.Role.RoleName)) // Trả về tất cả vai trò
+                Role = Role?.RoleName // Trả về tất cả vai trò
             });
-
-
-
         }
 
         public async Task<ResponseDTO> RefreshBothTokens(string oldAccessToken, string oldRefreshTokenKey)
         {
             // Kiểm tra tính hợp lệ của refresh token
-            var claimsPrincipal = JwtProvider.Validation(oldRefreshTokenKey);
-            if (claimsPrincipal == null)
+            var isValid = _jwtProvider.Validation(oldRefreshTokenKey); // Sử dụng _jwtProvider
+            if (!isValid)
             {
                 return new ResponseDTO("Invalid refresh token", 400, false);
             }
@@ -165,25 +152,14 @@ namespace BLL.Service
             claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
 
             // Thêm vai trò vào claims
-            if (user.UserRoles != null && user.UserRoles.Any())
-            {
-                foreach (var userRole in user.UserRoles)
-                {
-                    var roleName = userRole.Role?.RoleName ?? "User";
-                    claims.Add(new Claim(JwtConstant.KeyClaim.Role, roleName));
-                }
-            }
-            else
-            {
-                claims.Add(new Claim(JwtConstant.KeyClaim.Role, "User")); // Giá trị mặc định nếu không có vai trò
-            }
+            var Role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+            claims.Add(new Claim(ClaimTypes.Role, Role?.RoleName ?? "User"));
 
             // Thêm UserId vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
 
-
             // Tạo access token mới
-            var newAccessToken = JwtProvider.GenerateAccessToken(claims);
+            var newAccessToken = _jwtProvider.GenerateAccessToken(claims); // Sử dụng _jwtProvider
 
             // Lưu refresh token mới vào database
             var newRefreshToken = new RefreshToken
@@ -211,9 +187,8 @@ namespace BLL.Service
             {
                 NewAccessToken = newAccessToken,
                 RefreshToken = oldRefreshTokenKey,
-                Role = user.UserRoles // Trả về vai trò
+                Role = Role?.RoleName
             });
-
         }
 
         public async Task<ResponseDTO> LogoutAsync(string refreshTokenKey)

@@ -10,9 +10,9 @@ namespace DAL.Entities
     public class Role
     {
         [Key]
-        public Guid RoleId { get; set; }
+        public int RoleId { get; set; }
         [Required(ErrorMessage = "Rolne Name is required")]
         public string RoleName { get; set; }
-        public virtual ICollection<UserRole> UserRoles { get; set; }
+
     }
 }

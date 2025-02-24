@@ -1,6 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+/* eslint-disable no-unused-vars */
+import { useState, useRef, useEffect, useContext } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { ToastContainer, toast } from "react-toastify";
+
+{/* huy old code
 import { useNavigate } from "react-router-dom";
 import LogoutModal from "./LogoutModal";
 
@@ -20,15 +23,31 @@ const ROLE_ROUTES = {
 
 const LoginModal = () => {
   const navigate = useNavigate();
+*/}
+
+import AuthContext from "../../context/auth/AuthContext";
+import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
+const LoginModal = () => {
+  const { isAuthenticated, user, login, logout, loginGoogle } =
+    useContext(AuthContext) || {};
+  const role = user?.role || "";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoginModal, setIsLoginModal] = useState(false);
-  const [isLogoutModal, setIsLogoutModal] = useState(false);
   const [isOpenMenu, setIsOpenMenu] = useState(false);
+
+  {/* huy old code
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     return isLoggedIn ? JSON.parse(isLoggedIn) : false;
   });
+  */}
+
+  const navigate = useNavigate();
   const modalRef = useRef(null);
 
   const handleOutsideClick = (event) => {
@@ -48,12 +67,9 @@ const LoginModal = () => {
     };
   }, [isLoginModal]);
 
-  useEffect(() => {
-    localStorage.setItem("isLoggedIn", JSON.stringify(isAuthenticated));
-  }, [isAuthenticated]);
-
-  const handleGoogleSuccess = (response) => {
+  const handleGoogleSuccess = async (response) => {
     try {
+      {/* huy old code
       if (response.credential) {
         const userRole = ROLES.STUDENT;
         localStorage.setItem('userRole', userRole);
@@ -61,14 +77,18 @@ const LoginModal = () => {
         setIsAuthenticated(true);
         toast.success("Login success");
         navigate(ROLE_ROUTES[userRole]);
+      */}
+      const role = await loginGoogle(response.credential);
+      if (role === "Admin") {
+        navigate("/admin");
+      } else if (role === "Student") {
+        navigate("/student");
       } else {
-        toast.error("Login failed");
-        setIsAuthenticated(false);
+        navigate("/");
       }
-    } catch (error) {
-      toast.error(`Login failed: ${error.message}`);
-    } finally {
       setIsLoginModal(false);
+    } catch (error) {
+      toast.error(error);
     }
   };
 
@@ -83,9 +103,59 @@ const LoginModal = () => {
       setIsOpenMenu(true);
     }
   };
-  const handleLogoutModal = () => {
-    setIsLogoutModal(true);
-    setIsOpenMenu(false);
+
+  const handleLogout = () => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You will be logged out from your account.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Log Out",
+      cancelButtonText: "No, Stay Logged In",
+      confirmButtonColor: "#E63946",
+      cancelButtonColor: "#3085d6",
+      reverseButtons: true,
+      focusCancel: true,
+      customClass: {
+        popup: "rounded-xl shadow-md",
+        title: "text-lg font-semibold",
+        confirmButton: "px-4 py-2 text-sm font-medium",
+        cancelButton: "px-4 py-2 text-sm font-medium",
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        // Show success message with auto-close
+        Swal.fire({
+          title: "Logged Out",
+          text: "You have successfully logged out.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+          willClose: () => {
+            navigate("/");
+          },
+        });
+      }
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const role = await login(email, password);
+      if (role === "Admin") {
+        navigate("/admin");
+      } else if (role === "Student") {
+        navigate("/student");
+      } else {
+        navigate("/");
+      }
+      setIsLoginModal(false);
+    } catch (error) {
+      toast.error(error);
+    }
   };
 
   const handleEmailLogin = (e) => {
@@ -145,7 +215,7 @@ const LoginModal = () => {
               >
                 <li>
                   <a
-                    href="counselor"
+                    href={role}
                     className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
                   >
                     Portal
@@ -171,7 +241,7 @@ const LoginModal = () => {
                   <a
                     href="#"
                     className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-md"
-                    onClick={handleLogoutModal}
+                    onClick={handleLogout}
                   >
                     Sign out
                   </a>
@@ -181,14 +251,7 @@ const LoginModal = () => {
           )}
         </div>
       )}
-      {isLogoutModal && (
-        <>
-          <LogoutModal
-            isLogoutModal={isLogoutModal}
-            setIsLogoutModal={setIsLogoutModal}
-          />
-        </>
-      )}
+
       {isLoginModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg">
@@ -226,6 +289,8 @@ const LoginModal = () => {
               </h5>
 
               <div className="p-4 md:p-5">
+
+                {/*
                 <form className="space-y-4" onSubmit={handleEmailLogin}>
                   <div>
                     <input
@@ -233,8 +298,16 @@ const LoginModal = () => {
                       name="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                */}
+
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                  <div>
+                    <input
+                      type="text"
                       className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
-                      placeholder="Email"
+                      placeholder="Username"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                     />
                   </div>
@@ -245,7 +318,6 @@ const LoginModal = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
-                      placeholder="Password"
                       required
                     />
                   </div>
@@ -257,7 +329,6 @@ const LoginModal = () => {
                           type="checkbox"
                           value=""
                           className="w-4 h-4"
-                          required
                         />
                       </div>
                       <label

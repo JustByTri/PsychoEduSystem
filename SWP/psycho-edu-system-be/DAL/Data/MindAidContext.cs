@@ -11,7 +11,7 @@ namespace DAL.Data
         #region DbSet Properties
         public DbSet<Role> Roles { get; set; }
         public DbSet<User> Users { get; set; }
-        public DbSet<UserRole> UserRoles { get; set; }
+   
     
         public DbSet<DimensionHealth> Categories { get; set; }
         public DbSet<Slot> Slots { get; set; }
@@ -64,8 +64,11 @@ namespace DAL.Data
                 Address = "Ha Noi",
                 Status = true,
                 CreateAt = DateTime.Now,
-                IsAdmin = true
+                RoleId =  1 ,
+                IsEmailConfirmed = true
                 
+                
+
             };
         }
 
@@ -74,22 +77,13 @@ namespace DAL.Data
             #region Entity Configurations
 
 
-            modelBuilder.Entity<UserRole>()
-                .HasKey(ur => new { ur.UserId, ur.RoleId });
+            modelBuilder.Entity<User>()
+         .HasOne(u => u.Role)
+         .WithMany()
+         .HasForeignKey(u => u.RoleId);
 
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.User)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(ur => ur.UserId);
-
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.Role)
-                .WithMany(r => r.UserRoles)
-                .HasForeignKey(ur => ur.RoleId);
-
-
-        
-
+     
+           
 
 
             modelBuilder.Entity<Appointment>()
@@ -132,7 +126,7 @@ namespace DAL.Data
                 .WithMany(q => q.Answers)
                 .HasForeignKey(a => a.QuestionId);
 
-            // Configure automatic creation of CreateAt
+            
 
 
             modelBuilder.Entity<Question>()
@@ -181,7 +175,83 @@ namespace DAL.Data
     .WithMany()
     .HasForeignKey(pe => pe.StudentId)
     .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Class>()
+     .HasOne(c => c.Teacher)
+     .WithMany(t => t.ClassList)
+     .HasForeignKey(c => c.TeacherId)
+     .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Class)
+                .WithMany(c => c.Students)
+                .HasForeignKey(u => u.ClassId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            var teacherPassword = "teacher123";
+            byte[] passwordHash, passwordSalt;
+            CreatePasswordHash(teacherPassword, out passwordHash, out passwordSalt);
+
+            var teacher1 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "teacher1",
+                PasswordHash = passwordHash,
+                PasswordSalt = passwordSalt,
+                Phone = "0987654321",
+                Email = "teacher1@fpt.edu.vn",
+                FullName = "Nguyễn Văn A",
+                BirthDay = new DateTime(1985, 5, 15),
+                Gender = "Male",
+                Address = "Ha Noi",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 5, 
+                IsEmailConfirmed = true
+            };
+
+            var teacher2 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "teacher2",
+                PasswordHash = passwordHash,
+                PasswordSalt = passwordSalt,
+                Phone = "0987654322",
+                Email = "teacher2@fpt.edu.vn",
+                FullName = "Trần Thị B",
+                BirthDay = new DateTime(1988, 8, 20),
+                Gender = "Female",
+                Address = "Ho Chi Minh",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 5,
+                IsEmailConfirmed = true
+            };
+
+            modelBuilder.Entity<User>().HasData(teacher1, teacher2);
+
+            modelBuilder.Entity<Class>().HasData(
+                new Class
+                {
+                    ClassId = 1,
+                    Name = "SE1701",
+                    TeacherId = teacher1.UserId,
+                    CreateAt = DateTime.Now
+                },
+                new Class
+                {
+                    ClassId = 2,
+                    Name = "SE1702",
+                    TeacherId = teacher1.UserId,
+                    CreateAt = DateTime.Now
+                },
+                new Class
+                {
+                    ClassId = 3,
+                    Name = "AI1703",
+                    TeacherId = teacher2.UserId,
+                    CreateAt = DateTime.Now
+                }
+            );
             modelBuilder.Entity<ProgramEnrollment>()
                 .HasOne(pe => pe.Program)
                 .WithMany()
@@ -242,23 +312,101 @@ namespace DAL.Data
           
          }
      );
-            var adminRoleId = Guid.NewGuid();
+            var studentPassword = "student123";
+            byte[] studentPasswordHash, studentPasswordSalt;
+            CreatePasswordHash(studentPassword, out studentPasswordHash, out studentPasswordSalt);
+
+            var student1 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "student1",
+                PasswordHash = studentPasswordHash,
+                PasswordSalt = studentPasswordSalt,
+                Phone = "0987654333",
+                Email = "student1@fpt.edu.vn",
+                FullName = "Nguyễn Văn C",
+                BirthDay = new DateTime(2005, 3, 10),
+                Gender = "Male",
+                Address = "Ha Noi",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 3, // RoleId 3 là học sinh
+                ClassId = 1, // Gán vào lớp SE1701
+                IsEmailConfirmed = true
+            };
+
+            var student2 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "student2",
+                PasswordHash = studentPasswordHash,
+                PasswordSalt = studentPasswordSalt,
+                Phone = "0987654334",
+                Email = "student2@fpt.edu.vn",
+                FullName = "Trần Thị D",
+                BirthDay = new DateTime(2005, 7, 22),
+                Gender = "Female",
+                Address = "Ho Chi Minh",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 3, // RoleId 3 là học sinh
+                ClassId = 1, // Gán vào lớp SE1701
+                IsEmailConfirmed = true
+            };
+
+            var student3 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "student3",
+                PasswordHash = studentPasswordHash,
+                PasswordSalt = studentPasswordSalt,
+                Phone = "0987654335",
+                Email = "student3@fpt.edu.vn",
+                FullName = "Phạm Văn E",
+                BirthDay = new DateTime(2006, 1, 15),
+                Gender = "Male",
+                Address = "Da Nang",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 3, // RoleId 3 là học sinh
+                ClassId = 2, // Gán vào lớp SE1702
+                IsEmailConfirmed = true
+            };
+
+            var student4 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "student4",
+                PasswordHash = studentPasswordHash,
+                PasswordSalt = studentPasswordSalt,
+                Phone = "0987654336",
+                Email = "student4@fpt.edu.vn",
+                FullName = "Lê Thị F",
+                BirthDay = new DateTime(2006, 9, 30),
+                Gender = "Female",
+                Address = "Can Tho",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 3, // RoleId 3 là học sinh
+                ClassId = 3, // Gán vào lớp AI1703
+                IsEmailConfirmed = true
+            };
+
+            modelBuilder.Entity<User>().HasData(student1, student2, student3, student4);
+
             modelBuilder.Entity<Role>().HasData(
-                new Role { RoleId = adminRoleId, RoleName = "Admin" },
-                new Role { RoleId = Guid.NewGuid(), RoleName = "Psychologist" },
-                new Role { RoleId = Guid.NewGuid(), RoleName = "Student" },
-                new Role { RoleId = Guid.NewGuid(), RoleName = "Parent" },
-                new Role { RoleId = Guid.NewGuid(), RoleName = "Teacher" }
+                new Role { RoleId = 1, RoleName = "Admin" },
+                new Role { RoleId = 2, RoleName = "Psychologist" },
+                new Role { RoleId = 3, RoleName = "Student" },
+                new Role { RoleId = 4, RoleName = "Parent" },
+                new Role { RoleId = 5, RoleName = "Teacher" }
             );
 
             var adminUser = CreateAdminUser();
             modelBuilder.Entity<User>().HasData(adminUser);
-            modelBuilder.Entity<UserRole>().HasData(new UserRole
-            {
-                UserId = adminUser.UserId,
-                RoleId = adminRoleId
-            });
+          
             #endregion
         }
+
     }
 }
