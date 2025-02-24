@@ -19,6 +19,7 @@ namespace BLL.Interface
         Task<SurveyAnswerResponseDTO> GetUserSurveyAnswersAsync(Guid userId, Guid surveyId);
         Task<SurveyWithQuestionsAndAnswersDTO> AdjustSurveyAsync(Guid surveyId);
         Task<ResponseDTO> UpdateSurveyWithValidationAsync(Guid surveyId, SurveyWithQuestionsAndAnswersDTO updatedSurvey);
+        Task<List<SurveyResultDTO>> GetSurveyResults(SurveyResultFilterDTO filter);
 
     }
 }

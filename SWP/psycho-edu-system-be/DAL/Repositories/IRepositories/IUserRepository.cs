@@ -16,5 +16,6 @@ namespace DAL.Repositories.IRepositories
 
         Task<User> GetUserByEmailAsync(string email);
         Task<bool> IsUserExistAsync(string userName, string email);
+        Task<User> GetCurrentUserWithRoleAsync(Guid userId);
     }
 }
