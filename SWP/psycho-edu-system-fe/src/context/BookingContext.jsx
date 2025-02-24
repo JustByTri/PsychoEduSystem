@@ -1,5 +1,5 @@
-// context/BookingContext.js
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { getAuthDataFromLocalStorage } from "../utils/auth";
 
 const BookingContext = createContext();
 
@@ -27,16 +27,25 @@ export const BookingProvider = ({ children }) => {
     // Booking details
     date: "",
     time: "",
-    duration: 30, // default duration in minutes
+    duration: 30,
 
-    // Additional info
     reasonForBooking: "",
     additionalNotes: "",
-
-    // Contact info (for confirmation)
     email: "",
     phone: "",
   });
+
+  useEffect(() => {
+    const authData = getAuthDataFromLocalStorage();
+    if (authData) {
+      updateBookingData({
+        userId: authData.userId,
+        userRole: authData.role,
+        email: authData.email,
+        userName: authData.username || "",
+      });
+    }
+  }, []);
 
   const updateBookingData = (newData) => {
     setBookingData((prev) => ({
@@ -46,10 +55,12 @@ export const BookingProvider = ({ children }) => {
   };
 
   const resetBookingData = () => {
+    const authData = getAuthDataFromLocalStorage();
     setBookingData({
-      userId: "",
-      userName: "",
-      userRole: "",
+      userId: authData?.userId || "",
+      userName: authData?.username || "",
+      userRole: authData?.role || "",
+      email: authData?.email || "",
       childId: "",
       childName: "",
       consultantType: "",
@@ -61,10 +72,12 @@ export const BookingProvider = ({ children }) => {
       duration: 30,
       reasonForBooking: "",
       additionalNotes: "",
-      email: "",
       phone: "",
     });
   };
+
+  const isParent = () => bookingData.userRole === "Parent";
+  const isStudent = () => bookingData.userRole === "Student";
 
   return (
     <BookingContext.Provider
@@ -72,6 +85,8 @@ export const BookingProvider = ({ children }) => {
         bookingData,
         updateBookingData,
         resetBookingData,
+        isParent,
+        isStudent,
       }}
     >
       {children}
