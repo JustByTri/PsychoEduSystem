@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import ProgressBar from "../../components/Survey/ProgressBar";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +21,7 @@ const SurveyPage = () => {
 
   if (!questionsData) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
         <span className="text-xl font-medium text-gray-600">Loading...</span>
       </div>
     );
@@ -40,12 +41,14 @@ const SurveyPage = () => {
   const handleNextPage = () => {
     if (currentPage < totalPages - 1) {
       setCurrentPage((prev) => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
     }
   };
 
   const handlePreviousPage = () => {
     if (currentPage > 0) {
       setCurrentPage((prev) => prev - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
     }
   };
 
@@ -57,12 +60,11 @@ const SurveyPage = () => {
       showCancelButton: true,
       confirmButtonText: "Yes, submit!",
       cancelButtonText: "No, cancel",
-      confirmButtonColor: "#3085d6",
+      confirmButtonColor: "#4CAF50",
       cancelButtonColor: "#d33",
       reverseButtons: true,
     }).then(async (result) => {
       if (result.isConfirmed) {
-        // Khởi tạo điểm số ban đầu
         const scores = {
           "Lo Âu": 0,
           "Căng Thẳng": 0,
@@ -70,7 +72,6 @@ const SurveyPage = () => {
           date: new Date().toISOString(),
         };
 
-        // Tính điểm từ các câu trả lời
         answeredQuestions.forEach(({ questionId, answerPoint }) => {
           const question = questionsData.questions.find(
             (q) => q.questionId === questionId
@@ -80,10 +81,8 @@ const SurveyPage = () => {
           }
         });
 
-        // Lưu điểm số vào localStorage
         localStorage.setItem("surveyScores", JSON.stringify(scores));
 
-        // Chuẩn bị dữ liệu gửi lên server
         const surveyId = questionsData.surveyId;
         const responses = answeredQuestions
           .map(({ questionId, answerPoint }) => {
@@ -97,37 +96,23 @@ const SurveyPage = () => {
             );
             if (!answer) return null;
 
-            return {
-              questionId: questionId,
-              answerId: answer.answerId,
-            };
+            return { questionId: questionId, answerId: answer.answerId };
           })
           .filter(Boolean);
 
-        const surveyResult = {
-          surveyId: surveyId,
-          responses: responses,
-        };
-
-        // Lưu dữ liệu khảo sát vào localStorage
+        const surveyResult = { surveyId, responses };
         localStorage.setItem("surveyResponses", JSON.stringify(surveyResult));
 
         try {
-          // Gửi dữ liệu lên server
           await SurveyService.submitSurvey(surveyResult);
-
-          // Hiển thị thông báo thành công bằng SweetAlert
           Swal.fire(
             "Survey submitted!",
             "Your responses have been saved.",
             "success"
           ).then(() => {
-            // Chuyển hướng đến trang kết quả + truyền thông báo
             navigate("/student/survey-result", {
               state: { message: "Khảo sát đã được gửi thành công!" },
             });
-
-            // Reset câu trả lời
             setAnsweredQuestions([]);
           });
         } catch (error) {
@@ -158,12 +143,23 @@ const SurveyPage = () => {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-lg">
-      <ProgressBar progressPercentage={progressPercentage} />
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      transition={{ duration: 0.4 }}
+      className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-lg"
+    >
+      <div className="sticky top-0 left-0 right-0 bg-white shadow-md py-3 z-50">
+        <ProgressBar progressPercentage={progressPercentage} />
+      </div>
 
       {displayedQuestions.map((question) => (
-        <div
+        <motion.div
           key={question.questionId}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
           className="border rounded-md p-4 w-full mx-auto max-w-2xl"
         >
           <h4 className="text-xl lg:text-2xl font-semibold mb-4">
@@ -173,7 +169,7 @@ const SurveyPage = () => {
             {question.answers.map((answer) => (
               <label
                 key={answer.answerId}
-                className="flex items-center bg-gray-100 text-gray-700 rounded-md px-3 py-2 my-3 hover:bg-indigo-300 cursor-pointer"
+                className="flex items-center bg-gray-100 text-gray-700 rounded-md px-3 py-2 my-3 hover:bg-gray-300 cursor-pointer"
               >
                 <input
                   type="radio"
@@ -193,7 +189,7 @@ const SurveyPage = () => {
               </label>
             ))}
           </div>
-        </div>
+        </motion.div>
       ))}
 
       {/* Navigation Buttons */}
@@ -208,7 +204,7 @@ const SurveyPage = () => {
         <button
           onClick={handleNextPage}
           disabled={currentPage >= totalPages - 1}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all duration-300"
+          className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-all duration-300"
         >
           Next
         </button>
@@ -219,7 +215,7 @@ const SurveyPage = () => {
         {answeredQuestions.length === questionsData.questions.length && (
           <button
             onClick={handleSubmit}
-            className="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all duration-300"
+            className="px-6 py-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all duration-300"
           >
             Submit
           </button>
@@ -227,13 +223,13 @@ const SurveyPage = () => {
         <div className="mt-4">
           <button
             onClick={handleResetSurvey}
-            className="px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all duration-300"
+            className="px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-300"
           >
             Reset Survey
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

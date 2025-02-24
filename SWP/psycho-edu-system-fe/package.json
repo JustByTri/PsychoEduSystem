@@ -20,6 +20,7 @@
     "chart.js": "^4.4.7",
     "chartjs-plugin-datalabels": "^2.2.0",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.4.7",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.473.0",
     "psycho-edu-system": "file:",
