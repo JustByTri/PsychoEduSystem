@@ -134,17 +134,28 @@ namespace PsychoEduSystem.Controller
             }
         }
         [HttpGet("results")]
-        [Authorize(Policy = "SurveyResultsPolicy")]
-        public async Task<IActionResult> GetSurveyResults([FromQuery] SurveyResultFilterDTO filter)
+
+        public async Task<IActionResult> GetSurveyResults([FromQuery] Guid Userid, [FromQuery] SurveyResultFilterDTO filter)
         {
             try
             {
-                var results = await _surveyService.GetSurveyResults(filter);
+                // Validate the Userid
+                if (Userid == Guid.Empty)
+                {
+                    return BadRequest(new { Message = "Invalid User ID." });
+                }
+
+                // Call the service method to get survey results
+                var results = await _surveyService.GetSurveyResults(Userid, filter);
                 return Ok(results);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { Message = ex.Message }); // 403 Forbidden for unauthorized roles
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = ex.Message });
+                return StatusCode(500, new { Message = ex.Message }); // 500 Internal Server Error for other exceptions
             }
         }
     }
