@@ -5,15 +5,22 @@ import { SurveyService } from "../../api/services/surveyService";
 const StartUpPage = () => {
   const [isLoading, setLoading] = useState(true);
   const [isPublic, setIsPublic] = useState(false);
-  const [fetchedData, setFetchedData] = useState(null);
   const navigate = useNavigate();
   const fetchSurvey = async () => {
-    const response = await SurveyService.getSurveyContent(
-      "c2f81325-cf14-4e6c-bda8-54ec317cbdf8"
-    );
-    setIsPublic(response.isPublic);
-    setFetchedData(response);
-    localStorage.setItem("questions", JSON.stringify(fetchedData));
+    try {
+      const response = await SurveyService.getSurveyContent(
+        "450073b0-9a97-4ab9-abda-b766b7d9bebb"
+      );
+      if (response) {
+        setIsPublic(response?.isPublic ?? false);
+        localStorage.setItem("questions", JSON.stringify(response));
+      } else {
+        throw new Error("Empty response received");
+      }
+    } catch (error) {
+      console.error("Error fetching survey:", error);
+      localStorage.setItem("questions", JSON.stringify(null));
+    }
   };
   useEffect(() => {
     fetchSurvey();

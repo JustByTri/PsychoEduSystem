@@ -1,6 +1,6 @@
 import axios from "axios";
 const BASE_URL = "https://localhost:7192/";
-import { jwtDecode } from "jwt-decode";
+import DecodeJWT from "../../utils/decodeJwt";
 
 export const SurveyService = {
   getSurveys: async () => {
@@ -99,7 +99,7 @@ export const SurveyService = {
       const token = localStorage.getItem("user");
       const formattedToken = JSON.parse(token);
       const accessToken = formattedToken.accessToken;
-      const userData = jwtDecode(accessToken);
+      const userData = DecodeJWT(accessToken);
       const response = await axios.post(
         `${BASE_URL}api/Survey/submit/${userData.userId}`,
         data
