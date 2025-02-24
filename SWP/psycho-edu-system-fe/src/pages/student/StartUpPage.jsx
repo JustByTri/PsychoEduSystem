@@ -1,27 +1,32 @@
 import { useState, useEffect } from "react";
 import Loading from "../../components/Loadings/Loading";
-import data from "../../data/data.json";
 import { useNavigate } from "react-router-dom";
-
+import { SurveyService } from "../../api/services/surveyService";
 const StartUpPage = () => {
   const [isLoading, setLoading] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
   const [fetchedData, setFetchedData] = useState(null);
   const navigate = useNavigate();
-
+  const fetchSurvey = async () => {
+    const response = await SurveyService.getSurveyContent(
+      "c2f81325-cf14-4e6c-bda8-54ec317cbdf8"
+    );
+    setIsPublic(response.isPublic);
+    setFetchedData(response);
+    localStorage.setItem("questions", JSON.stringify(fetchedData));
+  };
   useEffect(() => {
-    setFetchedData(data);
-    if (fetchedData) {
-      localStorage.setItem("questions", JSON.stringify(fetchedData));
-    }
+    fetchSurvey();
     setTimeout(() => {
       setLoading(false);
     }, 2000);
-  }, [fetchedData]);
+  }, []);
 
   if (isLoading) {
     return <Loading />;
+  } else if (isPublic === false) {
+    return <div className="">Bạn đã làm rồi! Hẹn gặp lại</div>;
   }
-
   return (
     <div className="h-screen w-full flex items-center justify-center bg-cover bg-center">
       <div className="flex flex-col justify-center items-center gap-4 text-white text-center">

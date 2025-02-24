@@ -8,8 +8,10 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
-
+import { useContext } from "react";
+import AuthContext from "../../context/auth/AuthContext";
 const AdminHeader = () => {
+  const { logout } = useContext(AuthContext) || {};
   const navigate = useNavigate();
   const handleLogout = () => {
     Swal.fire({
@@ -31,9 +33,7 @@ const AdminHeader = () => {
       },
     }).then((result) => {
       if (result.isConfirmed) {
-        // Perform logout process
-        localStorage.removeItem("isLoggedIn");
-
+        logout();
         // Show success message with auto-close
         Swal.fire({
           title: "Logged Out",
