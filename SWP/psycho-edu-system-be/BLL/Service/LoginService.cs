@@ -67,13 +67,14 @@ namespace BLL.Service
             var claims = new List<Claim>();
 
             // Thêm vai trò vào claims
-            var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
-            claims.Add(new Claim(JwtConstant.KeyClaim.Role, role?.RoleName ?? "User"));
+            var Role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+            claims.Add(new Claim(ClaimTypes.Role, Role?.RoleName ?? "User"));
             // Thêm email vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
 
             // Thêm UserId vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, user.FullName.ToString()));
 
             // Thêm UserName vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.Username, user.UserName));
@@ -110,7 +111,7 @@ namespace BLL.Service
             {
                 AccessToken = accessTokenKey,
                 RefreshToken = refreshToken.RefreshTokenKey,
-                Role = role?.RoleName // Trả về tất cả vai trò
+                Role = Role?.RoleName // Trả về tất cả vai trò
             });
         }
 
@@ -151,8 +152,8 @@ namespace BLL.Service
             claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
 
             // Thêm vai trò vào claims
-            var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
-            claims.Add(new Claim(JwtConstant.KeyClaim.Role, role?.RoleName ?? "User"));
+            var Role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+            claims.Add(new Claim(ClaimTypes.Role, Role?.RoleName ?? "User"));
 
             // Thêm UserId vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
@@ -186,7 +187,7 @@ namespace BLL.Service
             {
                 NewAccessToken = newAccessToken,
                 RefreshToken = oldRefreshTokenKey,
-                Role = role?.RoleName
+                Role = Role?.RoleName
             });
         }
 

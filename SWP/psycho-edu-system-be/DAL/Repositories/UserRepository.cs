@@ -42,6 +42,12 @@ namespace DAL.Repositories
             return await _mindAidContext.Users
                 .FirstOrDefaultAsync(u => u.Email == emailOrUserName || u.UserName == emailOrUserName);
         }
+        public async Task<User> GetCurrentUserWithRoleAsync(Guid userId)
+        {
+            return await _dbSet
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+        }
 
     }
 }

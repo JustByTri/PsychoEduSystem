@@ -8,6 +8,15 @@ using BLL.Service;
 using DAL.UnitOfWork;
 using BLL.Utilities;
 using BLL.Services;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Common.Setting;
+using Common.Constant;
+using System.Security.Claims;
+using Swashbuckle.AspNetCore.SwaggerUI;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace MIndAid
 {
@@ -16,7 +25,25 @@ namespace MIndAid
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSettingModel.SecretKey)),
+            ValidateIssuer = true,
+            ValidIssuer = JwtSettingModel.Issuer,
+            ValidateAudience = true,
+            ValidAudience = JwtSettingModel.Audience,
+            ValidateLifetime = true,
+            RoleClaimType = ClaimTypes.Role
+        };
+    });
             // Add services to the container.
             builder.Services.AddControllers();
 
@@ -36,7 +63,42 @@ namespace MIndAid
             builder.Services.AddScoped<IRelationshipService, RelationshipService>();
             // Cấu hình Swagger
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+                c.OperationFilter<SecurityRequirementsOperationFilter>();
+                // Thêm security definition
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description =
+        "JWT Authorization header using the Bearer scheme. \r\n\r\n " +
+        "Enter 'Bearer' [space] and then your token in the text input below. \r\n\r\n" +
+        "Example: \"Bearer 12345abcdef\"",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Scheme = "Bearer",
+                    Type = SecuritySchemeType.ApiKey
+                });
+
+                // Thêm security requirement
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+{
+    {
+        new OpenApiSecurityScheme
+        {
+            Reference = new OpenApiReference
+            {
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            },
+            Scheme = "oauth2",
+            Name = "Bearer",
+            In = ParameterLocation.Header,
+        },
+        new List<string>()
+    }
+});
+            });
 
 
             // Cấu hình DbContext
@@ -53,18 +115,34 @@ namespace MIndAid
                               .AllowAnyHeader();
                     });
             });
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("SurveyResultsPolicy", policy =>
+                    policy.RequireRole("Student", "Parent", "Teacher", "Psychologist")
+                          .RequireAuthenticatedUser());
+            });
 
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+                    c.OAuthConfigObject = new OAuthConfigObject
+                    {
+                        ClientId = "swagger-ui",
+                        AppName = "Swagger UI",
+                    };
+                });
                 app.UseSwagger();
-                app.UseSwaggerUI();
             }
-
+         
             app.UseHttpsRedirection();
+            app.UseAuthentication();
             app.UseAuthorization();
+            app.UseHttpsRedirection();
             app.MapControllers();
             app.UseCors("AllowAll");
             app.Run();

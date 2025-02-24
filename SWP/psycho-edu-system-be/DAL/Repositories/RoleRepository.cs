@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using DAL.Entities;
 using DAL.Repositories.IRepositories;
 
-using DAL.Repositories.IRepositories;
+
 using DAL.Data;
 
 namespace DAL.Repositories
