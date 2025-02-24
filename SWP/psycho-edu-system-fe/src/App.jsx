@@ -10,34 +10,25 @@ import NotFoundPage from "./pages/error/NotFoundPage";
 import BookingPage from "./pages/booking/BookingPage";
 //StudentPage
 import StudentPortal from "./pages/student/StudentPortal";
-import CoursePage from "./pages/student/CoursePage";
 import StudentProgramPage from "./pages/student/StudentProgramPage";
 import StudentProgramDetail from "./pages/student/StudentProgramDetail";
 import StudentSurveyPage from './pages/survey/StudentSurveyPage';
 import StudentSurveyQuestion from './pages/survey/StudentSurveyQuestion';
 import SurveyDetailsPage from "./pages/student/SurveyDetailsPage";
-//thinh
 import ProgramCoursePage from "./pages/student/ProgramPage";
 import Dashboard from "./pages/student/Dashboard";
 import StartUpPage from "./pages/student/StartUpPage";
 import SurveyPage from "./pages/student/SurveyPage";
 import SurveyResultPage from "./pages/student/SurveyResultPage";
 //ParentPage
-import ParentPortal from "./pages/parent/ParentPortal";
-
 //AdminPage
 import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
-import AdminPortal from "./pages/admin/AdminPortal";
 import ProgramList from "./pages/admin/program/ProgramList";
-
 //CounselorPage
-import CounselorPortal from "./pages/counselor/CounselorPortal";
-
 //TeacherPage
-import TeacherPortal from "./pages/teacher/TeacherPortal";
 
 function App() {
   return (
@@ -60,6 +51,7 @@ function App() {
             </Route>
           </Route>
 
+          //huy
             <Route path="/students" element={<StudentPortal />} />
             <Route path="/students/program" element={<StudentProgramPage />} />
             <Route path="/students/program/:id" element={<StudentProgramDetail />} />
