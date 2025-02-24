@@ -274,43 +274,55 @@ using System.Text;
                     includes: q => q.Include(u => u.Role));
 
                 if (user?.Role == null) throw new Exception("Không tìm thấy thông tin người dùng");
+            var latestSurvey = await _unitOfWork.Survey
+   .FindAll(s => s.IsPublic &&
+       s.SurveyFor.Equals(user.Role.RoleName))
+   .OrderByDescending(s => s.CreateAt) // Sắp xếp theo ngày tạo giảm dần
+   .Include(s => s.Questions)
+   .ThenInclude(q => q.Answers)
+   .FirstOrDefaultAsync();
 
-                // Lấy survey theo role
-                var surveys = await _unitOfWork.Survey
-                    .FindAll(s => s.IsPublic &&
-                        s.SurveyFor.Equals(user.Role.RoleName))
-                    .Include(s => s.Questions)
-                    .ThenInclude(q => q.Answers)
-                    .ToListAsync();
-
+            if (latestSurvey == null)
+            {
                 return new SurveyResponseDTO
                 {
-                    Message = "Vui lòng thực hiện khảo sát",
-                    CanTakeSurvey = true,
-                    Surveys = surveys.Select(s => new SurveyDTO
-                    {
-                        SurveyId = s.SurveyId,
-                        SurveyName = s.SurveyName,
-                        Description = s.Description,
-                        IsPublic = s.IsPublic,
-                        SurveyFor = s.SurveyFor,
-                        CreateAt = s.CreateAt,
-                        Questions = s.Questions.Select(q => new QuestionDTO
-                        {
-                            QuestionID = q.QuestionId,
-                            Content = q.Content,
-                            Answers = q.Answers.Select(a => new AnswerDTO
-                            {
-                                AnswerId = a.AnswerId,
-                                Content = a.Content,
-                                Point = a.Point
-                            }).ToList()
-                        }).ToList()
-                    }).ToList()
+                    CanTakeSurvey = false,
+                    Message = "Không có survey nào phù hợp"
                 };
             }
 
-            public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(Guid userId, SubmitSurveyRequestDTO request)
+
+            return new SurveyResponseDTO
+            {
+                Message = "Vui lòng thực hiện khảo sát",
+                CanTakeSurvey = true,
+                Surveys = new List<SurveyDTO>
+        {
+            new SurveyDTO
+            {
+                SurveyId = latestSurvey.SurveyId,
+                SurveyName = latestSurvey.SurveyName,
+                Description = latestSurvey.Description,
+                IsPublic = latestSurvey.IsPublic,
+                SurveyFor = latestSurvey.SurveyFor,
+                CreateAt = latestSurvey.CreateAt,
+                Questions = latestSurvey.Questions.Select(q => new QuestionDTO
+                {
+                    QuestionID = q.QuestionId,
+                    Content = q.Content,
+                    Answers = q.Answers.Select(a => new AnswerDTO
+                    {
+                        AnswerId = a.AnswerId,
+                        Content = a.Content,
+                        Point = a.Point
+                    }).ToList()
+                }).ToList()
+            }
+        }
+            };
+        }
+
+        public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(Guid userId, SubmitSurveyRequestDTO request)
             {
            
                 var healthPoints = 0;
