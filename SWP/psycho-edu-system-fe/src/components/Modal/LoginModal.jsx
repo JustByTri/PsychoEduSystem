@@ -2,29 +2,6 @@
 import { useState, useRef, useEffect, useContext } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { ToastContainer, toast } from "react-toastify";
-
-{/* huy old code
-import { useNavigate } from "react-router-dom";
-import LogoutModal from "./LogoutModal";
-
-const ROLES = {
-  ADMIN: 'admin',
-  COUNSELOR: 'counselor',
-  PARENT: 'parent',
-  STUDENT: 'student'
-};
-
-const ROLE_ROUTES = {
-  [ROLES.ADMIN]: '/admin',
-  [ROLES.COUNSELOR]: '/counselor',
-  [ROLES.PARENT]: '/parent',
-  [ROLES.STUDENT]: '/students'
-};
-
-const LoginModal = () => {
-  const navigate = useNavigate();
-*/}
-
 import AuthContext from "../../context/auth/AuthContext";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -37,16 +14,6 @@ const LoginModal = () => {
   const [error, setError] = useState("");
   const [isLoginModal, setIsLoginModal] = useState(false);
   const [isOpenMenu, setIsOpenMenu] = useState(false);
-
-  {/* huy old code
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    return isLoggedIn ? JSON.parse(isLoggedIn) : false;
-  });
-  */}
-
   const navigate = useNavigate();
   const modalRef = useRef(null);
 
@@ -69,15 +36,6 @@ const LoginModal = () => {
 
   const handleGoogleSuccess = async (response) => {
     try {
-      {/* huy old code
-      if (response.credential) {
-        const userRole = ROLES.STUDENT;
-        localStorage.setItem('userRole', userRole);
-        localStorage.setItem('isLoggedIn', 'true');
-        setIsAuthenticated(true);
-        toast.success("Login success");
-        navigate(ROLE_ROUTES[userRole]);
-      */}
       const role = await loginGoogle(response.credential);
       if (role === "Admin") {
         navigate("/admin");
@@ -157,44 +115,12 @@ const LoginModal = () => {
       toast.error(error);
     }
   };
-
-  const handleEmailLogin = (e) => {
-    e.preventDefault();
-    
-    // Example email patterns for different roles
-    const emailPatterns = {
-      [ROLES.ADMIN]: /@admin\.com$/,
-      [ROLES.COUNSELOR]: /@counselor\.com$/,
-      [ROLES.PARENT]: /@parent\.com$/
-    };
-
-    let userRole = null;
-    
-    // Determine role based on email pattern
-    Object.entries(emailPatterns).forEach(([role, pattern]) => {
-      if (pattern.test(email)) {
-        userRole = role;
-      }
-    });
-
-    if (userRole && password.length >= 6) {
-      localStorage.setItem('userRole', userRole);
-      localStorage.setItem('isLoggedIn', 'true');
-      setIsAuthenticated(true);
-      toast.success("Login success");
-      navigate(ROLE_ROUTES[userRole]);
-      setIsLoginModal(false);
-    } else {
-      toast.error("Invalid credentials");
-    }
-  };
-
   return (
     <>
       <ToastContainer />
       {isAuthenticated === false ? (
         <a
-          className="block py-2 pr-4 pl-3 text-[#3B945E] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
+          className="block py-2 pr-4 pl-3 text-[#002B36] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
           onClick={() => setIsLoginModal(true)}
         >
           Sign In
@@ -203,7 +129,7 @@ const LoginModal = () => {
         <div className="relative cursor-pointer">
           <div
             onClick={handleOpenMenu}
-            className="block py-2 pr-4 pl-3 text-sm text-[#3B945E] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
+            className="block py-2 pr-4 pl-3 text-sm text-[#002B36] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
           >
             User
           </div>
@@ -289,17 +215,6 @@ const LoginModal = () => {
               </h5>
 
               <div className="p-4 md:p-5">
-
-                {/*
-                <form className="space-y-4" onSubmit={handleEmailLogin}>
-                  <div>
-                    <input
-                      type="email"
-                      name="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                */}
-
                 <form className="space-y-4" onSubmit={handleSubmit}>
                   <div>
                     <input
@@ -311,15 +226,19 @@ const LoginModal = () => {
                       required
                     />
                   </div>
+                  <hr className="h-px my-8 bg-gray-200 border-0"></hr>
                   <div>
                     <input
                       type="password"
                       name="password"
+                      id="password"
+                      placeholder="Password"
+                      className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
                       required
                     />
+                    <hr className="h-px my-8 bg-gray-200 border-0"></hr>
                   </div>
                   <div className="flex justify-between">
                     <div className="flex items-start">
@@ -352,7 +271,7 @@ const LoginModal = () => {
                     Login
                   </button>
                 </form>
-                <hr className="h-px my-5 bg-gray-200 border-0" />
+                <hr className="h-px my-5 bg-gray-200 border-0"></hr>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}

@@ -1,13 +1,13 @@
-import React from 'react';
-
 const Loading = () => {
   return (
-    <div className="loading-container">
-      <div className="loading-spinner">
-        {/* You can customize the loading animation/spinner here */}
-        <div className="spinner"></div>
-      </div>
-      <p>Loading...</p>
+    <div
+      aria-label="Loading..."
+      role="status"
+      className="h-screen w-full flex justify-center items-center"
+    >
+      <span className="text-xl sm:text-xl md:text-xl font-medium text-gray-500 animate-bounce">
+        Loading...
+      </span>
     </div>
   );
 };
