@@ -58,16 +58,21 @@ namespace MIndAid
             builder.Services.AddScoped<ILoginService, LoginService>();
             builder.Services.AddScoped<ISurveyService, SurveyService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
-            builder.Services.AddScoped<IJwtProvider,JwtProvider>();
+            builder.Services.AddScoped<IJwtProvider, JwtProvider>();
             builder.Services.AddScoped<IClassService, ClassService>();
             builder.Services.AddScoped<IRelationshipService, RelationshipService>();
+
+            builder.Services.AddScoped<ITargetProgramService, TargetProgramService>();
+
+
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
                 c.OperationFilter<SecurityRequirementsOperationFilter>();
-  
+
                 c.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
                 {
                     Description =
@@ -80,7 +85,7 @@ namespace MIndAid
                     Type = SecuritySchemeType.ApiKey
                 });
 
-      
+
             });
 
 
@@ -116,7 +121,7 @@ namespace MIndAid
                 });
                 app.UseSwagger();
             }
-         
+
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
