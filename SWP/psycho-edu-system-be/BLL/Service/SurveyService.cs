@@ -652,7 +652,12 @@ using System.Text;
             switch (currentUser.Role.RoleName)
             {
                 case "Student":
-                    query = query.Where(sr => sr.SurveyTargetId == currentUser.UserId);
+                    var student = await _unitOfWork.User.FindAll(u => u.UserId == userId).Select(u => u.UserId).ToListAsync();
+                    query = query.Where(sr => student.Contains(sr.SurveyTargetId))
+              .Include(sr => sr.SurveyTaker)
+              .Where(sr => student.Contains(sr.SurveyTaker.UserId));
+
+
                     break;
 
                 case "Parent":
