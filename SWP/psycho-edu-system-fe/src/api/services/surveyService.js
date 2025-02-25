@@ -100,10 +100,12 @@ export const SurveyService = {
       const formattedToken = JSON.parse(token);
       const accessToken = formattedToken.accessToken;
       const userData = DecodeJWT(accessToken);
+      const surveyTargetId =
+        formattedToken.role === "Student" ? userData.userId : data.childId;
       const surveyResult = {
         surveyId: data.surveyId,
         surveyTakerId: userData.userId,
-        surveyTargetId: userData.userId,
+        surveyTargetId: surveyTargetId,
         responses: data.responses,
       };
       const response = await axios.post(

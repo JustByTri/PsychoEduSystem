@@ -37,13 +37,7 @@ const LoginModal = () => {
   const handleGoogleSuccess = async (response) => {
     try {
       const role = await loginGoogle(response.credential);
-      if (role === "Admin") {
-        navigate("/admin");
-      } else if (role === "Student") {
-        navigate("/student");
-      } else {
-        navigate("/");
-      }
+      if (role === "Student") navigate("/student");
       setIsLoginModal(false);
     } catch (error) {
       toast.error(error);
@@ -108,7 +102,7 @@ const LoginModal = () => {
       } else if (role === "Student") {
         navigate("/student");
       } else {
-        navigate("/");
+        navigate("/parent");
       }
       setIsLoginModal(false);
     } catch (error) {

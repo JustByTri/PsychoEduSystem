@@ -17,6 +17,9 @@ import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
 import RequireSurvey from "./components/Survey/RequireSurvey";
+import ParentLayout from "./components/Layouts/ParentLayout";
+import ParentDashboard from "./pages/parent/Dashboard";
+import ParentSurveyPage from "./pages/parent/SurveyPage";
 function App() {
   return (
     <AuthProvider>
@@ -27,9 +30,7 @@ function App() {
           </Route>
 
           {/* Student Routes */}
-          <Route
-            element={<ProtectedRoute allowedRoles={["Student", "Parent"]} />}
-          >
+          <Route element={<ProtectedRoute allowedRoles={["Student"]} />}>
             {/* Route riêng cho StartUpPage, không bị RequireSurvey chặn */}
             <Route path="student/start-up-survey" element={<StartUpPage />} />
             <Route path="student/survey-for-student" element={<SurveyPage />} />
@@ -38,11 +39,16 @@ function App() {
               <Route path="student/" element={<PortalLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="program" element={<ProgramCoursePage />} />
-                <Route path="survey-result" element={<SurveyResultPage />} />
               </Route>
             </Route>
           </Route>
-
+          <Route path="survey-result" element={<SurveyResultPage />} />
+          <Route element={<ProtectedRoute allowedRoles={["Parent"]} />}>
+            <Route path="parent/" element={<ParentLayout />}>
+              <Route index element={<ParentDashboard />} />
+              <Route path="survey/:childId" element={<ParentSurveyPage />} />
+            </Route>
+          </Route>
           {/* Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
             <Route path="admin/" element={<AdminPortalLayout />}>
