@@ -34,6 +34,7 @@ namespace DAL.Data
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<SurveyAnswerUser> SurveyAnswerUsers { get; set; }
+        public DbSet<Schedule> Schedules { get; set; }
 
         #endregion
 

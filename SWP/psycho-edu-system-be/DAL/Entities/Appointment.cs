@@ -12,9 +12,9 @@ namespace DAL.Entities
     {
         [Key]
         public Guid AppointmentId { get; set; }
-        public Guid SlotId { get; set; }
-        public Guid BookedBy { get; set; } // FK to User (người đặt)
-        public Guid MeetingWith { get; set; } // FK to User (Counselor/Teacher)
+        public int  SlotId { get; set; }
+        public Guid BookedBy { get; set; } 
+        public Guid MeetingWith { get; set; } 
         public string GoogleMeet { get; set; }
         public string Notes { get; set; }
         public bool IsOnline { get; set; }
