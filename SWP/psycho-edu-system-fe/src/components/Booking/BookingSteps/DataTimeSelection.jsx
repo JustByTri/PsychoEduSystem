@@ -13,15 +13,7 @@ import { consultantService } from "../../../api/services/consultant";
 import { useBooking } from "../../../context/BookingContext";
 
 export const DateTimeSelection = () => {
-  const {
-    selectedConsultant,
-    selectedDate,
-    setSelectedDate,
-    selectedTime,
-    setSelectedTime,
-    appointmentType,
-    setAppointmentType,
-  } = useBooking();
+  const { bookingData, updateBookingData } = useBooking();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -40,12 +32,12 @@ export const DateTimeSelection = () => {
   // Fetch available slots từ API
   useEffect(() => {
     const fetchAvailableSlots = async () => {
-      if (selectedConsultant && selectedDate) {
+      if (bookingData.consultantId && bookingData.date) {
         try {
           setLoading(true);
           const slots = await consultantService.getAvailableSlots(
-            selectedConsultant.id,
-            selectedDate
+            bookingData.consultantId,
+            bookingData.date
           );
           setAvailableSlots(slots);
         } catch (error) {
@@ -59,7 +51,7 @@ export const DateTimeSelection = () => {
     };
 
     fetchAvailableSlots();
-  }, [selectedConsultant, selectedDate]);
+  }, [bookingData.consultantId, bookingData.date]);
 
   // Tính toán các ngày trong tháng
   const daysInMonth = new Date(
@@ -91,7 +83,32 @@ export const DateTimeSelection = () => {
   // Kiểm tra slot đã được đặt
   const isSlotBooked = (time) => {
     // Thêm logic kiểm tra slot đã book
-    return selectedConsultant?.bookedSlots?.includes(`${selectedDate} ${time}`);
+    return (
+      bookingData.consultantId &&
+      bookingData.bookedSlots?.includes(`${bookingData.date} ${time}`)
+    );
+  };
+
+  // Hàm xử lý khi chọn ngày
+  const handleSelectDate = (dateString) => {
+    updateBookingData({
+      date: dateString,
+      time: "", // Reset time when date changes
+    });
+  };
+
+  // Hàm xử lý khi chọn giờ
+  const handleSelectTime = (timeString) => {
+    updateBookingData({
+      time: timeString,
+    });
+  };
+
+  // Hàm xử lý khi chọn loại cuộc hẹn
+  const handleSelectAppointmentType = (type) => {
+    updateBookingData({
+      appointmentType: type,
+    });
   };
 
   return (
@@ -151,15 +168,14 @@ export const DateTimeSelection = () => {
                 day
               );
               const isDisabled = date < new Date();
+              const dateString = format(date, "yyyy-MM-dd");
               return (
                 <button
                   key={day}
-                  onClick={() =>
-                    !isDisabled && setSelectedDate(format(date, "yyyy-MM-dd"))
-                  }
+                  onClick={() => !isDisabled && handleSelectDate(dateString)}
                   disabled={isDisabled}
                   className={`p-2 rounded-lg ${
-                    selectedDate === format(date, "yyyy-MM-dd")
+                    bookingData.date === dateString
                       ? "bg-blue-600 text-white"
                       : isDisabled
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
@@ -175,7 +191,7 @@ export const DateTimeSelection = () => {
       </div>
 
       {/* Time Slots Section */}
-      {selectedDate && (
+      {bookingData.date && (
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-4">Select Time</h3>
           {loading ? (
@@ -187,12 +203,12 @@ export const DateTimeSelection = () => {
                 return (
                   <button
                     key={time}
-                    onClick={() => !isBooked && setSelectedTime(time)}
+                    onClick={() => !isBooked && handleSelectTime(time)}
                     disabled={isBooked}
                     className={`p-3 rounded-lg border ${
                       isBooked
                         ? "bg-red-50 border-red-200 cursor-not-allowed"
-                        : selectedTime === time
+                        : bookingData.time === time
                         ? "border-blue-600 bg-blue-50"
                         : "border-gray-200 hover:border-blue-600"
                     }`}
@@ -215,16 +231,16 @@ export const DateTimeSelection = () => {
       )}
 
       {/* Appointment Type Selection */}
-      {selectedTime && (
+      {bookingData.time && (
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-4">
             Select Appointment Type
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
-              onClick={() => setAppointmentType("video")}
+              onClick={() => handleSelectAppointmentType("video")}
               className={`p-4 rounded-lg border ${
-                appointmentType === "video"
+                bookingData.appointmentType === "video"
                   ? "border-blue-600 bg-blue-50"
                   : "border-gray-200"
               } hover:border-blue-600`}
@@ -235,9 +251,9 @@ export const DateTimeSelection = () => {
               </div>
             </button>
             <button
-              onClick={() => setAppointmentType("in-person")}
+              onClick={() => handleSelectAppointmentType("in-person")}
               className={`p-4 rounded-lg border ${
-                appointmentType === "in-person"
+                bookingData.appointmentType === "in-person"
                   ? "border-blue-600 bg-blue-50"
                   : "border-gray-200"
               } hover:border-blue-600`}

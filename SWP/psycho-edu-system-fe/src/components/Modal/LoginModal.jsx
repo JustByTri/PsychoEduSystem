@@ -6,7 +6,7 @@ import AuthContext from "../../context/auth/AuthContext";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 const LoginModal = () => {
-  const { isAuthenticated, user, login, logout } =
+  const { isAuthenticated, user, login, logout, loginGoogle } =
     useContext(AuthContext) || {};
   const role = user?.role || "";
   const [email, setEmail] = useState("");
@@ -34,19 +34,19 @@ const LoginModal = () => {
     };
   }, [isLoginModal]);
 
-  const handleGoogleSuccess = (response) => {
+  const handleGoogleSuccess = async (response) => {
     try {
-      if (response.credential) {
-        toast.success("Login success");
-
-        console.log(response.credential);
+      const role = await loginGoogle(response.credential);
+      if (role === "Admin") {
+        navigate("/admin");
+      } else if (role === "Student") {
+        navigate("/student");
       } else {
-        toast.error("Login failed");
+        navigate("/");
       }
-    } catch (error) {
-      toast.error(`Login failed: ${error.message}`);
-    } finally {
       setIsLoginModal(false);
+    } catch (error) {
+      toast.error(error);
     }
   };
 

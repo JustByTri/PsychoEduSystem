@@ -55,7 +55,24 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
+  const loginGoogle = async (idToken) => {
+    try {
+      const data = await LoginService.loginWithGoogle(idToken);
+      const userData = {
+        accessToken: data.result.accessToken,
+        role: "Student",
+        username: data.result.username,
+      };
 
+      localStorage.setItem("user", JSON.stringify(userData));
+      dispatch({ type: "LOGIN", payload: userData });
+
+      return userData.role;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  };
   const logout = () => {
     localStorage.clear();
     dispatch({ type: "LOGOUT" });
@@ -66,7 +83,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, logout, loginGoogle }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,7 @@
 import axios from "axios";
 const BASE_URL = "https://localhost:7192/";
+import DecodeJWT from "../../utils/decodeJwt";
+
 export const SurveyService = {
   getSurveys: async () => {
     try {
@@ -80,6 +82,28 @@ export const SurveyService = {
         }
       );
 
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        console.error("API Error:", error.response.status, error.response.data);
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+      } else {
+        console.error("Error setting up request:", error.message);
+      }
+      throw error;
+    }
+  },
+  submitSurvey: async (data) => {
+    try {
+      const token = localStorage.getItem("user");
+      const formattedToken = JSON.parse(token);
+      const accessToken = formattedToken.accessToken;
+      const userData = DecodeJWT(accessToken);
+      const response = await axios.post(
+        `${BASE_URL}api/Survey/submit/${userData.userId}`,
+        data
+      );
       return response.data;
     } catch (error) {
       if (error.response) {
