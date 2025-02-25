@@ -146,4 +146,43 @@ export const SurveyService = {
       throw error;
     }
   },
+  getSurveyResult: async (data) => {
+    if (!data || !data.month || !data.year) {
+      console.warn("Dữ liệu không hợp lệ, không gọi API.");
+      return [];
+    }
+    try {
+      const token = localStorage.getItem("user");
+      const formattedToken = JSON.parse(token);
+      const accessToken = formattedToken.accessToken;
+      const userData = DecodeJWT(accessToken);
+
+      // Tạo query params
+      const params = new URLSearchParams({
+        Userid: userData.userId,
+        Month: data.month,
+        Year: data.year,
+      });
+
+      // Chỉ thêm StudentId nếu nó không undefined
+      if (data.studentId !== undefined) {
+        params.append("StudentId", data.studentId);
+      }
+
+      const response = await axios.get(
+        `${BASE_URL}api/Survey/results?${params}`
+      );
+
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        console.error("API Error:", error.response.status, error.response.data);
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+      } else {
+        console.error("Error setting up request:", error.message);
+      }
+      throw error;
+    }
+  },
 };

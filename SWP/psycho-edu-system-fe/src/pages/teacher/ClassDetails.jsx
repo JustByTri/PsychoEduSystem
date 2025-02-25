@@ -53,7 +53,9 @@ const ClassDetails = () => {
       setSurveyLoading(false);
     }
   };
-
+  const handleViewSurveyResults = (studentId) => {
+    navigate(`/overall-survey-result/${studentId}`);
+  };
   // Lọc danh sách theo tìm kiếm
   const filteredStudents = students.filter(
     (student) =>
@@ -142,18 +144,36 @@ const ClassDetails = () => {
                   <td className="p-3 border border-gray-300">
                     {student.gender || "N/A"}
                   </td>
-                  <td className="p-3 border border-gray-300">
-                    <button
+                  <td className="p-3 border border-gray-300 flex gap-3">
+                    {/* Nút Làm Khảo Sát */}
+                    <motion.button
                       onClick={() => handleSurveyClick(student.userId)}
-                      className={`text-white font-semibold py-2 px-4 rounded ${
+                      className={`flex-1 px-4 py-2 text-white font-semibold rounded-lg shadow-md transition-all text-sm ${
                         surveyLoading
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-green-500 hover:bg-green-600"
                       }`}
                       disabled={surveyLoading}
+                      whileHover={!surveyLoading ? { scale: 1.05 } : {}}
+                      whileTap={!surveyLoading ? { scale: 0.95 } : {}}
                     >
                       {surveyLoading ? "Đang kiểm tra..." : "Làm khảo sát"}
-                    </button>
+                    </motion.button>
+
+                    {/* Nút Xem Kết Quả */}
+                    <motion.button
+                      onClick={() => handleViewSurveyResults(student.userId)}
+                      className={`flex-1 px-4 py-2 text-white font-semibold rounded-lg shadow-md transition-all text-sm ${
+                        surveyLoading
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-green-500 hover:bg-green-600"
+                      }`}
+                      disabled={surveyLoading}
+                      whileHover={!surveyLoading ? { scale: 1.05 } : {}}
+                      whileTap={!surveyLoading ? { scale: 0.95 } : {}}
+                    >
+                      Xem Kết Quả
+                    </motion.button>
                   </td>
                 </tr>
               ))}

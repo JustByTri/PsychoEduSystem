@@ -6,10 +6,12 @@ import "react-toastify/dist/ReactToastify.css";
 import { UserService } from "../../api/services/userService";
 import { useEffect, useState } from "react";
 import { SurveyService } from "../../api/services/surveyService";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     const fetchChildren = async () => {
       try {
@@ -23,18 +25,19 @@ const Dashboard = () => {
 
     fetchChildren();
   }, []);
+
   const handleHelpClick = () => {
     toast.success("Liên hệ hỗ trợ qua email hoặc hotline: 1900 123 456", {
       position: "top-right",
       duration: 4000,
     });
   };
-  const handleChildSelect = async (studentId) => {
+
+  const handleTakeSurvey = async (studentId) => {
     setLoading(true);
     try {
       const surveyStatus = await SurveyService.checkUserSurveyStatus(studentId);
       if (surveyStatus.canTakeSurvey) {
-        // Lưu dữ liệu khảo sát vào localStorage (nếu cần)
         if (surveyStatus.surveys.length > 0) {
           const surveyData = await SurveyService.getSurveyContent(
             surveyStatus.surveys[0].surveyId
@@ -42,8 +45,6 @@ const Dashboard = () => {
           localStorage.setItem("questions", JSON.stringify(surveyData));
           console.log("Survey data saved to localStorage ✅");
         }
-
-        // Điều hướng mà không truyền surveyId
         navigate(`/survey/${studentId}`);
       } else {
         toast.info("Không có khảo sát nào khả dụng!");
@@ -56,10 +57,13 @@ const Dashboard = () => {
     }
   };
 
+  const handleViewSurveyResults = (studentId) => {
+    navigate(`/overall-survey-result/${studentId}`);
+  };
+
   return (
     <div className="flex flex-col items-center min-h-screen p-10 bg-gray-50">
       <ToastContainer />
-      {/* Header Section */}
       <motion.h1
         className="text-4xl font-bold text-gray-900 mb-4"
         initial={{ opacity: 0, y: -20 }}
@@ -75,11 +79,9 @@ const Dashboard = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.2 }}
       >
-        Hãy chọn một bé để bắt đầu khảo sát. Chúng tôi sẽ giúp bạn tạo một trải
-        nghiệm phù hợp nhất với bé yêu của bạn!
+        Hãy chọn một bé để bắt đầu khảo sát hoặc xem kết quả khảo sát trước đó.
       </motion.p>
 
-      {/* Children Selection Grid */}
       <motion.div
         className={`${
           children.length === 1
@@ -94,13 +96,11 @@ const Dashboard = () => {
         }}
       >
         {children.map((child) => (
-          <motion.button
+          <motion.div
             key={child.studentId}
-            onClick={() => handleChildSelect(child.studentId)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             className="p-6 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col items-center transition-transform hover:-translate-y-1"
-            aria-label={`Chọn ${child.relationshipName}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
           >
             <div className="relative">
               <img
@@ -118,7 +118,30 @@ const Dashboard = () => {
             <h2 className="text-lg font-medium text-gray-800 mt-4">
               {child.relationshipName}
             </h2>
-          </motion.button>
+
+            {/* Buttons for survey actions */}
+            <div className="mt-4 flex space-x-4">
+              <motion.button
+                onClick={() => handleTakeSurvey(child.studentId)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md text-sm font-medium hover:bg-blue-600 transition"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-label={`Làm survey cho ${child.relationshipName}`}
+              >
+                Làm Survey
+              </motion.button>
+
+              <motion.button
+                onClick={() => handleViewSurveyResults(child.studentId)}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md text-sm font-medium hover:bg-green-600 transition"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-label={`Xem kết quả survey của ${child.relationshipName}`}
+              >
+                Xem Kết Quả
+              </motion.button>
+            </div>
+          </motion.div>
         ))}
       </motion.div>
 

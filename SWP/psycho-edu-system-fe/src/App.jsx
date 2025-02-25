@@ -22,6 +22,7 @@ import ParentDashboard from "./pages/parent/Dashboard";
 import ParentSurveyPage from "./pages/parent/SurveyPage";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import ClassDetails from "./pages/teacher/ClassDetails";
+import SurveyResult from "./pages/survey/SurveyResult";
 function App() {
   return (
     <AuthProvider>
@@ -59,7 +60,10 @@ function App() {
               <Route path="survey/:id" element={<SurveyDetail />} />
             </Route>
           </Route>
-
+          <Route
+            path="overall-survey-result/:studentId"
+            element={<SurveyResult />}
+          />
           {/* Counselor Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Counselor"]} />}>
             <Route
