@@ -12,12 +12,11 @@ const RequireSurvey = () => {
     const checkSurveyStatus = async () => {
       try {
         const response = await SurveyService.checkUserSurveyStatus();
-        console.log("API response:", response);
-
-        if (response?.surveys && response.surveys.surveyId) {
+        if (response?.surveys) {
           setHasCompletedSurvey(false);
-          setSurveyData(response.surveys.surveyId);
-          console.log(response.surveys.surveyId);
+          if (Array.isArray(response.surveys) && response.surveys.length > 0) {
+            setSurveyData(response.surveys[0].surveyId);
+          }
         } else {
           setHasCompletedSurvey(true);
           setSurveyData(null);
@@ -37,7 +36,6 @@ const RequireSurvey = () => {
   if (loading) return <p>Loading...</p>;
 
   if (!hasCompletedSurvey) {
-    console.log("Survey Data being sent to StartUpPage:", surveyData);
     return (
       <Navigate to="/student/start-up-survey" state={{ surveyData }} replace />
     );

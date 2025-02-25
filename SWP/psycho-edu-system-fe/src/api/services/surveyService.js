@@ -100,9 +100,15 @@ export const SurveyService = {
       const formattedToken = JSON.parse(token);
       const accessToken = formattedToken.accessToken;
       const userData = DecodeJWT(accessToken);
+      const surveyResult = {
+        surveyId: data.surveyId,
+        surveyTakerId: userData.userId,
+        surveyTargetId: userData.userId,
+        responses: data.responses,
+      };
       const response = await axios.post(
-        `${BASE_URL}api/Survey/submit/${userData.userId}`,
-        data
+        `${BASE_URL}api/Survey/submit`,
+        surveyResult
       );
       return response.data;
     } catch (error) {

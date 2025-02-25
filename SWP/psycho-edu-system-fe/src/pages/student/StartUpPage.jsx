@@ -20,12 +20,8 @@ const StartUpPage = () => {
         setLoading(false);
         return;
       }
-
-      console.log("Survey Data received:", surveyData);
-
       try {
         const response = await SurveyService.getSurveyContent(surveyData);
-        console.log("Survey response:", response);
         localStorage.setItem("questions", JSON.stringify(response));
         console.log("Survey data saved to localStorage ✅");
       } catch (error) {
