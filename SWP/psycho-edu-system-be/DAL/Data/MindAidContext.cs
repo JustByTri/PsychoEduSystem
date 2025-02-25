@@ -19,7 +19,7 @@ namespace DAL.Data
         public DbSet<Message> Messages { get; set; }
     
         public DbSet<MentalHealthPointDetail> MentalHealthPointDetails { get; set; }
-    
+
         public DbSet<Question> QuestionSets { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Relationship> Relationships { get; set; }
@@ -30,6 +30,8 @@ namespace DAL.Data
         public DbSet<Class> Classes { get; set; }
         public DbSet<TargetProgram> TargetPrograms { get; set; }
         public DbSet<ProgramEnrollment> ProgramEnrollments { get; set; }
+
+        public DbSet<TargetProgram> targetPrograms { get; set; }
 
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -302,14 +304,14 @@ namespace DAL.Data
              DimensionId = 2,
              DimensionName = "Trầm Cảm",
              CreateAt = DateTime.Now,
-            
+
          },
          new DimensionHealth
          {
              DimensionId = 3,
              DimensionName = "Căng Thẳng",
              CreateAt = DateTime.Now,
-          
+
          }
      );
             var studentPassword = "student123";

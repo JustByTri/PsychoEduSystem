@@ -15,7 +15,7 @@ namespace DAL.UnitOfWork
         public UnitOfWork(MindAidContext context)
         {
             _context = context;
-
+            TargetProgram = new TargetProgramRepository(_context);
             // Khởi tạo các repository
             Appointment = new AppointmentRepository(_context);
            DimensionHealth = new CategoryRepository(_context);
@@ -30,7 +30,7 @@ namespace DAL.UnitOfWork
             UserToken = new UserTokenRepository(_context);
             Answer = new AnswerRepository(_context);
             RefreshToken = new RefreshTokenRepository(_context);
-            Question = new QuestionRepository(_context);    
+            Question = new QuestionRepository(_context);
             Survey = new SurveyRepository(_context);
             SurveyResponse = new SurveyResponseRepository(_context);
             SurveyAnswerUser = new SurveyAnswerUserRepository(_context);
