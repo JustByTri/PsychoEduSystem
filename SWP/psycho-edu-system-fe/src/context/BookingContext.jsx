@@ -13,22 +13,18 @@ export const BookingProvider = ({ children }) => {
     userId: "",
     userName: "",
     userRole: "",
-
     // Child info (for parents)
     childId: "",
     childName: "",
-
     // Consultant info
-    consultantType: "", // "counselor" or "homeroom"
+    consultantType: "",
     consultantId: "",
     consultantName: "",
     isHomeroomTeacher: false,
-
     // Booking details
     date: "",
     time: "",
     duration: 30,
-
     reasonForBooking: "",
     additionalNotes: "",
     email: "",
