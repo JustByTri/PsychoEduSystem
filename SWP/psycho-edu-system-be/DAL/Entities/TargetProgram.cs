@@ -12,14 +12,19 @@ namespace DAL.Entities
     {
         [Key]
         public Guid ProgramId { get; set; }
-        public string Title { get; set; }
-        public DateTime Date { get; set; }
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
-        public string MeetingUrl { get; set; }
-        public bool IsCompleted { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public DateTime StartDate { get; set; }    
+        public int MinPoint { get; set; }
+        public int Capacity { get; set; }
+        public Guid CreateBy { get; set; }
+        public DateTime CreateAt { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [ForeignKey("CreateBy")]
+        public User CreatedByUser { get; set; }
+        [ForeignKey("Demension")]
+        public int DemensionId  { get; set; }
+        public DimensionHealth Demension { get; set; }
     }
+
 }

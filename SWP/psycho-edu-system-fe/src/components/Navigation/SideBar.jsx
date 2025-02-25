@@ -21,8 +21,8 @@ const SideBar = () => {
       path: "/student/start-up-survey",
     },
     { icon: faCogs, label: "Program", path: "/student/program" },
-    { icon: faHistory, label: "History", path: "#" },
-    { icon: faFileAlt, label: "Report", path: "#" },
+    { icon: faHistory, label: "Schedules", path: "/student/schedule" },
+    { icon: faFileAlt, label: "Booking", path: "/student/booking" },
     { icon: faUser, label: "Account", path: "#" },
   ];
 

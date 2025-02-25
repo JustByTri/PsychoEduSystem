@@ -1,27 +1,39 @@
 import { useState, useEffect } from "react";
 import Loading from "../../components/Loadings/Loading";
-import data from "../../data/data.json";
 import { useNavigate } from "react-router-dom";
-
+import { SurveyService } from "../../api/services/surveyService";
 const StartUpPage = () => {
   const [isLoading, setLoading] = useState(true);
-  const [fetchedData, setFetchedData] = useState(null);
+  const [isPublic, setIsPublic] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setFetchedData(data);
-    if (fetchedData) {
-      localStorage.setItem("questions", JSON.stringify(fetchedData));
+  const fetchSurvey = async () => {
+    try {
+      const response = await SurveyService.getSurveyContent(
+        "450073b0-9a97-4ab9-abda-b766b7d9bebb"
+      );
+      if (response) {
+        setIsPublic(response?.isPublic ?? false);
+        localStorage.setItem("questions", JSON.stringify(response));
+      } else {
+        throw new Error("Empty response received");
+      }
+    } catch (error) {
+      console.error("Error fetching survey:", error);
+      localStorage.setItem("questions", JSON.stringify(null));
     }
+  };
+  useEffect(() => {
+    fetchSurvey();
     setTimeout(() => {
       setLoading(false);
     }, 2000);
-  }, [fetchedData]);
+  }, []);
 
   if (isLoading) {
     return <Loading />;
+  } else if (isPublic === false) {
+    return <div className="">Bạn đã làm rồi! Hẹn gặp lại</div>;
   }
-
   return (
     <div className="h-screen w-full flex items-center justify-center bg-cover bg-center">
       <div className="flex flex-col justify-center items-center gap-4 text-white text-center">

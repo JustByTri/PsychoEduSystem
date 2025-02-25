@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories
 {
-    public class CategoryRepository : GenericRepository<Category>, ICategoryRepository
+    public class CategoryRepository : GenericRepository<DimensionHealth>, ICategoryRepository
     {
         public CategoryRepository(MindAidContext context) : base(context) { }
     }

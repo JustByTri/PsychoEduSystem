@@ -22,9 +22,18 @@ namespace DAL.Repositories.IRepositories
         Task DeleteAsync(Guid id);
         Task<bool> AnyAsync(Expression<Func<User, bool>> predicate);
         Task<T> GetByConditionAsync(Expression<Func<T, bool>> expression);
+        Task<IEnumerable<T>> GetByConditionAsyncc(Expression<Func<T, bool>> expression);
         T GetByCondition(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> FindProductAsync(Expression<Func<T, bool>> expression);
         Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> expression);
-        Task CreateRangeAsync(List<T> entity);
+        Task CreateRangeAsync(IEnumerable<T> entities);
+        Task<T> GetByConditionWithIncludesAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes);
+        Task<T> GetByConditionWithIncludesAsyncc(
+    Expression<Func<T, bool>> expression,
+    params Func<IQueryable<T>, IQueryable<T>>[] includes);
+        Task<List<SurveyAnswerUser>> GetUserAnswersAsync(Guid userId, Guid surveyId);
+        Task<T> GetByEmailAsync(string email);
+        Task<T> GetByIdWithIncludesAsync(Guid id, params Expression<Func<T, object>>[] includes);
+
     }
-}
+    }

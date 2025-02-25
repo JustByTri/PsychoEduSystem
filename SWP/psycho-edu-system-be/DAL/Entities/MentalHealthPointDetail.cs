@@ -5,21 +5,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static DAL.Entities.DimensionHealth;
 
 namespace DAL.Entities
 {
     public class MentalHealthPointDetail
     {
         [Key]
-        public Guid MHPDId { get; set; }
-        public Guid MHPId { get; set; }
-        public MentalHealthPoint MentalHealthPoints { get; set; }
-        public int Point {  get; set; }
-        public int CategoryID { get; set; }
-        public Category Category { get; set; }
+        public Guid MentalHPDetailId { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public DateTime? CreateAt { get; set; }
-
+        public int DimensionId { get; set; } 
+        public int HealthPoints { get; set; }
+        public string DimensionName { get; set; }
+        public SurveyResponse SurveyResponse { get; set; }
+        public Guid SurveyResponseId { get; set; }
+        [ForeignKey("DimensionId")]
+        public DimensionHealth Dimension { get; set; }
+        public DateTime CreateAt { get; set; }
     }
 }

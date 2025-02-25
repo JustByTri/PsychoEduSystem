@@ -1,8 +1,9 @@
+/* eslint-disable react/prop-types */
 const Question = ({ question, currentAnswer, handleAnswerSelection }) => {
   return (
     <div className="border rounded-md p-4 w-full mx-auto max-w-2xl">
       <h4 className="text-xl lg:text-2xl font-semibold mb-4">
-        {question.questionContent}
+        {question.content}
       </h4>
       <div>
         {question.answers.map((answer) => (
@@ -13,14 +14,14 @@ const Question = ({ question, currentAnswer, handleAnswerSelection }) => {
             <input
               type="radio"
               name={`question-${question.questionId}`}
-              value={answer.answerPoint}
-              checked={currentAnswer?.answerPoint === answer.answerPoint}
+              value={answer.point}
+              checked={currentAnswer?.point === answer.point}
               onChange={() =>
-                handleAnswerSelection(question.questionId, answer.answerPoint)
+                handleAnswerSelection(question.questionId, answer.point)
               }
               className="mr-3"
             />
-            <i className="pl-2">{answer.answerContent}</i>
+            <i className="pl-2">{answer.content}</i>
           </label>
         ))}
       </div>

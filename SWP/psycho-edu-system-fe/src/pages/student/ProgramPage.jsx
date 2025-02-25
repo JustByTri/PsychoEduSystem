@@ -16,11 +16,8 @@ import {
   courseListData,
   courseTopicsData,
 } from "../../data/courseData";
-import CourseCatalog from "../../components/ProgramPageComponents/CourseCatalog";
-import CourseList from "../../components/ProgramPageComponents/CoursesList";
-import CourseContent from "../../components/ProgramPageComponents/CourseContent";
-import CourseDetail from "../../components/ProgramPageComponents/CourseDetail";
-import SideBar from "../../components/Bar/SideBar";
+import CourseCatalog from "../../components/CoursePageComponents/CourseCatalog";
+import CourseList from "../../components/CoursePageComponents/CoursesList";
 
 /**
  * Component hiển thị chi tiết khóa học
@@ -51,13 +48,12 @@ const CourseDetailView = () => {
  * Component chính của trang Program
  * Quản lý state và điều hướng giữa danh sách khóa học và chi tiết khóa học
  */
-const ProgramCoursePage = () => {
+const ProgramPage = () => {
   // Các state quản lý filter và tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCounselor, setSelectedCounselor] = useState("All");
   const [selectedType, setSelectedType] = useState("All");
-  const [currentPage, setCurrentPage] = useState("/program");
   // State quản lý trạng thái thu gọn của sidebar
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -79,40 +75,6 @@ const ProgramCoursePage = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // Cấu hình menu items cho sidebar
-  const courseNavigationItems = [
-    {
-      name: "Home",
-      href: "/course/overview",
-      icon: BookOpen,
-    },
-    {
-      name: "Survey",
-      href: "d",
-      icon: PlayCircle,
-    },
-    {
-      name: "Program",
-      href: "/program",
-      icon: Users,
-    },
-    {
-      name: "Account",
-      href: "/a",
-      icon: Airplay,
-    },
-    {
-      name: "History",
-      href: "/b",
-      icon: AlignCenter,
-    },
-    {
-      name: "Report",
-      href: "/c",
-      icon: LucideShoppingBasket,
-    },
-  ];
 
   /**
    * Filter courses dựa trên các điều kiện:
@@ -136,22 +98,6 @@ const ProgramCoursePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col lg:flex-row max-w-7xl mx-auto">
-        {/* Sidebar */}
-        <div
-          className={`top-0 left-0 h-full z-30 transition-all duration-300 ease-in-out ${
-            isCollapsed ? "w-15" : "w-30"
-          }`}
-        >
-          <SideBar
-            items={courseNavigationItems}
-            title="Course Catalog"
-            currentPath={currentPage}
-            isCollapsed={isCollapsed}
-            onCollapse={() => setIsCollapsed(!isCollapsed)}
-            onItemClick={(item) => setCurrentPage(item.href)}
-          />
-        </div>
-
         {/* Main content area */}
         <div
           className={`flex-1 transition-all duration-300 ${
@@ -195,41 +141,4 @@ const ProgramCoursePage = () => {
   );
 };
 
-//         <div
-//           className={`flex-1 transition-all duration-300 ${
-//             isCollapsed ? "ml-20" : "ml-72"
-//           }`}
-//         >
-//           <div className="max-w-[1920px] mx-auto px-4 py-6 lg:px-8">
-//             <Routes>
-//               <Route
-//                 path="/"
-//                 element={
-//                   <div className="flex flex-col lg:flex-row gap-6">
-//                     <CourseCatalog
-//                       selectedCategory={selectedCategory}
-//                       onCategorySelect={setSelectedCategory}
-//                       categories={courseCatalogData}
-//                     />
-//                     <CourseList
-//                       searchTerm={searchTerm}
-//                       onSearchChange={(e) => setSearchTerm(e.target.value)}
-//                       courses={filteredCourses}
-//                       selectedCounselor={selectedCounselor}
-//                       selectedType={selectedType}
-//                       onCounselorChange={(e) => setSelectedCounselor(e.target.value)}
-//                       onTypeChange={(e) => setSelectedType(e.target.value)}
-//                     />
-//                   </div>
-//                 }
-//               />
-//               <Route path="/course/:courseId" element={<CourseDetailView />} />
-//             </Routes>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-export default ProgramCoursePage;
+export default ProgramPage;

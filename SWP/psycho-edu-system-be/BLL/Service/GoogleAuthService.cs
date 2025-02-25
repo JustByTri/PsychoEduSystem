@@ -2,19 +2,15 @@
 using Common.Config;
 using Common.Constants;
 using Common.DTO;
-using Common.Constants;
 using DAL.Entities;
 using DAL.UnitOfWork;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
-using BLL.Service;
 
 namespace BLL.Services
 {
@@ -22,145 +18,106 @@ namespace BLL.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly GoogleAuthConfig _googleAuthConfig;
+        private readonly IJwtProvider _jwtProvider;
 
-        public GoogleAuthService(IUnitOfWork unitOfWork, IOptions<GoogleAuthConfig> googleAuthConfig)
+        public GoogleAuthService(IUnitOfWork unitOfWork, IOptions<GoogleAuthConfig> googleAuthConfig, IJwtProvider jwtProvider)
         {
             _unitOfWork = unitOfWork;
             _googleAuthConfig = googleAuthConfig.Value;
+            _jwtProvider = jwtProvider;
         }
 
-        public async Task<bool> SignInWithGoogle(GoogleAuthTokenDTO googleAuthToken)
-
+        public async Task<ResponseDTO> GoogleSignIn(GoogleAuthTokenDTO googleAuthToken)
         {
-            // Check if token is valid
             Payload payload;
             try
             {
+                // Xác thực token Google
                 payload = await ValidateAsync(googleAuthToken.IdToken, new ValidationSettings
                 {
-                    Audience = new[] { _googleAuthConfig.ClientId }
+                    Audience = new[] { "1018910450198-m8sitc37vcjdg1qbe7d3cp00nca00840.apps.googleusercontent.com" }
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return false;
+                return new ResponseDTO("Failed to validate Google token.", 400, false, ex.Message);
             }
 
-            // Check if user exists
-            var existingUser = await _unitOfWork.User.GetUserByEmailAsync(payload.Email);
+            
+            if (!payload.Email.EndsWith("@fpt.edu.vn", StringComparison.OrdinalIgnoreCase))
+            {
+                return new ResponseDTO("Login failed. Only fpt.edu.vn emails are allowed.", 400, false);
+            }
 
+      
+            var existingUser = await _unitOfWork.User.GetByEmailAsync(payload.Email);
             if (existingUser != null)
             {
                 return await GenerateTokensForUser(existingUser);
             }
 
-            // Create new user from Google payload
+            // Tạo người dùng mới nếu chưa tồn tại
             var newUser = new User
             {
                 UserId = Guid.NewGuid(),
-                FullName = payload.FamilyName + payload.GivenName,
-                Email = payload.Email,
+                FullName = $"{payload.GivenName} {payload.FamilyName}".Trim(),
                 PasswordHash = new byte[32],
                 PasswordSalt = new byte[32],
-                
+                Email = payload.Email,
+                IsEmailConfirmed = true,
+                CreateAt = DateTime.UtcNow,
+                RoleId = 3 
             };
 
-            var role = await _unitOfWork.Role.FirstOrDefaultAsync(r => r.RoleName == "Student");
-
-            if (role == null)
-            {
-                await EnsureRolesExistAsync();
-            }
-
-            _unitOfWork.User.Add(newUser);
-
-            var userRole = new UserRole
-            {
-                UserId = newUser.UserId,
-                RoleId = role.RoleId
-            };
-
-            _unitOfWork.UserRole.Add(userRole);
-
-            try
-            {
-                var result = await _unitOfWork.SaveChangeAsync();
-                if (!result)
-                {
-                    return false;
-                }
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            await _unitOfWork.User.AddAsync(newUser);
+            await _unitOfWork.SaveChangeAsync();
 
             return await GenerateTokensForUser(newUser);
         }
 
-        private async Task<bool> GenerateTokensForUser(User user)
+        private async Task<ResponseDTO> GenerateTokensForUser(User user)
         {
+           
             var claims = new List<Claim>
-        {
-            new Claim(JwtConstant.KeyClaim.Email, user.Email ?? string.Empty),
-            new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()),
-            new Claim(JwtConstant.KeyClaim.Username, user.UserName ?? "Unknown")
-        };
+    {
+        new Claim(JwtClaimTypes.UserId, user.UserId.ToString()),
+        new Claim(JwtClaimTypes.Email, user.Email),
+        new Claim(JwtClaimTypes.Username, user.UserName),
+         new Claim(JwtClaimTypes.RoleId, user.RoleId.ToString())
+    };
 
-            if (user.UserRoles != null)
+          
+            var accessToken = _jwtProvider.GenerateAccessToken(claims);
+            var refreshToken = _jwtProvider.GenerateRefreshToken(claims);
+
+           
+            var refreshTokenEntity = new RefreshToken
             {
-                foreach (var userRole in user.UserRoles)
-                {
-                    claims.Add(new Claim(JwtConstant.KeyClaim.Role, userRole.Role?.RoleName ?? "Student"));
-                }
-            }
-            else
-            {
-                claims.Add(new Claim(JwtConstant.KeyClaim.Role, "Student"));
-            }
-
-            var fullName = $"{user.FullName}".Trim();
-            claims.Add(new Claim(JwtConstant.KeyClaim.fullName, fullName));
-
-            var refreshTokenKey = JwtProvider.GenerateRefreshToken(claims);
-            var accessTokenKey = JwtProvider.GenerateAccessToken(claims);
-
-            var refreshToken = new UserToken
-            {
-                TokenId = Guid.NewGuid(),
+                RefreshTokenId = Guid.NewGuid(),
                 UserId = user.UserId,
-                RefreshToken = refreshTokenKey,
-              
-                TokenCreated = DateTime.UtcNow
+                RefreshTokenKey = refreshToken,
+                IsRevoked = false,
+                CreatedAt = DateTime.UtcNow
             };
-
-            _unitOfWork.UserToken.Add(refreshToken);
 
             try
             {
+                await _unitOfWork.RefreshToken.AddAsync(refreshTokenEntity);
                 await _unitOfWork.SaveChangeAsync();
-                return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return false;
+                return new ResponseDTO("Failed to save refresh token", 500, false, ex.Message);
             }
-        }
 
-        private async Task EnsureRolesExistAsync()
-        {
-            var studentRole = await _unitOfWork.Role.FirstOrDefaultAsync(r => r.RoleName == "Student");
-
-            if (studentRole == null)
+            // Trả về access token và refresh token
+            return new ResponseDTO("Login successful", 200, true, new
             {
-                await _unitOfWork.Role.AddAsync(new Role
-                {
-                    RoleId = Guid.NewGuid(),
-                    RoleName = "Student"
-                });
-            }
-
-            await _unitOfWork.SaveChangeAsync();
+                AccessToken = accessToken, // Đảm bảo tên trường chính xác
+                RefreshToken = refreshToken,
+                UserId = user.UserId,
+                Role = 3 
+            });
         }
     }
 }

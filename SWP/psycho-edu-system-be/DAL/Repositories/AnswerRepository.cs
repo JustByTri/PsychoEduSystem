@@ -13,7 +13,10 @@ namespace DAL.Repositories
     public class AnswerRepository : GenericRepository<Answer>, IAnswerRepository
     {
         public AnswerRepository(MindAidContext context) : base(context) { }
-
-
+        public async Task DeleteRangeAsync(IEnumerable<Answer> entities)
+        {
+            _dbSet.RemoveRange(entities);
+            await _context.SaveChangesAsync();
+        }
     }
 }
