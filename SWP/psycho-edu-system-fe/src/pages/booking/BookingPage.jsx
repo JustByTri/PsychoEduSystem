@@ -5,6 +5,7 @@ import { ConsultantTypeSelection } from "../../components/Booking/BookingSteps/C
 import { ConsultantSelection } from "../../components/Booking/BookingSteps/ConsultantSelection";
 import { DateTimeSelection } from "../../components/Booking/BookingSteps/DataTimeSelection";
 import { ConfirmationStep } from "../../components/Booking/BookingSteps/ConfirmationStep";
+import { UserInfoForm } from "../../components/Booking/BookingSteps/UserInfoForm";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -12,14 +13,14 @@ import "react-toastify/dist/ReactToastify.css";
 const BookingPageContent = () => {
   const { isParent, bookingData, resetBookingData } = useBooking();
   const [step, setStep] = useState(1);
-  const [totalSteps, setTotalSteps] = useState(4);
+  const [totalSteps, setTotalSteps] = useState(5);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isParent()) {
-      setTotalSteps(5);
+      setTotalSteps(6);
     } else {
-      setTotalSteps(4);
+      setTotalSteps(5);
     }
   }, [isParent]);
 
@@ -45,25 +46,70 @@ const BookingPageContent = () => {
     }
   };
 
-  const handleConfirm = () => {
-    // Giả lập gọi API để lưu booking
-    console.log("Booking confirmed:", bookingData);
+  const handleNextWithValidation = () => {
+    // Kiểm tra validation ở bước UserInfoForm
+    const userInfoStep = isParent() ? 5 : 4; // Bước UserInfoForm
+    if (step === userInfoStep) {
+      if (!bookingData.userName || !bookingData.phone || !bookingData.email) {
+        toast.error("Please fill in all required fields!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        return;
+      }
+    }
+    handleNext();
+  };
 
-    // Hiển thị thông báo thành công
-    toast.success("Booking registered successfully!", {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
+  const handleConfirm = async () => {
+    try {
+      // // Gửi dữ liệu booking đến backend
+      //  const response = await fetch("/api/bookings", {
+      //    method: "POST",
+      //    headers: {
+      //      "Content-Type": "application/json",
+      //    },
+      //    body: JSON.stringify(bookingData),
+      //  });
 
-    // Reset form và chuyển hướng sau 3 giây
-    setTimeout(() => {
-      resetBookingData();
-      navigate("/student/schedule"); // Chuyển đến trang Schedule
-    }, 3000);
+      //  if (!response.ok) {
+      //    throw new Error("Failed to save booking");
+      //  }
+
+      //  // Đọc phản hồi từ backend (nếu cần)
+      //  const result = await response.json();
+      //  console.log("Booking saved successfully:", result);
+
+      // Hiển thị thông báo thành công
+      toast.success("Booking registered successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
+      // Reset và chuyển hướng sau 3 giây
+      setTimeout(() => {
+        resetBookingData();
+        navigate("/student/schedule");
+      }, 3000);
+    } catch (error) {
+      console.error("Error confirming booking:", error);
+      toast.error("Failed to register booking. Please try again.", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
   };
 
   const renderStepContent = () => {
@@ -83,9 +129,15 @@ const BookingPageContent = () => {
           return bookingData.consultantType === "counselor" ? (
             <DateTimeSelection />
           ) : (
-            <ConfirmationStep />
+            <UserInfoForm />
           );
         case 5:
+          return bookingData.consultantType === "counselor" ? (
+            <UserInfoForm />
+          ) : (
+            <ConfirmationStep />
+          );
+        case 6:
           return <ConfirmationStep />;
         default:
           return null;
@@ -105,16 +157,20 @@ const BookingPageContent = () => {
         return bookingData.consultantType === "counselor" ? (
           <DateTimeSelection />
         ) : (
-          <ConfirmationStep />
+          <UserInfoForm />
         );
       case 4:
+        return bookingData.consultantType === "counselor" ? (
+          <UserInfoForm />
+        ) : (
+          <ConfirmationStep />
+        );
+      case 5:
         return <ConfirmationStep />;
       default:
         return null;
     }
   };
-
-  const isLastStep = step === totalSteps;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -140,7 +196,7 @@ const BookingPageContent = () => {
 
           {step < totalSteps ? (
             <button
-              onClick={handleNext}
+              onClick={handleNextWithValidation}
               className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Next
@@ -155,7 +211,6 @@ const BookingPageContent = () => {
           )}
         </div>
       </div>
-      {/* Thêm ToastContainer để hiển thị thông báo */}
       <ToastContainer />
     </div>
   );
