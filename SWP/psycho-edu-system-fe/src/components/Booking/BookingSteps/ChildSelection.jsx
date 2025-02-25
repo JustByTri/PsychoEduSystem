@@ -1,3 +1,7 @@
+import { useState, useEffect } from "react";
+import { useBooking } from "../../../context/BookingContext";
+import { getAuthDataFromLocalStorage } from "../../../utils/auth";
+
 export const ChildSelection = () => {
   const { updateBookingData, bookingData } = useBooking();
   const [children, setChildren] = useState([]);
@@ -8,13 +12,13 @@ export const ChildSelection = () => {
     const fetchChildren = async () => {
       try {
         setIsLoading(true);
+        const authData = getAuthDataFromLocalStorage();
         const response = await fetch(
-          `/api/parents/${bookingData.userId}/children`,
+          `https://localhost:7192/api/relationships/parent/${bookingData.userId}`,
           {
             headers: {
-              Authorization: `Bearer ${
-                getAuthDataFromLocalStorage().accessToken
-              }`,
+              Authorization: `Bearer ${authData.accessToken}`,
+              "Content-Type": "application/json",
             },
           }
         );
@@ -32,7 +36,12 @@ export const ChildSelection = () => {
       }
     };
 
-    fetchChildren();
+    if (bookingData.userId) {
+      fetchChildren();
+    } else {
+      setIsLoading(false);
+      setError("No parent ID available");
+    }
   }, [bookingData.userId]);
 
   if (isLoading) return <div>Loading children data...</div>;

@@ -68,19 +68,21 @@ const BookingPageContent = () => {
   const handleConfirm = async () => {
     try {
       // // Gửi dữ liệu booking đến backend
-      //  const response = await fetch("/api/bookings", {
+      //  const authData = getAuthDataFromLocalStorage();
+      //  const response = await fetch("https://localhost:7192/api/bookings", {
       //    method: "POST",
       //    headers: {
       //      "Content-Type": "application/json",
+      //      Authorization: `Bearer ${authData.accessToken}`, // Thêm token xác thực
       //    },
       //    body: JSON.stringify(bookingData),
       //  });
 
       //  if (!response.ok) {
-      //    throw new Error("Failed to save booking");
+      //    const errorData = await response.json();
+      //    throw new Error(errorData.message || "Failed to save booking");
       //  }
 
-      //  // Đọc phản hồi từ backend (nếu cần)
       //  const result = await response.json();
       //  console.log("Booking saved successfully:", result);
 
