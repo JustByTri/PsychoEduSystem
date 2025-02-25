@@ -1,6 +1,8 @@
 ﻿using BLL.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using BLL.Service;
+using DAL.Entities;
 
 namespace PsychoEduSystem.Controller
 {
