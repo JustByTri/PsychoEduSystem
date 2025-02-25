@@ -38,6 +38,7 @@ function App() {
               <Route path="survey-for-student" element={<SurveyPage />} />
               <Route path="survey-result" element={<SurveyResultPage />} />
               <Route path="schedule" element={<SchedulePage />} />
+              <Route path="booking" element={<BookingPage />} />
             </Route>
           </Route>
 
@@ -66,7 +67,6 @@ function App() {
             />
           </Route>
 
-          <Route path="booking/" element={<BookingPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Router>
