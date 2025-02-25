@@ -2,6 +2,8 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ToastContainer, toast } from "react-toastify";
+import TargetProgramDelete from "../../../components/Pop-up/TargetProgramDelete";
+import TargetProgramEdit from "../../../components/Pop-up/TargetProgramEdit";
 
 const mockCounselors = [
   { id: 1, name: "Dr. Sarah Johnson", specialization: "Anxiety & Depression" },
@@ -56,7 +58,39 @@ const ProgramList = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
-  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState(null);
+  const handleEditClick = (program) => {
+    setSelectedProgram(program);
+    setIsEditModalOpen(true);
+  };
+  const handleDeleteClick = (program) => {
+    setSelectedProgram(program);
+    setIsDeleteModalOpen(true);
+  };
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const updatedProgram = {
+      ...selectedProgram,
+      name: formData.get('name'),
+      startDate: formData.get('startDate'),
+      minimumScore: parseInt(formData.get('minimumScore')),
+      participantLimit: parseInt(formData.get('participantLimit')),
+      counselorName: mockCounselors.find(c => c.id === parseInt(formData.get('counselorId')))?.name,
+      dimensionName: mockDimensions.find(d => d.id === parseInt(formData.get('dimensionId')))?.name,
+    };
+    
+    setPrograms(programs.map(p => p.id === selectedProgram.id ? updatedProgram : p));
+    toast.success("Program updated successfully!");
+    setIsEditModalOpen(false);
+  };
+  const handleDeleteConfirm = () => {
+    setPrograms(programs.filter(p => p.id !== selectedProgram.id));
+    toast.success("Program deleted successfully!");
+    setIsDeleteModalOpen(false);
+  };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -75,7 +109,6 @@ const ProgramList = () => {
       [name]: value,
     });
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     // Add API call here
@@ -102,7 +135,6 @@ const ProgramList = () => {
       dimensionId: "",
     });
   };
-
   return (
     <div className="p-8 text-white">
       <ToastContainer />
@@ -123,12 +155,12 @@ const ProgramList = () => {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-600">
-              <th className="py-3 text-left">Name</th>
-              <th className="py-3 text-left">Start Date</th>
-              <th className="py-3 text-left">Min. Score</th>
-              <th className="py-3 text-left">Participants</th>
-              <th className="py-3 text-left">Counselor</th>
-              <th className="py-3 text-left">Actions</th>
+              <th className="py-4 text-left px-4">Name</th>
+              <th className="py-4 text-left px-4">Start Date</th>
+              <th className="py-4 text-left px-4">Min. Score</th>
+              <th className="py-4 text-left px-4">Participants</th>
+              <th className="py-4 text-left px-4">Counselor</th>
+              <th className="py-4 text-left px-4">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -141,16 +173,22 @@ const ProgramList = () => {
             ) : (
               programs.map((program) => (
                 <tr key={program.id} className="border-b border-gray-700">
-                  <td className="py-3">{program.name}</td>
-                  <td>{program.startDate}</td>
-                  <td>{program.minimumScore}</td>
-                  <td>{program.participantLimit}</td>
-                  <td>{program.counselorName}</td>
-                  <td className="flex gap-2">
-                    <button className="p-2 text-blue-400 hover:text-blue-300">
+                  <td className="py-4 text-left px-4">{program.name}</td>
+                  <td className="py-4 text-left px-4">{program.startDate}</td>
+                  <td className="py-4 text-left px-4">{program.minimumScore}</td>
+                  <td className="py-4 text-left px-4">{program.participantLimit}</td>
+                  <td className="py-4 text-left px-4">{program.counselorName}</td>
+                  <td className="py-4 px-4 flex gap-2">
+                    <button 
+                      className="p-2 text-blue-400 hover:text-blue-300"
+                      onClick={() => handleEditClick(program)}
+                    >
                       <FontAwesomeIcon icon={faEdit} />
                     </button>
-                    <button className="p-2 text-red-400 hover:text-red-300">
+                    <button 
+                      className="p-2 text-red-400 hover:text-red-300"
+                      onClick={() => handleDeleteClick(program)}
+                    >
                       <FontAwesomeIcon icon={faTrash} />
                     </button>
                   </td>
@@ -286,6 +324,22 @@ const ProgramList = () => {
           </div>
         </div>
       )}
+      {/* Add these modal components at the end of your return statement */}
+      <TargetProgramEdit
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditSubmit}
+        program={selectedProgram}
+        counselors={mockCounselors}
+        dimensions={mockDimensions}
+      />
+
+      <TargetProgramDelete
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        programName={selectedProgram?.name}
+      />
     </div>
   );
 };
