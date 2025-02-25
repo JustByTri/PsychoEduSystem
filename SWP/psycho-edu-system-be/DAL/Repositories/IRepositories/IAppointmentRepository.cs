@@ -8,12 +8,7 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories.IRepositories
 {
-    public interface IAppointmentRepository : IGenericRepository<Appointment>
+   public interface IAppointmentRepository : IGenericRepository<Appointment>
     {
-        Task<IEnumerable<Appointment>> GetAllAppointmentsAsync();
-        Task<Appointment?> GetAppointmentByIdAsync(Guid id);
-        Task AddAppointmentAsync(Appointment appointment);
-        Task UpdateAppointmentAsync(Appointment appointment);
-        Task DeleteAppointmentAsync(Guid id);
     }
 }
