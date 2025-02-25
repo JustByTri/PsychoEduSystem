@@ -24,7 +24,7 @@ namespace DAL.UnitOfWork
         IAnswerRepository Answer { get; }
 
         IRefreshTokenRepository RefreshToken { get; }
-        IQuestionRepository Question { get; }
+     IQuestionRepository Question { get; }
         ISurveyRepository Survey { get; }
         ISurveyResponseRepository SurveyResponse { get; }
         ISurveyAnswerUserRepository SurveyAnswerUser { get; }
