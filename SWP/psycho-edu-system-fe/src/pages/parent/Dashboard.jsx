@@ -32,7 +32,7 @@ const Dashboard = () => {
   const handleChildSelect = async (studentId) => {
     setLoading(true);
     try {
-      const surveyStatus = await SurveyService.checkUserSurveyStatus();
+      const surveyStatus = await SurveyService.checkUserSurveyStatus(studentId);
       if (surveyStatus.canTakeSurvey) {
         // Lưu dữ liệu khảo sát vào localStorage (nếu cần)
         if (surveyStatus.surveys.length > 0) {
@@ -44,7 +44,7 @@ const Dashboard = () => {
         }
 
         // Điều hướng mà không truyền surveyId
-        navigate(`survey/${studentId}`);
+        navigate(`/survey/${studentId}`);
       } else {
         toast.info("Không có khảo sát nào khả dụng!");
       }
@@ -81,7 +81,11 @@ const Dashboard = () => {
 
       {/* Children Selection Grid */}
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8"
+        className={`${
+          children.length === 1
+            ? "flex justify-center"
+            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 justify-center items-center"
+        }`}
         initial="hidden"
         animate="visible"
         variants={{
@@ -109,7 +113,6 @@ const Dashboard = () => {
                 alt={child.name}
                 className="w-24 h-24 object-cover rounded-full border-4 border-blue-400 shadow-md"
               />
-
               <div className="absolute inset-0 rounded-full border-2 border-white"></div>
             </div>
             <h2 className="text-lg font-medium text-gray-800 mt-4">

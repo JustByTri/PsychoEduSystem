@@ -11,7 +11,7 @@ const RequireSurvey = () => {
   useEffect(() => {
     const checkSurveyStatus = async () => {
       try {
-        const response = await SurveyService.checkUserSurveyStatus();
+        const response = await SurveyService.checkUserSurveyStatus("");
         if (response?.surveys) {
           setHasCompletedSurvey(false);
           if (Array.isArray(response.surveys) && response.surveys.length > 0) {

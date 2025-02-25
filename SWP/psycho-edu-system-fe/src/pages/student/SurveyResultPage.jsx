@@ -18,7 +18,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 const SurveyResultPage = () => {
@@ -26,11 +26,15 @@ const SurveyResultPage = () => {
   const [chartData, setChartData] = useState(null);
   const [status, setStatus] = useState("");
   const [surveyDate, setSurveyDate] = useState("");
-
+  const navigate = useNavigate();
+  const [role, setRole] = useState(null);
   useEffect(() => {
     if (location.state?.message) {
       toast.success(location.state.message, { autoClose: 3000 });
     }
+    const data = localStorage.getItem("user");
+    const formattedData = JSON.parse(data);
+    setRole(formattedData.role);
     const fetchedData = localStorage.getItem("surveyScores");
     if (fetchedData) {
       const parsedData = JSON.parse(fetchedData);
@@ -96,6 +100,12 @@ const SurveyResultPage = () => {
   return (
     <div className="container mx-auto p-6 bg-gradient-to-b from-gray-50 to-gray-100 shadow-xl rounded-lg flex flex-col min-h-screen">
       <ToastContainer />
+      <button
+        onClick={() => navigate("/" + role)}
+        className="fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition-all duration-300"
+      >
+        Back
+      </button>
       <div className="text-center text-2xl font-bold text-gray-700 mb-4">
         Survey Results
       </div>

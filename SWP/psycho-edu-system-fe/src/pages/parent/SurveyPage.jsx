@@ -144,93 +144,102 @@ const SurveyPage = () => {
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -50 }}
-      transition={{ duration: 0.4 }}
-      className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-lg"
-    >
-      <div className="sticky top-0 left-0 right-0 bg-white shadow-md py-3 z-50">
-        <ProgressBar progressPercentage={progressPercentage} />
-      </div>
+    <div>
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition-all duration-300"
+      >
+        Back
+      </button>
 
-      {displayedQuestions.map((question) => (
-        <motion.div
-          key={question.questionId}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-          className="border rounded-md p-4 w-full mx-auto max-w-2xl"
-        >
-          <h4 className="text-xl lg:text-2xl font-semibold mb-4">
-            {question.content}
-          </h4>
-          <div>
-            {question.answers.map((answer) => (
-              <label
-                key={answer.answerId}
-                className="flex items-center bg-gray-100 text-gray-700 rounded-md px-3 py-2 my-3 hover:bg-gray-300 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name={`question-${question.questionId}`}
-                  value={answer.point}
-                  checked={
-                    answeredQuestions.find(
-                      (item) => item.questionId === question.questionId
-                    )?.answerPoint === answer.point
-                  }
-                  onChange={() =>
-                    handleAnswerSelection(question.questionId, answer.point)
-                  }
-                  className="mr-3"
-                />
-                <i className="pl-2">{answer.content}</i>
-              </label>
-            ))}
-          </div>
-        </motion.div>
-      ))}
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -50 }}
+        transition={{ duration: 0.4 }}
+        className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-lg"
+      >
+        <div className="sticky top-0 left-0 right-0 bg-white shadow-md py-3 z-50">
+          <ProgressBar progressPercentage={progressPercentage} />
+        </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between items-center mt-6">
-        <button
-          onClick={handlePreviousPage}
-          disabled={currentPage === 0}
-          className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 disabled:opacity-50 transition-all duration-300"
-        >
-          Previous
-        </button>
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage >= totalPages - 1}
-          className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-all duration-300"
-        >
-          Next
-        </button>
-      </div>
-
-      {/* Survey Actions */}
-      <div className="mt-6 text-center">
-        {answeredQuestions.length === questionsData.questions.length && (
-          <button
-            onClick={handleSubmit}
-            className="px-6 py-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all duration-300"
+        {displayedQuestions.map((question) => (
+          <motion.div
+            key={question.questionId}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+            className="border rounded-md p-4 w-full mx-auto max-w-2xl"
           >
-            Submit
+            <h4 className="text-xl lg:text-2xl font-semibold mb-4">
+              {question.content}
+            </h4>
+            <div>
+              {question.answers.map((answer) => (
+                <label
+                  key={answer.answerId}
+                  className="flex items-center bg-gray-100 text-gray-700 rounded-md px-3 py-2 my-3 hover:bg-gray-300 cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    name={`question-${question.questionId}`}
+                    value={answer.point}
+                    checked={
+                      answeredQuestions.find(
+                        (item) => item.questionId === question.questionId
+                      )?.answerPoint === answer.point
+                    }
+                    onChange={() =>
+                      handleAnswerSelection(question.questionId, answer.point)
+                    }
+                    className="mr-3"
+                  />
+                  <i className="pl-2">{answer.content}</i>
+                </label>
+              ))}
+            </div>
+          </motion.div>
+        ))}
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between items-center mt-6">
+          <button
+            onClick={handlePreviousPage}
+            disabled={currentPage === 0}
+            className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 disabled:opacity-50 transition-all duration-300"
+          >
+            Previous
           </button>
-        )}
-        <div className="mt-4">
           <button
-            onClick={handleResetSurvey}
-            className="px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-300"
+            onClick={handleNextPage}
+            disabled={currentPage >= totalPages - 1}
+            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-all duration-300"
           >
-            Reset Survey
+            Next
           </button>
         </div>
-      </div>
-    </motion.div>
+
+        {/* Survey Actions */}
+        <div className="mt-6 text-center">
+          {answeredQuestions.length === questionsData.questions.length && (
+            <button
+              onClick={handleSubmit}
+              className="px-6 py-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all duration-300"
+            >
+              Submit
+            </button>
+          )}
+          <div className="mt-4">
+            <button
+              onClick={handleResetSurvey}
+              className="px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-300"
+            >
+              Reset Survey
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 

@@ -97,12 +97,26 @@ const LoginModal = () => {
     setError("");
     try {
       const role = await login(email, password);
-      if (role === "Admin") {
-        navigate("/admin");
-      } else if (role === "Student") {
-        navigate("/student");
-      } else {
-        navigate("/parent");
+      console.log(role);
+      switch (role) {
+        case "Admin":
+          navigate("/admin");
+          break;
+        case "Student":
+          navigate("/student");
+          break;
+        case "Parent":
+          navigate("/parent");
+          break;
+        case "Teacher":
+          navigate("/teacher");
+          break;
+        case "Psychologist":
+          navigate("/psychologist");
+          break;
+        default:
+          toast.error("Invalid role detected!");
+          return;
       }
       setIsLoginModal(false);
     } catch (error) {

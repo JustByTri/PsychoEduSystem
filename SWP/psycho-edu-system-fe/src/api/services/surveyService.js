@@ -124,14 +124,15 @@ export const SurveyService = {
       throw error;
     }
   },
-  checkUserSurveyStatus: async () => {
+  checkUserSurveyStatus: async (targetId) => {
     try {
       const token = localStorage.getItem("user");
       const formattedToken = JSON.parse(token);
       const accessToken = formattedToken.accessToken;
       const userData = DecodeJWT(accessToken);
+      if (formattedToken.role === "Student") targetId = userData.userId;
       const response = await axios.get(
-        `${BASE_URL}api/Survey/user/${userData.userId}`
+        `${BASE_URL}api/Survey/user?takerId=${userData.userId}&targetId=${targetId}`
       );
       return response.data;
     } catch (error) {

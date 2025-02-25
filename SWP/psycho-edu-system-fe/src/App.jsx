@@ -20,6 +20,8 @@ import RequireSurvey from "./components/Survey/RequireSurvey";
 import ParentLayout from "./components/Layouts/ParentLayout";
 import ParentDashboard from "./pages/parent/Dashboard";
 import ParentSurveyPage from "./pages/parent/SurveyPage";
+import TeacherDashboard from "./pages/teacher/Dashboard";
+import ClassDetails from "./pages/teacher/ClassDetails";
 function App() {
   return (
     <AuthProvider>
@@ -46,9 +48,9 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={["Parent"]} />}>
             <Route path="parent/" element={<ParentLayout />}>
               <Route index element={<ParentDashboard />} />
-              <Route path="survey/:childId" element={<ParentSurveyPage />} />
             </Route>
           </Route>
+          <Route path="survey/:childId" element={<ParentSurveyPage />} />
           {/* Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
             <Route path="admin/" element={<AdminPortalLayout />}>
@@ -68,10 +70,10 @@ function App() {
 
           {/* Teacher Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
-            <Route
-              path="teacher-dashboard"
-              element={<div>Teacher Dashboard</div>}
-            />
+            <Route path="teacher/" element={<ParentLayout />}>
+              <Route index element={<TeacherDashboard />} />
+              <Route path="class/:classId" element={<ClassDetails />} />
+            </Route>
           </Route>
 
           <Route path="booking/" element={<BookingPage />} />

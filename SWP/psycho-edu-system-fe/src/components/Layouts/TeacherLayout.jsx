@@ -1,18 +1,18 @@
-import { Outlet } from "react-router-dom";
-import ParentHeader from "../Header/ParentHeader";
-import ParentSidebar from "../Navigation/ParentSidebar";
+import Header from "../Header/Header";
+import TeacherSidebar from "../Navigation/TeacherSidebar";
 import Breadcrumbs from "../Breadcrumbs ";
-const ParentLayout = () => {
+import { Outlet } from "react-router-dom";
+const TeacherLayout = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <ParentHeader />
+      <Header />
 
       {/* Main layout with Sidebar and Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar (Fixed height, no scrolling) */}
         <div className="flex-shrink-0 h-full">
-          <ParentSidebar />
+          <TeacherSidebar />
         </div>
 
         {/* Outlet (Scrollable Content) */}
@@ -22,7 +22,7 @@ const ParentLayout = () => {
         </div>
       </div>
     </div>
-  );  
+  );
 };
 
-export default ParentLayout;
+export default TeacherLayout;
