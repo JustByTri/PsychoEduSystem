@@ -30,7 +30,10 @@ namespace MIndAid
             builder.Services.AddScoped<ILoginService, LoginService>();
             builder.Services.AddScoped<ISurveyService, SurveyService>();
             builder.Services.AddScoped<IMentalHealthPointService, MentalHealthPointService>();
-
+            builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+            builder.Services.AddScoped<ITargetProgramRepository, TargetProgramRepository>();
+            builder.Services.AddScoped<ITargetProgramService, TargetProgramService>();
             // Cấu hình Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

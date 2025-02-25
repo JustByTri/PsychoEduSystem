@@ -8,7 +8,7 @@ namespace DAL.UnitOfWork
     {
         IAppointmentRepository Appointment { get; }
         ICategoryRepository Category { get; }
-       
+
         IMentalHealthPointDetailRepository MentalHealthPointDetail { get; }
         IMentalHealthPointRepository MentalHealthPoint { get; }
         IMessageRepository Message { get; }
@@ -16,14 +16,15 @@ namespace DAL.UnitOfWork
         ISlotRepository Slot { get; }
         IUserRepository User { get; }
         IUserRoleRepository UserRole { get; }
-        
+
         IUserTokenRepository UserToken { get; }
 
         IAnswerRepository Answer { get; }
 
         IRefreshTokenRepository RefreshToken { get; }
-     IQuestionRepository Question { get; }
+        IQuestionRepository Question { get; }
         ISurveyRepository Survey { get; }
+        ITargetProgramRepository TargetProgram { get; }
 
         // Dispose method để giải phóng tài nguyên
         void Dispose();

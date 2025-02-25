@@ -13,11 +13,11 @@ namespace DAL.UnitOfWork
         public UnitOfWork(MindAidContext context)
         {
             _context = context;
-
+            TargetProgram = new TargetProgramRepository(_context);
             // Khởi tạo các repository
             Appointment = new AppointmentRepository(_context);
             Category = new CategoryRepository(_context);
-       
+
             MentalHealthPointDetail = new MentalHealthPointDetailRepository(_context);
             MentalHealthPoint = new MentalHealthPointRepository(_context);
             Message = new MessageRepository(_context);
@@ -28,14 +28,14 @@ namespace DAL.UnitOfWork
             UserToken = new UserTokenRepository(_context);
             Answer = new AnswerRepository(_context);
             RefreshToken = new RefreshTokenRepository(_context);
-            Question = new QuestionRepository(_context);    
+            Question = new QuestionRepository(_context);
             Survey = new SurveyRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
         public IAppointmentRepository Appointment { get; private set; }
         public ICategoryRepository Category { get; private set; }
-    
+
         public IMentalHealthPointDetailRepository MentalHealthPointDetail { get; private set; }
         public IMentalHealthPointRepository MentalHealthPoint { get; private set; }
         public IMessageRepository Message { get; private set; }
@@ -53,6 +53,8 @@ namespace DAL.UnitOfWork
         public IRefreshTokenRepository RefreshToken { get; private set; }
         public IQuestionRepository Question { get; private set; }
         public ISurveyRepository Survey { get; private set; }
+
+        public ITargetProgramRepository TargetProgram { get; private set; }
 
         // Giải phóng tài nguyên
         public void Dispose()

@@ -12,20 +12,22 @@ namespace DAL.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
-    
+
         public DbSet<Category> Categories { get; set; }
         public DbSet<Slot> Slots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<MentalHealthPoint> MentalHealthPoints { get; set; }
         public DbSet<MentalHealthPointDetail> MentalHealthPointDetails { get; set; }
-    
+
         public DbSet<Question> QuestionSets { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Relationship> Relationships { get; set; }
         public DbSet<RequestAppointments> RequestAppointments { get; set; }
         public DbSet<Survey> Surveys { get; set; }
         public DbSet<Video> Videos { get; set; }
+
+        public DbSet<TargetProgram> targetPrograms { get; set; }
 
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -58,6 +60,7 @@ namespace DAL.Data
                 Gender = "Male",
                 Address = "Ha Noi",
                 Status = true,
+                Role = "Admin", // gắn giá trị cho Role
                 CreateAt = DateTime.Now
             };
         }
@@ -79,10 +82,6 @@ namespace DAL.Data
                 .HasOne(ur => ur.Role)
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
-
-
-        
-
 
 
             modelBuilder.Entity<Appointment>()
@@ -114,19 +113,12 @@ namespace DAL.Data
                 .HasForeignKey(m => m.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-
-        
-       
-    
-
-
             modelBuilder.Entity<Answer>()
                 .HasOne(a => a.Question)
                 .WithMany(q => q.Answers)
                 .HasForeignKey(a => a.QuestionId);
 
             // Configure automatic creation of CreateAt
-
 
             modelBuilder.Entity<Question>()
                 .Property(q => q.CreateAt)
@@ -154,22 +146,22 @@ namespace DAL.Data
          {
              CategoryId = 1,
              CategoryName = "Lo Âu",
-             CreateAt = DateTime.Now, 
-      
+             CreateAt = DateTime.Now,
+
          },
          new Category
          {
              CategoryId = 2,
              CategoryName = "Trầm Cảm",
              CreateAt = DateTime.Now,
-            
+
          },
          new Category
          {
              CategoryId = 3,
              CategoryName = "Căng Thẳng",
              CreateAt = DateTime.Now,
-          
+
          }
      );
             var adminRoleId = Guid.NewGuid();
