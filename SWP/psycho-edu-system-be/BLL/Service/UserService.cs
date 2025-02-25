@@ -80,7 +80,7 @@ namespace BLL.Service
             return await _unitOfWork.User.IsUserExistAsync(userName, email);
         }
         public async Task<bool> CreateParentAccountAsync(CreateParentAccountDTO parentAccountDTO)
-        {
+            {
             using (var transaction = _unitOfWork.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
             {
 
