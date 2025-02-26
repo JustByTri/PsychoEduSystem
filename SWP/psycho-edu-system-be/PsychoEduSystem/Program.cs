@@ -66,7 +66,7 @@ namespace MIndAid
 
 
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
-
+            builder.Services.AddScoped<IAppointmentService, AppointmentService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
