@@ -127,5 +127,18 @@ namespace PsychoEduSystem.Controller
 
             return Ok(response);
         }
+        [HttpGet("{userId}/slots")]
+        public async Task<IActionResult> GetAvailableSlots(Guid userId, [FromQuery] DateOnly selectedDate)
+        {
+            if (userId == Guid.Empty)
+                return BadRequest("Invalid user ID.");
+
+            var response = await _userService.GetAvailableSlotsAsync(userId, selectedDate);
+
+            if (!response.IsSuccess || response.Result == null)
+                return NotFound(response.Message);
+
+            return Ok(response);
+        }
     }
 }
