@@ -93,16 +93,19 @@ namespace DAL.Data
                 .HasForeignKey(a => a.SlotId);
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Booker)
-                .WithMany(u => u.StudentAppointments)
+                .WithMany(u => u.ParentAppointments)
                 .HasForeignKey(a => a.BookedBy)
                 .OnDelete(DeleteBehavior.Restrict);
-
             modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.Counselor)
-                .WithMany(u => u.CounselorAppointments)
+                .HasOne(a => a.Consultant)
+                .WithMany(u => u.ConsultantAppointments)
                 .HasForeignKey(a => a.MeetingWith)
                 .OnDelete(DeleteBehavior.Restrict);
-
+            modelBuilder.Entity<Appointment>()
+                .HasOne(a => a.Target)
+                .WithMany(u => u.StudentAppointments)
+                .HasForeignKey(a => a.AppointmentFor)
+                .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Student)
                 .WithMany(u => u.SentMessages)

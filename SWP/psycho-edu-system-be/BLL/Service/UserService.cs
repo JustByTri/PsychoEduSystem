@@ -192,5 +192,32 @@ namespace BLL.Service
                 return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
+
+        public async Task<ResponseDTO> GetAvailableSlotsAsync(Guid userId, DateOnly selectedDate)
+        {
+            try
+            {
+                var date = DateTime.Parse(selectedDate.ToString());
+                var userSchedules = await _unitOfWork.Schedule.GetAllByListAsync(s => s.UserId == userId && s.Date == date);
+
+                if (userSchedules == null || !userSchedules.Any())
+                    return new ResponseDTO("No schedules found for the user on this date.", 404, false, null);
+
+                var slotIds = userSchedules.Select(s => s.SlotId).ToList();
+
+                var bookedSlots = await _unitOfWork.Appointment.GetAllByListAsync(a => slotIds.Contains(a.SlotId) && a.Date == selectedDate);
+
+                var availableSlots = slotIds.Except(bookedSlots.Select(s => s.SlotId)).ToList();
+
+                if (!availableSlots.Any())
+                    return new ResponseDTO("No available slots.", 404, false, null);
+
+                return new ResponseDTO("Get available slots success", 200, true, availableSlots);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
     }
 }
