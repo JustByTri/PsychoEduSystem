@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using BLL.Interface;
 using BLL.Utilities;
@@ -157,6 +158,38 @@ namespace BLL.Service
                     transaction.Rollback();
                     throw;
                 }
+            }
+        }
+
+        public async Task<ResponseDTO> RetrieveUserClassInfoAsync(Guid studentId)
+        {
+            try
+            {
+                var student = await _unitOfWork.User.GetByIdAsync(studentId);
+
+                if (student == null)
+                {
+                    return new ResponseDTO("User not found", 404, false, string.Empty);
+                }
+
+                var classInfo = student?.ClassId != null ? await _unitOfWork.Class.GetByIdInt((int)student.ClassId) : null;
+                if (classInfo == null)
+                {
+                    return new ResponseDTO("Class not found", 404, false, string.Empty);
+                }
+
+                var classDetail = new StudentClassResponseDTO
+                {
+                    ClassId = classInfo.ClassId,
+                    ClassName = classInfo.Name,
+                    TeacherId = classInfo.TeacherId,
+                };
+                
+                return new ResponseDTO("Retrieve class success", 200, true, classDetail);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
     }
