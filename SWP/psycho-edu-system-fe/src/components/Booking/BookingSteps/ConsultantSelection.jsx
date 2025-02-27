@@ -21,10 +21,10 @@ export const ConsultantSelection = () => {
 
   const handleSelectChild = (child) => {
     updateBookingData({
-      childId: child.id, // Giữ nguyên kiểu số
+      childId: child.id,
       childName: child.name,
     });
-    // console.log("Updated bookingData for child:", { childId: child.id });
+    console.log("Updated bookingData for child:", { childId: child.id });
   };
 
   const handleSelectConsultant = (consultant) => {
@@ -33,9 +33,9 @@ export const ConsultantSelection = () => {
       consultantName: consultant.name,
     });
   };
-  // console.log("Updated bookingData for consultant:", {
-  //   consultantId: consultant.id,
-  // });
+  console.log("Updated bookingData for consultant:", {
+    consultantId: consultant.id,
+  });
 
   return (
     <div className="space-y-6">
