@@ -4,6 +4,7 @@ using DAL.Entities;
 using DAL.UnitOfWork;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,7 +46,7 @@ namespace BLL.Service
                     return new ResponseDTO("Meeting date not valid", 400, false, string.Empty);
                 }
 
-                var bookedAppointment = await _unitOfWork.Appointment.GetByConditionAsync(s => s.SlotId == request.SlotId && s.Date == request.Date && s.MeetingWith == request.MeetingWith);
+                var bookedAppointment = await _unitOfWork.Appointment.GetByConditionAsync(s => s.SlotId == request.SlotId && s.Date == request.Date && s.MeetingWith == request.MeetingWith && s.IsCanceled == false);
 
                 if (bookedAppointment != null)
                 {
@@ -117,7 +118,9 @@ namespace BLL.Service
                     MeetingWith = a.MeetingWith,
                     Date = a.Date,
                     SlotId = a.SlotId,
-                    IsOnline = a.IsOnline
+                    IsOnline = a.IsOnline,
+                    IsCancelled = a.IsCanceled,
+                    IsCompleted = a.IsCompleted,
                 }).ToList();
 
                 return new ResponseDTO("Appointments retrieved successfully.", 200, true, appointmentList);
@@ -157,7 +160,9 @@ namespace BLL.Service
                     MeetingWith = a.MeetingWith,
                     Date = a.Date,
                     SlotId = a.SlotId,
-                    IsOnline = a.IsOnline
+                    IsOnline = a.IsOnline,
+                    IsCancelled = a.IsCanceled,
+                    IsCompleted = a.IsCompleted,
                 }).ToList();
 
                 return new ResponseDTO("Appointments retrieved successfully.", 200, true, appointmentList);
@@ -168,9 +173,30 @@ namespace BLL.Service
             }
         }
 
-        public Task<ResponseDTO> UpdateAppointmentAsync()
+        public async Task<ResponseDTO> CancelAppointmentAsync(Guid AppointmentId)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var selectedAppointment = await _unitOfWork.Appointment.GetByIdAsync(AppointmentId);
+
+                if (selectedAppointment == null) return new ResponseDTO("Appointment not found", 400, false, string.Empty);
+
+                if (selectedAppointment.IsCanceled == false)
+                {
+                    selectedAppointment.IsCanceled = true;
+                } else
+                {
+                    return new ResponseDTO("Appointment has already been cancelled", 200, true, string.Empty);
+                }
+
+                _ = await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO("Appointment cancelled successfully", 200, true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"An error occurred: {ex.Message}", 500, false, string.Empty);
+            }
         }
     }
 }

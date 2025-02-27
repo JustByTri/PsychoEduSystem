@@ -18,5 +18,6 @@ namespace BLL.Interface
         Task<bool> CreateParentAccountAsync(CreateParentAccountDTO parentAccountDTO);
         Task<ResponseDTO> RetrieveUserClassInfoAsync(Guid studentId);
         Task<ResponseDTO> GetAvailableSlotsAsync(Guid userId, DateOnly date);
+        Task<ResponseDTO> GetPsychologistsAsync();
     }
 }
