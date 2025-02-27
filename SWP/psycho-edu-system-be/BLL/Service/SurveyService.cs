@@ -251,12 +251,12 @@ using System.Text;
                 };
 
             }
-            public async Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid userId)
+            public async Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid takerId, Guid targetId)
             {
                 // Kiểm tra survey response trong tháng
                 var currentMonthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                 var hasTakenSurvey = await _unitOfWork.SurveyResponse
-                    .FindAll(sr => sr.SurveyTakerId == userId && sr.CreateAt >= currentMonthStart )
+                    .FindAll(sr => sr.SurveyTakerId == takerId && sr.SurveyTargetId == targetId && sr.CreateAt >= currentMonthStart )
                     .AnyAsync();
 
                 if (hasTakenSurvey)
@@ -270,7 +270,7 @@ using System.Text;
 
                 // Lấy user với role
                 var user = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
-                    u => u.UserId == userId,
+                    u => u.UserId == takerId,
                     includes: q => q.Include(u => u.Role));
 
                 if (user?.Role == null) throw new Exception("Không tìm thấy thông tin người dùng");
