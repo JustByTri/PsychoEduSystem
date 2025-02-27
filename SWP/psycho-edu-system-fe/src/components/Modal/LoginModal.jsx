@@ -5,6 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import AuthContext from "../../context/auth/AuthContext";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 const LoginModal = () => {
   const { isAuthenticated, user, login, logout, loginGoogle } =
     useContext(AuthContext) || {};
@@ -37,13 +38,7 @@ const LoginModal = () => {
   const handleGoogleSuccess = async (response) => {
     try {
       const role = await loginGoogle(response.credential);
-      if (role === "Admin") {
-        navigate("/admin");
-      } else if (role === "Student") {
-        navigate("/student");
-      } else {
-        navigate("/");
-      }
+      if (role === "Student") navigate("/student");
       setIsLoginModal(false);
     } catch (error) {
       toast.error(error);
@@ -103,12 +98,26 @@ const LoginModal = () => {
     setError("");
     try {
       const role = await login(email, password);
-      if (role === "Admin") {
-        navigate("/admin");
-      } else if (role === "Student") {
-        navigate("/student");
-      } else {
-        navigate("/");
+      console.log(role);
+      switch (role) {
+        case "Admin":
+          navigate("/admin");
+          break;
+        case "Student":
+          navigate("/student");
+          break;
+        case "Parent":
+          navigate("/parent");
+          break;
+        case "Teacher":
+          navigate("/teacher");
+          break;
+        case "Psychologist":
+          navigate("/psychologist");
+          break;
+        default:
+          toast.error("Invalid role detected!");
+          return;
       }
       setIsLoginModal(false);
     } catch (error) {
@@ -134,7 +143,13 @@ const LoginModal = () => {
             User
           </div>
           {isOpenMenu && (
-            <div className="absolute right-0 mt-2 w-44 bg-[#dbf7f1] rounded-lg shadow-2xl text-left">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="absolute right-0 mt-2 w-44 bg-[#dbf7f1] rounded-lg shadow-2xl text-left"
+            >
               <ul
                 className="py-2 px-1 text-sm font-thin text-blue-700"
                 aria-labelledby="dropdownDefaultButton"
@@ -173,14 +188,26 @@ const LoginModal = () => {
                   </a>
                 </li>
               </ul>
-            </div>
+            </motion.div>
           )}
         </div>
       )}
 
       {isLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="fixed inset-0 z-50 flex items-center justify-center"
+        >
+          <motion.div
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg"
+          >
             <div ref={modalRef} className="relative bg-white rounded-lg">
               <div className="flex items-center justify-between p-4 md:p-5">
                 <h3 className="text-xl font-bold text-blue-600 flex-grow text-center">
@@ -278,8 +305,8 @@ const LoginModal = () => {
                 />
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </>
   );
