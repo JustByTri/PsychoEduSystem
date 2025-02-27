@@ -23,10 +23,6 @@ namespace BLL.Service
 
         public async Task<IActionResult> BookSlots(BookSlotRequest request)
         {
-      
-         
-
-            
             var user = await _context.Users.FindAsync(request.UserId);
             if (user == null)
                 return new NotFoundObjectResult("User not found");
@@ -35,24 +31,42 @@ namespace BLL.Service
 
             foreach (var detail in request.BookingDetails)
             {
-         
                 var slot = await _context.Slots.FindAsync(detail.SlotId);
                 if (slot == null)
                 {
                     return new NotFoundObjectResult($"Slot {detail.SlotId} not found");
                 }
 
-          
                 if (detail.Date < DateTime.Today)
                 {
                     return new BadRequestObjectResult($"Cannot book for past date: {detail.Date:yyyy-MM-dd}");
                 }
-                var existingBooking = await _context.Schedules
-           .AnyAsync(s => s.SlotId == detail.SlotId && s.Date.Date == detail.Date.Date);
 
-                if (existingBooking)
+                // Check for duplicates IN THE CURRENT REQUEST
+                var duplicateInRequest = bookingsToAdd
+                    .Any(b => b.UserId == request.UserId && b.SlotId == detail.SlotId && b.Date.Date == detail.Date.Date);
+
+                if (duplicateInRequest)
                 {
-                    return new BadRequestObjectResult($"The specialist already has a schedule on {detail.Date:yyyy-MM-dd} for slot {slot.SlotName}. No need to book again.");
+                    return new BadRequestObjectResult($"Duplicate booking detected in request for slot {slot.SlotName} on {detail.Date:yyyy-MM-dd}.");
+                }
+
+                // Check for duplicates IN DATABASE
+                var existingUserBooking = await _context.Schedules
+                    .AnyAsync(s => s.UserId == request.UserId && s.SlotId == detail.SlotId && s.Date.Date == detail.Date.Date);
+
+                if (existingUserBooking)
+                {
+                    return new BadRequestObjectResult($"You have already booked slot {slot.SlotName} on {detail.Date:yyyy-MM-dd}.");
+                }
+
+                // Check specialist availability
+                var existingSpecialistBooking = await _context.Schedules
+                    .AnyAsync(s => s.SlotId == detail.SlotId && s.Date.Date == detail.Date.Date);
+
+                if (existingSpecialistBooking)
+                {
+                    return new BadRequestObjectResult($"The specialist is already booked for slot {slot.SlotName} on {detail.Date:yyyy-MM-dd}.");
                 }
 
                 bookingsToAdd.Add(new Schedule
@@ -64,9 +78,7 @@ namespace BLL.Service
                 });
             }
 
-         
             await _context.Schedules.AddRangeAsync(bookingsToAdd);
-
             await _context.SaveChangesAsync();
 
             return new OkObjectResult(new

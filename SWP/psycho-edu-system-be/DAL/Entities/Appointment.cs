@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Identity.Client;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -14,7 +15,9 @@ namespace DAL.Entities
         public Guid AppointmentId { get; set; }
         public int  SlotId { get; set; }
         public Guid BookedBy { get; set; } 
-        public Guid MeetingWith { get; set; } 
+        public Guid AppointmentFor { get; set; }
+        public Guid MeetingWith { get; set; }
+        public DateOnly Date {  get; set; }
         public string GoogleMeet { get; set; }
         public string Notes { get; set; }
         public bool IsOnline { get; set; }
@@ -27,6 +30,8 @@ namespace DAL.Entities
         [ForeignKey("BookedBy")]
         public User Booker { get; set; }
         [ForeignKey("MeetingWith")]
-        public User Counselor { get; set; }
+        public User Consultant { get; set; }
+        [ForeignKey("AppointmentFor")]
+        public User Target { get; set; }
     }
 }

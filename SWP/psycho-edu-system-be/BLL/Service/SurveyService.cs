@@ -256,7 +256,7 @@ using System.Text;
                 // Kiểm tra survey response trong tháng
                 var currentMonthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                 var hasTakenSurvey = await _unitOfWork.SurveyResponse
-                    .FindAll(sr => sr.SurveyTakerId == userId && sr.CreateAt >= currentMonthStart)
+                    .FindAll(sr => sr.SurveyTakerId == userId && sr.CreateAt >= currentMonthStart )
                     .AnyAsync();
 
                 if (hasTakenSurvey)
@@ -553,7 +553,7 @@ using System.Text;
             }
             public async Task<ResponseDTO> UpdateSurveyWithValidationAsync(Guid surveyId, SurveyWithQuestionsAndAnswersDTO updatedSurvey)
             {
-          
+                
                 var survey = await _unitOfWork.Survey.GetByIdAsync(surveyId);
                 if (survey == null)
                     return new ResponseDTO("Survey không tồn tại.", 404, false);
@@ -629,7 +629,6 @@ using System.Text;
             }
         public async Task<List<SurveyResultDTO>> GetSurveyResults(Guid userId, SurveyResultFilterDTO filter)
         {
-
             var currentUser = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
          u => u.UserId == userId,
          includes: q => q.Include(u => u.Role));
