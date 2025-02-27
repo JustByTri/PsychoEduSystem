@@ -32,14 +32,13 @@ export const DateTimeSelection = () => {
       { id: 8, time: "16:00" },
     ];
     setSlots(slotTimes);
-    // Không cần sử dụng availableSlots từ bookingData nữa vì sẽ fetch khi chọn ngày
   }, []);
 
   const fetchAvailableSlots = async (date, consultantId) => {
     try {
       setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
-      const formattedDate = moment(date).format("YYYY-MM-DD");
+      const formattedDate = moment(date).format("YYYY-MM-DD"); // Sử dụng ngày được chọn
       const response = await axios.get(
         `https://localhost:7192/api/User/${consultantId}/slots?selectedDate=${formattedDate}`,
         {
@@ -50,60 +49,67 @@ export const DateTimeSelection = () => {
         }
       );
 
-      if (response.data.isSuccess && response.data.statusCode === 200) {
-        // Chuyển đổi mảng slotId thành định dạng { slotId, slotName, isAvailable }
-        const slotTimes = [
-          {
-            slotId: 1,
-            slotName: "8:00",
-            isAvailable: response.data.result.includes(1),
-          },
-          {
-            slotId: 2,
-            slotName: "9:00",
-            isAvailable: response.data.result.includes(2),
-          },
-          {
-            slotId: 3,
-            slotName: "10:00",
-            isAvailable: response.data.result.includes(3),
-          },
-          {
-            slotId: 4,
-            slotName: "11:00",
-            isAvailable: response.data.result.includes(4),
-          },
-          {
-            slotId: 5,
-            slotName: "13:00",
-            isAvailable: response.data.result.includes(5),
-          },
-          {
-            slotId: 6,
-            slotName: "14:00",
-            isAvailable: response.data.result.includes(6),
-          },
-          {
-            slotId: 7,
-            slotName: "15:00",
-            isAvailable: response.data.result.includes(7),
-          },
-          {
-            slotId: 8,
-            slotName: "16:00",
-            isAvailable: response.data.result.includes(8),
-          },
-        ];
-        setAvailableSlots(
-          slotTimes
-            .filter((slot) => slot.isAvailable)
-            .map((slot) => slot.slotId)
-        );
-      } else {
+      if (response.status === 200) {
+        const slotsData = response.data.result || response.data || [];
+        // Chuyển đổi mảng slotId hoặc dữ liệu slots thành định dạng { slotId, slotName, isAvailable }
+        if (Array.isArray(slotsData)) {
+          const slotTimes = [
+            { slotId: 1, slotName: "8:00", isAvailable: slotsData.includes(1) },
+            { slotId: 2, slotName: "9:00", isAvailable: slotsData.includes(2) },
+            {
+              slotId: 3,
+              slotName: "10:00",
+              isAvailable: slotsData.includes(3),
+            },
+            {
+              slotId: 4,
+              slotName: "11:00",
+              isAvailable: slotsData.includes(4),
+            },
+            {
+              slotId: 5,
+              slotName: "13:00",
+              isAvailable: slotsData.includes(5),
+            },
+            {
+              slotId: 6,
+              slotName: "14:00",
+              isAvailable: slotsData.includes(6),
+            },
+            {
+              slotId: 7,
+              slotName: "15:00",
+              isAvailable: slotsData.includes(7),
+            },
+            {
+              slotId: 8,
+              slotName: "16:00",
+              isAvailable: slotsData.includes(8),
+            },
+          ];
+          setAvailableSlots(
+            slotTimes
+              .filter((slot) => slot.isAvailable)
+              .map((slot) => slot.slotId)
+          );
+        } else {
+          // Nếu không có slots (response rỗng hoặc không phải mảng), đặt availableSlots rỗng
+          setAvailableSlots([]);
+        }
+      } else if (response.status === 404) {
+        // Xử lý 404 (Not Found) không báo lỗi, chỉ hiển thị tất cả slots ở dạng không khả dụng
         setAvailableSlots([]);
+      } else {
+        console.warn(
+          "Unexpected API response:",
+          response.status,
+          response.data
+        );
+        setAvailableSlots([]); // Mặc định hiển thị slots rỗng nếu có lỗi khác
       }
     } catch (error) {
-      setError(error.message || "Failed to fetch available slots");
+      console.error("Error fetching available slots:", error);
+      setAvailableSlots([]); // Xử lý lỗi mạng hoặc khác, chỉ hiển thị slots rỗng
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +124,7 @@ export const DateTimeSelection = () => {
     setSelectedDate(date);
     updateBookingData({ date: moment(date).format("YYYY-MM-DD") }); // Cập nhật date vào bookingData
     if (bookingData.consultantId) {
-      fetchAvailableSlots(date, bookingData.consultantId); // Fetch slots khi click chọn ngày, dựa trên counselor đã chọn
+      fetchAvailableSlots(date, bookingData.consultantId); // Fetch slots khi click chọn ngày
     }
   };
 
@@ -139,12 +145,16 @@ export const DateTimeSelection = () => {
 
   if (isLoading)
     return (
-      <div className="text-center text-gray-600">
+      <motion.div className="text-center text-gray-600">
         Loading available slots...
-      </div>
+      </motion.div>
     );
   if (error)
-    return <div className="text-center text-red-600">Error: {error}</div>;
+    return (
+      <motion.div className="text-center text-red-600">
+        Error: {error}
+      </motion.div>
+    );
 
   return (
     <div className="py-6">
@@ -158,7 +168,7 @@ export const DateTimeSelection = () => {
         transition={{ duration: 0.5 }}
         className="space-y-6"
       >
-        {/* Lịch lớn với hiệu ứng motion */}
+        {/* Lịch lớn với hiệu ứng motion (không đánh dấu ngày có slots nữa) */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -167,16 +177,16 @@ export const DateTimeSelection = () => {
         >
           <Calendar
             localizer={localizer}
-            date={selectedDate}
-            onNavigate={(newDate) => setSelectedDate(newDate)}
-            onSelectSlot={(slotInfo) => handleSelectDate(slotInfo.start)}
+            events={[]}
             startAccessor="start"
             endAccessor="end"
             style={{ height: 400 }} // Chiều cao lịch
             defaultView="month" // Mặc định hiển thị tháng
             views={["month", "week"]} // Cho phép chuyển giữa tháng và tuần
+            onSelectSlot={(slotInfo) => handleSelectDate(slotInfo.start)}
             selectable // Cho phép chọn ngày
-            events={[]} // Không cần sự kiện, chỉ dùng để chọn ngày
+            date={selectedDate}
+            onNavigate={(newDate) => setSelectedDate(newDate)}
             slotPropGetter={(date) => {
               const today = new Date();
               today.setHours(0, 0, 0, 0);
@@ -301,6 +311,8 @@ export const DateTimeSelection = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleSelectAppointmentType("online")}
               className={`p-4 border rounded-md cursor-pointer transition-colors
                 ${
@@ -315,6 +327,8 @@ export const DateTimeSelection = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleSelectAppointmentType("offline")}
               className={`p-4 border rounded-md cursor-pointer transition-colors
                 ${

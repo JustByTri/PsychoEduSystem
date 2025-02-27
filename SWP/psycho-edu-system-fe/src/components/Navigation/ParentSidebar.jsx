@@ -20,8 +20,8 @@ const ParentSidebar = () => {
       label: "Assignments",
       path: "/parent/assignments",
     },
-    { icon: faBell, label: "Notifications", path: "/parent/notifications" },
-    { icon: faFileAlt, label: "Reports", path: "/parent/reports" },
+    { icon: faBell, label: "Schedule", path: "/parent/schedule" },
+    { icon: faFileAlt, label: "Booking", path: "/parent/booking" },
     { icon: faUser, label: "Account", path: "/parent/account" },
   ];
 

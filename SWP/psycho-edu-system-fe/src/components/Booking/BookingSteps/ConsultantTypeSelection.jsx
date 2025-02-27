@@ -1,17 +1,31 @@
 import { useState, useEffect } from "react";
 import { useBooking } from "../../../context/BookingContext";
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
+import { motion } from "framer-motion"; // Thêm framer-motion
+import axios from "axios"; // Thêm axios
 
 export const ConsultantTypeSelection = () => {
-  const { updateBookingData, bookingData, isStudent, isParent } = useBooking();
+  const { updateBookingData, bookingData, isParent } = useBooking();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Debug để kiểm tra giá trị
+  useEffect(() => {
+    console.log("isParent:", isParent());
+    console.log("bookingData:", bookingData);
+  }, [isParent, bookingData]);
+
+  // Hàm fetch teacherId từ API với axios
   const fetchClassAndTeacher = async (studentId) => {
+    if (!studentId) {
+      setError("Student ID is required.");
+      return null;
+    }
+
     try {
       setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
-      const response = await fetch(
+      const response = await axios.get(
         `https://localhost:7192/api/User/${studentId}/class`,
         {
           headers: {
@@ -21,34 +35,45 @@ export const ConsultantTypeSelection = () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch class and teacher");
-      }
+      console.log("API Response for class and teacher:", response.data);
 
-      const data = await response.json();
-      if (data.isSuccess && data.statusCode === 200) {
-        return data.result.teacherId; // Chỉ trả về teacherId
+      if (response.data.isSuccess && response.data.statusCode === 200) {
+        return response.data.result.teacherId; // Chỉ trả về teacherId
       }
+      setError("Invalid response from server.");
       return null;
     } catch (error) {
-      setError(error.message);
+      console.error("Fetch class and teacher error:", error.message);
+      setError(error.message || "Failed to fetch class and teacher");
       return null;
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Hàm xử lý chọn loại consultant
   const handleSelectType = async (type) => {
+    setIsLoading(true); // Bắt đầu loading khi click
+    setError(null); // Reset lỗi
+
+    let studentId;
+    // Lấy studentId: userId nếu không phải parent (student), childId nếu là parent
+    studentId = !isParent() ? bookingData.userId : bookingData.childId;
+
+    // Kiểm tra studentId trước khi tiếp tục
+    if (!studentId) {
+      setError("No valid student ID available. Please check your data.");
+      setIsLoading(false);
+      return;
+    }
+
     if (type === "homeroom") {
-      const studentId = isStudent()
-        ? bookingData.userId
-        : bookingData.studentId;
       const teacherId = await fetchClassAndTeacher(studentId);
       if (teacherId) {
         updateBookingData({
           consultantType: type,
-          consultantId: teacherId, // Lưu teacherId làm consultantId
-          consultantName: "", // Không cần tên, để trống
+          consultantId: teacherId,
+          consultantName: "",
           isHomeroomTeacher: true,
         });
       } else {
@@ -56,6 +81,7 @@ export const ConsultantTypeSelection = () => {
           consultantType: type,
           isHomeroomTeacher: true,
         });
+        setError("Could not fetch homeroom teacher. Please try again.");
       }
     } else {
       updateBookingData({
@@ -65,16 +91,52 @@ export const ConsultantTypeSelection = () => {
         isHomeroomTeacher: false,
       });
     }
+    setIsLoading(false); // Kết thúc loading
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  // useEffect để kiểm tra và fetch nếu đã có consultantType (optional)
+  useEffect(() => {
+    if (bookingData.consultantType === "homeroom") {
+      const studentId = !isParent() ? bookingData.userId : bookingData.childId;
+      if (studentId) fetchClassAndTeacher(studentId);
+    }
+  }, [
+    bookingData.consultantType,
+    bookingData.userId,
+    bookingData.childId,
+    isParent,
+  ]);
+
+  if (isLoading)
+    return (
+      <motion.div className="text-center text-gray-600">Loading...</motion.div>
+    );
+  if (error)
+    return (
+      <motion.div className="text-center text-red-600">
+        Error: {error}
+      </motion.div>
+    );
 
   return (
-    <div className="py-6">
-      <h2 className="text-xl font-semibold mb-4">Select Consultant Type</h2>
-      <div className="space-y-3">
-        <div
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="py-6"
+    >
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+        Select Consultant Type
+      </h2>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="space-y-3"
+      >
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => handleSelectType("counselor")}
           className={`p-4 border rounded-md cursor-pointer transition-colors
             ${
@@ -83,9 +145,11 @@ export const ConsultantTypeSelection = () => {
                 : "border-gray-200 hover:border-blue-300"
             }`}
         >
-          Counselor
-        </div>
-        <div
+          <p className="text-center font-medium text-gray-800">Counselor</p>
+        </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => handleSelectType("homeroom")}
           className={`p-4 border rounded-md cursor-pointer transition-colors
             ${
@@ -94,9 +158,11 @@ export const ConsultantTypeSelection = () => {
                 : "border-gray-200 hover:border-blue-300"
             }`}
         >
-          Homeroom Teacher
-        </div>
-      </div>
-    </div>
+          <p className="text-center font-medium text-gray-800">
+            Homeroom Teacher
+          </p>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };
