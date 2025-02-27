@@ -1,255 +1,286 @@
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
-import {
-  FaCalendarAlt,
-  FaClock,
-  FaVideo,
-  FaBuilding,
-  FaArrowLeft,
-  FaArrowRight,
-} from "react-icons/fa";
-
-import { consultantService } from "../../../api/services/consultant";
 import { useBooking } from "../../../context/BookingContext";
+import { getAuthDataFromLocalStorage } from "../../../utils/auth";
+import { Calendar, momentLocalizer } from "react-big-calendar";
+import moment from "moment";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import { motion } from "framer-motion"; // Thêm framer-motion
+
+// Thiết lập localizer cho react-big-calendar
+const localizer = momentLocalizer(moment);
 
 export const DateTimeSelection = () => {
-  const {
-    selectedConsultant,
-    selectedDate,
-    setSelectedDate,
-    selectedTime,
-    setSelectedTime,
-    appointmentType,
-    setAppointmentType,
-  } = useBooking();
+  const { updateBookingData, bookingData } = useBooking();
+  const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày được chọn từ lịch
+  const [slots, setSlots] = useState([]); // Tất cả các slot cứng từ 1 đến 8
+  const [availableSlots, setAvailableSlots] = useState([]); // Slots có sẵn từ bookingData hoặc API
+  const [appointmentType, setAppointmentType] = useState("online"); // Mặc định online
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Thêm timeSlots cố định để test
-  const timeSlots = [
-    "09:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "02:00 PM",
-    "03:00 PM",
-    "04:00 PM",
-  ];
-
-  // Fetch available slots từ API
+  // Dữ liệu cứng cho các slot (1-8 tương ứng với thời gian)
   useEffect(() => {
-    const fetchAvailableSlots = async () => {
-      if (selectedConsultant && selectedDate) {
-        try {
-          setLoading(true);
-          const slots = await consultantService.getAvailableSlots(
-            selectedConsultant.id,
-            selectedDate
-          );
-          setAvailableSlots(slots);
-        } catch (error) {
-          console.error("Failed to fetch available slots:", error);
-          // Nếu API fail, sử dụng timeSlots mặc định
-          setAvailableSlots(timeSlots);
-        } finally {
-          setLoading(false);
+    const slotTimes = [
+      { id: 1, time: "8:00" },
+      { id: 2, time: "9:00" },
+      { id: 3, time: "10:00" },
+      { id: 4, time: "11:00" },
+      { id: 5, time: "13:00" },
+      { id: 6, time: "14:00" },
+      { id: 7, time: "15:00" },
+      { id: 8, time: "16:00" },
+    ];
+    setSlots(slotTimes);
+    // Sử dụng availableSlots từ bookingData nếu có
+    if (
+      bookingData.availableSlots &&
+      Array.isArray(bookingData.availableSlots)
+    ) {
+      setAvailableSlots(
+        bookingData.availableSlots
+          .filter((slot) => slot.isAvailable)
+          .map((slot) => slot.slotId)
+      );
+    }
+  }, [bookingData.availableSlots]);
+
+  const fetchAvailableSlots = async (date) => {
+    try {
+      setIsLoading(true);
+      const authData = getAuthDataFromLocalStorage();
+      const formattedDate = moment(date).format("YYYY-MM-DD");
+      const response = await fetch(
+        `https://localhost:7192/api/Schedule/available-slots/${formattedDate}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
         }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch available slots");
       }
-    };
 
-    fetchAvailableSlots();
-  }, [selectedConsultant, selectedDate]);
+      const data = await response.json();
+      // Lọc các slot có isAvailable: true và lấy slotId
+      setAvailableSlots(
+        data.filter((slot) => slot.isAvailable).map((slot) => slot.slotId)
+      );
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Tính toán các ngày trong tháng
-  const daysInMonth = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth() + 1,
-    0
-  ).getDate();
+  const handleSelectDate = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset giờ để so sánh ngày
+    if (date < today) {
+      return; // Không cho chọn ngày đã qua, không hiển thị thông báo
+    }
+    setSelectedDate(date);
+    updateBookingData({ date: moment(date).format("YYYY-MM-DD") }); // Cập nhật date vào bookingData
+    fetchAvailableSlots(date); // Fetch slots khi click chọn ngày
+  };
 
-  const firstDayOfMonth = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth(),
-    1
-  ).getDay();
+  const handleSelectSlot = (slot) => {
+    if (availableSlots.includes(slot.id)) {
+      updateBookingData({
+        date: moment(selectedDate).format("YYYY-MM-DD"),
+        time: slot.time,
+        slotId: slot.id,
+      });
+    }
+  };
 
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const handleSelectAppointmentType = (type) => {
+    setAppointmentType(type);
+    updateBookingData({ appointmentType: type }); // Lưu loại appointment vào bookingData
+  };
 
-  const handlePrevMonth = () => {
-    setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
+  if (isLoading)
+    return (
+      <div className="text-center text-gray-600">
+        Loading available slots...
+      </div>
     );
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
-    );
-  };
-
-  // Kiểm tra slot đã được đặt
-  const isSlotBooked = (time) => {
-    // Thêm logic kiểm tra slot đã book
-    return selectedConsultant?.bookedSlots?.includes(`${selectedDate} ${time}`);
-  };
+  if (error)
+    return <div className="text-center text-red-600">Error: {error}</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Calendar Section */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Select Date</h3>
-        <div className="p-4 border rounded-lg">
-          {/* Calendar Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <FaCalendarAlt className="text-2xl text-gray-600 mr-2" />
-              <span className="font-medium">
-                {format(currentMonth, "MMMM yyyy")}
-              </span>
-            </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={handlePrevMonth}
-                disabled={currentMonth <= new Date()}
-                className="text-blue-600 hover:text-blue-700 disabled:text-gray-400"
-              >
-                <FaArrowLeft className="inline mr-1" /> Prev Month
-              </button>
-              <button
-                onClick={handleNextMonth}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                Next Month <FaArrowRight className="inline ml-1" />
-              </button>
-            </div>
-          </div>
+    <div className="py-6">
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+        Select Date, Time, and Appointment Type
+      </h2>
 
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div
-                key={day}
-                className="text-center text-sm font-medium text-gray-600"
+      <div className="space-y-6">
+        {/* Lịch lớn với hiệu ứng motion */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
+        >
+          <Calendar
+            localizer={localizer}
+            date={selectedDate}
+            onNavigate={(newDate) => setSelectedDate(newDate)}
+            onSelectSlot={(slotInfo) => handleSelectDate(slotInfo.start)}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: 400 }} // Chiều cao lịch
+            defaultView="month" // Mặc định hiển thị tháng
+            views={["month", "week"]} // Cho phép chuyển giữa tháng và tuần
+            selectable // Cho phép chọn ngày
+            events={[]} // Không cần sự kiện, chỉ dùng để chọn ngày
+            slotPropGetter={(date) => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              if (date < today) {
+                return {
+                  className: "rbc-past-date",
+                  style: { backgroundColor: "#e5e7eb", cursor: "not-allowed" },
+                };
+              } else if (moment(date).isSame(selectedDate, "day")) {
+                return {
+                  className: "rbc-selected-date",
+                  style: {
+                    backgroundColor: "#e0f7fa",
+                    border: "2px solid #3b82f6",
+                    cursor: "pointer",
+                  },
+                }; // Ngày đã chọn nổi bật
+              }
+              return {
+                className: "rbc-hoverable",
+                style: { cursor: "pointer" },
+              }; // Tất cả các ngày khác có thể hover
+            }}
+            components={{
+              dateCellWrapper: (props) => {
+                const isHovered = props.isHovered; // Kiểm tra trạng thái hover
+                const defaultStyle = props.style || {}; // Giá trị mặc định nếu props.style là undefined
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (moment(props.value).isSame(selectedDate, "day")) {
+                  return <div {...props}>{props.children}</div>; // Giữ style cho ngày đã chọn
+                }
+                if (props.value < today) {
+                  return (
+                    <div
+                      {...props}
+                      style={{
+                        ...defaultStyle,
+                        backgroundColor: "#e5e7eb", // Màu xám nhạt với Tailwind (gray-200)
+                        cursor: "not-allowed",
+                        opacity: 0.5,
+                      }}
+                    >
+                      {props.children}
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    {...props}
+                    style={{
+                      ...defaultStyle,
+                      backgroundColor:
+                        isHovered && moment(props.value).isAfter(today, "day")
+                          ? "#f5f5f5" // Màu xám rất nhạt (gray-100) khi hover
+                          : defaultStyle.backgroundColor || "transparent",
+                      border:
+                        isHovered && moment(props.value).isAfter(today, "day")
+                          ? "2px solid #3b82f6" // Màu xanh đậm (blue-600) với Tailwind
+                          : "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {props.children}
+                  </div>
+                );
+              },
+            }}
+          />
+        </motion.div>
+
+        {/* Danh sách slots với hiệu ứng motion */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
+        >
+          <h3 className="text-lg font-medium mb-2 text-gray-800">
+            Available Time Slots
+          </h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {slots.map((slot) => (
+              <motion.div
+                key={slot.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: slot.id * 0.1 }}
+                className={`p-4 border rounded-md cursor-pointer transition-colors
+                  ${
+                    bookingData.time === slot.time
+                      ? "border-blue-500 bg-blue-50"
+                      : availableSlots.includes(slot.id)
+                      ? "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                      : "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
+                  }`}
+                onClick={() =>
+                  availableSlots.includes(slot.id) && handleSelectSlot(slot)
+                }
               >
-                {day}
-              </div>
+                <p className="text-center font-medium text-gray-800">
+                  {slot.time}
+                </p>
+              </motion.div>
             ))}
           </div>
+        </motion.div>
 
-          {/* Calendar Days */}
-          <div className="grid grid-cols-7 gap-2">
-            {Array(firstDayOfMonth)
-              .fill(null)
-              .map((_, index) => (
-                <div key={`empty-${index}`} />
-              ))}
-            {days.map((day) => {
-              const date = new Date(
-                currentMonth.getFullYear(),
-                currentMonth.getMonth(),
-                day
-              );
-              const isDisabled = date < new Date();
-              return (
-                <button
-                  key={day}
-                  onClick={() =>
-                    !isDisabled && setSelectedDate(format(date, "yyyy-MM-dd"))
-                  }
-                  disabled={isDisabled}
-                  className={`p-2 rounded-lg ${
-                    selectedDate === format(date, "yyyy-MM-dd")
-                      ? "bg-blue-600 text-white"
-                      : isDisabled
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "hover:bg-blue-50"
-                  }`}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Time Slots Section */}
-      {selectedDate && (
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-4">Select Time</h3>
-          {loading ? (
-            <div className="text-center py-4">Loading available slots...</div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {timeSlots.map((time) => {
-                const isBooked = isSlotBooked(time);
-                return (
-                  <button
-                    key={time}
-                    onClick={() => !isBooked && setSelectedTime(time)}
-                    disabled={isBooked}
-                    className={`p-3 rounded-lg border ${
-                      isBooked
-                        ? "bg-red-50 border-red-200 cursor-not-allowed"
-                        : selectedTime === time
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-blue-600"
-                    }`}
-                  >
-                    <div className="flex items-center justify-center">
-                      <FaClock className="mr-2" />
-                      {time}
-                      {isBooked && (
-                        <span className="ml-2 text-red-500 text-sm">
-                          (Booked)
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Appointment Type Selection */}
-      {selectedTime && (
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-4">
+        {/* Chọn loại appointment với hiệu ứng motion */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
+        >
+          <h3 className="text-lg font-medium mb-2 text-gray-800">
             Select Appointment Type
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button
-              onClick={() => setAppointmentType("video")}
-              className={`p-4 rounded-lg border ${
-                appointmentType === "video"
-                  ? "border-blue-600 bg-blue-50"
-                  : "border-gray-200"
-              } hover:border-blue-600`}
+          <div className="space-y-3">
+            <div
+              onClick={() => handleSelectAppointmentType("online")}
+              className={`p-4 border rounded-md cursor-pointer transition-colors
+                ${
+                  appointmentType === "online"
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200 hover:border-green-300 hover:bg-green-50"
+                }`}
             >
-              <div className="flex items-center">
-                <FaVideo className="text-2xl mr-3 text-gray-600" />
-                <span>Video Call</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setAppointmentType("in-person")}
-              className={`p-4 rounded-lg border ${
-                appointmentType === "in-person"
-                  ? "border-blue-600 bg-blue-50"
-                  : "border-gray-200"
-              } hover:border-blue-600`}
+              <p className="text-center font-medium text-gray-800">Online</p>
+            </div>
+            <div
+              onClick={() => handleSelectAppointmentType("offline")}
+              className={`p-4 border rounded-md cursor-pointer transition-colors
+                ${
+                  appointmentType === "offline"
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200 hover:border-green-300 hover:bg-green-50"
+                }`}
             >
-              <div className="flex items-center">
-                <FaBuilding className="text-2xl mr-3 text-gray-600" />
-                <span>In-Person</span>
-              </div>
-            </button>
+              <p className="text-center font-medium text-gray-800">Offline</p>
+            </div>
           </div>
-        </div>
-      )}
+        </motion.div>
+      </div>
     </div>
   );
 };

@@ -11,15 +11,15 @@ namespace DAL.Data
         #region DbSet Properties
         public DbSet<Role> Roles { get; set; }
         public DbSet<User> Users { get; set; }
-   
-    
+
+
         public DbSet<DimensionHealth> Categories { get; set; }
         public DbSet<Slot> Slots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Message> Messages { get; set; }
-    
+
         public DbSet<MentalHealthPointDetail> MentalHealthPointDetails { get; set; }
-    
+
         public DbSet<Question> QuestionSets { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Relationship> Relationships { get; set; }
@@ -34,6 +34,7 @@ namespace DAL.Data
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<SurveyAnswerUser> SurveyAnswerUsers { get; set; }
+        public DbSet<Schedule> Schedules { get; set; }
 
         #endregion
 
@@ -64,7 +65,10 @@ namespace DAL.Data
                 Address = "Ha Noi",
                 Status = true,
                 CreateAt = DateTime.Now,
-                RoleId =  1 ,
+                RoleId =  1,
+                IsEmailConfirmed = true
+
+
 
             };
         }
@@ -79,8 +83,8 @@ namespace DAL.Data
          .WithMany()
          .HasForeignKey(u => u.RoleId);
 
-     
-           
+
+
 
 
             modelBuilder.Entity<Appointment>()
@@ -88,17 +92,20 @@ namespace DAL.Data
                 .WithMany(s => s.Appointments)
                 .HasForeignKey(a => a.SlotId);
             modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.Booker) 
-                .WithMany(u => u.StudentAppointments)
-                .HasForeignKey(a => a.BookedBy) 
+                .HasOne(a => a.Booker)
+                .WithMany(u => u.ParentAppointments)
+                .HasForeignKey(a => a.BookedBy)
                 .OnDelete(DeleteBehavior.Restrict);
-
             modelBuilder.Entity<Appointment>()
-                .HasOne(a => a.Counselor) 
-                .WithMany(u => u.CounselorAppointments)
-                .HasForeignKey(a => a.MeetingWith) 
+                .HasOne(a => a.Consultant)
+                .WithMany(u => u.ConsultantAppointments)
+                .HasForeignKey(a => a.MeetingWith)
                 .OnDelete(DeleteBehavior.Restrict);
-
+            modelBuilder.Entity<Appointment>()
+                .HasOne(a => a.Target)
+                .WithMany(u => u.StudentAppointments)
+                .HasForeignKey(a => a.AppointmentFor)
+                .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Student)
                 .WithMany(u => u.SentMessages)
@@ -123,7 +130,7 @@ namespace DAL.Data
                 .WithMany(q => q.Answers)
                 .HasForeignKey(a => a.QuestionId);
 
-            
+
 
 
             modelBuilder.Entity<Question>()
@@ -153,14 +160,14 @@ namespace DAL.Data
      .HasOne(sr => sr.SurveyTaker)
      .WithMany()
      .HasForeignKey(sr => sr.SurveyTakerId)
-     .OnDelete(DeleteBehavior.Cascade); 
+     .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<SurveyResponse>()
                 .HasOne(sr => sr.SurveyTarget)
                 .WithMany()
                 .HasForeignKey(sr => sr.SurveyTargetId)
-                .OnDelete(DeleteBehavior.NoAction); 
-        
+                .OnDelete(DeleteBehavior.NoAction);
+
 
             modelBuilder.Entity<Relationship>()
                 .HasOne(r => r.Student)
@@ -202,7 +209,7 @@ namespace DAL.Data
                 Address = "Ha Noi",
                 Status = true,
                 CreateAt = DateTime.Now,
-                RoleId = 5, 
+                RoleId = 5,
                 IsEmailConfirmed = true
             };
 
@@ -291,22 +298,22 @@ namespace DAL.Data
          {
              DimensionId = 1,
              DimensionName = "Lo Âu",
-             CreateAt = DateTime.Now, 
-      
+             CreateAt = DateTime.Now,
+
          },
          new DimensionHealth
          {
              DimensionId = 2,
              DimensionName = "Trầm Cảm",
              CreateAt = DateTime.Now,
-            
+
          },
          new DimensionHealth
          {
              DimensionId = 3,
              DimensionName = "Căng Thẳng",
              CreateAt = DateTime.Now,
-          
+
          }
      );
             var studentPassword = "student123";
@@ -401,7 +408,58 @@ namespace DAL.Data
 
             var adminUser = CreateAdminUser();
             modelBuilder.Entity<User>().HasData(adminUser);
-          
+            modelBuilder.Entity<Slot>().HasData(
+       new Slot { SlotId = 1, SlotName = "8:00", CreateAt = DateTime.Now },
+       new Slot { SlotId = 2, SlotName = "9:00", CreateAt = DateTime.Now },
+       new Slot { SlotId = 3, SlotName = "10:00", CreateAt = DateTime.Now },
+       new Slot { SlotId = 4, SlotName = "11:00", CreateAt = DateTime.Now },
+       new Slot { SlotId = 5, SlotName = "13:00", CreateAt = DateTime.Now },
+       new Slot { SlotId = 6, SlotName = "14:00", CreateAt = DateTime.Now },
+       new Slot { SlotId = 7, SlotName = "15:00", CreateAt = DateTime.Now },
+       new Slot { SlotId = 8, SlotName = "16:00", CreateAt = DateTime.Now }
+   );
+
+            byte[] psychologistPasswordHash, psychologistPasswordSalt;
+            CreatePasswordHash("psychologist123", out psychologistPasswordHash, out psychologistPasswordSalt);
+
+            var psychologist1 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "psychologist1",
+                PasswordHash = psychologistPasswordHash,
+                PasswordSalt = psychologistPasswordSalt,
+                Phone = "0987654323",
+                Email = "psychologist1@fpt.edu.vn",
+                FullName = "Nguyễn Thị G",
+                BirthDay = new DateTime(1980, 10, 10),
+                Gender = "Female",
+                Address = "Hà Nội",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 2, // RoleId 2 là Psychologist
+                IsEmailConfirmed = true
+            };
+
+            var psychologist2 = new User
+            {
+                UserId = Guid.NewGuid(),
+                UserName = "psychologist2",
+                PasswordHash = psychologistPasswordHash,
+                PasswordSalt = psychologistPasswordSalt,
+                Phone = "0987654324",
+                Email = "psychologist2@fpt.edu.vn",
+                FullName = "Trần Văn H",
+                BirthDay = new DateTime(1985, 12, 15),
+                Gender = "Male",
+                Address = "Hồ Chí Minh",
+                Status = true,
+                CreateAt = DateTime.Now,
+                RoleId = 2, // RoleId 2 là Psychologist
+                IsEmailConfirmed = true
+            };
+
+            modelBuilder.Entity<User>().HasData(psychologist1, psychologist2);
+
             #endregion
         }
 

@@ -78,7 +78,7 @@ namespace BLL.Service
         public bool Validation(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(JwtSettingModel.SecretKey);
+            var key = Encoding.UTF8.GetBytes(JwtSettingModel.SecretKey); 
 
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
@@ -90,7 +90,6 @@ namespace BLL.Service
 
             return true;
         }
-
         public string? GetUserId(string token)
         {
             if (string.IsNullOrEmpty(token))

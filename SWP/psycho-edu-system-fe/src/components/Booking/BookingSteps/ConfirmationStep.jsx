@@ -1,15 +1,7 @@
 import { useBooking } from "../../../context/BookingContext";
 
 export const ConfirmationStep = () => {
-  const {
-    role,
-    selectedConsultant,
-    selectedChild,
-    selectedDate,
-    selectedTime,
-    appointmentType,
-    userInfo,
-  } = useBooking();
+  const { bookingData } = useBooking();
 
   return (
     <div className="space-y-6">
@@ -22,42 +14,48 @@ export const ConfirmationStep = () => {
           <div className="flex justify-between">
             <span className="text-gray-600">Booking Type:</span>
             <span className="font-medium">
-              {role === "parent" ? "Parent Booking" : "Student Booking"}
+              {bookingData.userRole === "Parent"
+                ? "Parent Booking"
+                : "Student Booking"}
             </span>
           </div>
 
-          {role === "parent" && selectedChild && (
+          {bookingData.userRole === "Parent" && bookingData.childName && (
             <div className="flex justify-between">
               <span className="text-gray-600">Child:</span>
-              <span className="font-medium">{selectedChild.name}</span>
+              <span className="font-medium">{bookingData.childName}</span>
             </div>
           )}
 
-          {selectedConsultant && (
+          {bookingData.consultantName && (
             <div className="flex justify-between">
               <span className="text-gray-600">Consultant:</span>
-              <span className="font-medium">{selectedConsultant.name}</span>
+              <span className="font-medium">{bookingData.consultantName}</span>
             </div>
           )}
 
           <div className="flex justify-between">
             <span className="text-gray-600">Date & Time:</span>
             <span className="font-medium">
-              {selectedDate} at {selectedTime}
+              {bookingData.date} at {bookingData.time}
             </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-gray-600">Meeting Type:</span>
-            <span className="font-medium capitalize">{appointmentType}</span>
+            <span className="font-medium capitalize">
+              {bookingData.appointmentType || "Not specified"}
+            </span>
           </div>
 
           <div className="pt-4 border-t">
             <h4 className="font-medium mb-2">Contact Information</h4>
             <div className="space-y-2">
-              <p className="text-gray-600">Name: {userInfo.name}</p>
-              <p className="text-gray-600">Phone: {userInfo.phone}</p>
-              <p className="text-gray-600">Email: {userInfo.email}</p>
+              <p className="text-gray-600">Name: {bookingData.userName}</p>
+              <p className="text-gray-600">
+                Phone: {bookingData.phone || "Not provided"}
+              </p>
+              <p className="text-gray-600">Email: {bookingData.email}</p>
             </div>
           </div>
         </div>

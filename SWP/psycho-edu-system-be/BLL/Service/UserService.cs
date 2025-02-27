@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 using BLL.Interface;
 using BLL.Utilities;
@@ -80,7 +82,7 @@ namespace BLL.Service
             return await _unitOfWork.User.IsUserExistAsync(userName, email);
         }
         public async Task<bool> CreateParentAccountAsync(CreateParentAccountDTO parentAccountDTO)
-        {
+            {
             using (var transaction = _unitOfWork.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
             {
 
@@ -157,6 +159,93 @@ namespace BLL.Service
                     transaction.Rollback();
                     throw;
                 }
+            }
+        }
+
+        public async Task<ResponseDTO> RetrieveUserClassInfoAsync(Guid studentId)
+        {
+            try
+            {
+                var student = await _unitOfWork.User.GetByIdAsync(studentId);
+
+                if (student == null)
+                {
+                    return new ResponseDTO("User not found", 404, false, string.Empty);
+                }
+
+                var classInfo = student?.ClassId != null ? await _unitOfWork.Class.GetByIdInt((int)student.ClassId) : null;
+                if (classInfo == null)
+                {
+                    return new ResponseDTO("Class not found", 404, false, string.Empty);
+                }
+
+                var classDetail = new StudentClassResponseDTO
+                {
+                    ClassId = classInfo.ClassId,
+                    ClassName = classInfo.Name,
+                    TeacherId = classInfo.TeacherId,
+                };
+                
+                return new ResponseDTO("Retrieve class success", 200, true, classDetail);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetAvailableSlotsAsync(Guid userId, DateOnly selectedDate)
+        {
+            try
+            {
+                var date = DateTime.Parse(selectedDate.ToString());
+                var userSchedules = await _unitOfWork.Schedule.GetAllByListAsync(s => s.UserId == userId && s.Date == date);
+
+                if (userSchedules == null || !userSchedules.Any())
+                    return new ResponseDTO("No schedules found for the user on this date.", 404, false, null);
+
+                var slotIds = userSchedules.Select(s => s.SlotId).ToList();
+
+                var bookedSlots = await _unitOfWork.Appointment.GetAllByListAsync(a => slotIds.Contains(a.SlotId) && a.Date == selectedDate);
+
+                var availableSlots = slotIds.Except(bookedSlots.Select(s => s.SlotId)).ToList();
+
+                if (!availableSlots.Any())
+                    return new ResponseDTO("No available slots.", 404, false, null);
+
+                return new ResponseDTO("Get available slots success", 200, true, availableSlots);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetPsychologistsAsync()
+        {
+            try
+            {
+                var psychologists = await _unitOfWork.User.GetAllByListAsync(u => u.RoleId == 2);
+                var list = psychologists.Select(p => new PsychologistResponseDTO
+                {
+                    UserId = p.UserId,
+                    FirstName = p.FirstName,
+                    LastName = p.LastName,
+                    FullName = p.FullName,
+                    PhoneNumber = p.Phone,
+                    Email = p.Email,
+                    BirthDay = p.BirthDay,
+                    Gender = p.Gender,
+                    Address = p.Address,
+                });
+
+                if (!list.Any()) return new ResponseDTO("No data available", 200, true, string.Empty);
+
+                return new ResponseDTO("Retrieve psychologists successfully", 200, true, list);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
     }

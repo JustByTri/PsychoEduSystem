@@ -8,7 +8,7 @@ namespace DAL.Repositories.IRepositories
     {
         T GetById(string id);
         Task<T> GetByIdAsync(Guid id);
-        Task<T> GetByIdInt ( int  id );
+        Task<T> GetByIdInt(int id);
         IQueryable<T> GetAll();
         IQueryable<T> FindAll(Expression<Func<T, bool>> expression);
         IEnumerable<T> FindAllAsync(Expression<Func<T, bool>> expression);
@@ -33,5 +33,9 @@ namespace DAL.Repositories.IRepositories
     params Func<IQueryable<T>, IQueryable<T>>[] includes);
         Task<List<SurveyAnswerUser>> GetUserAnswersAsync(Guid userId, Guid surveyId);
         Task<T> GetByEmailAsync(string email);
+        Task<T> GetByIdWithIncludesAsync(Guid id, params Expression<Func<T, object>>[] includes);
+        Task<List<T>> GetAllAsync();
+
+
     }
-    }
+}
