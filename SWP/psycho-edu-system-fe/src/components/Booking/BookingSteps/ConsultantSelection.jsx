@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useBooking } from "../../../context/BookingContext";
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
+import { motion } from "framer-motion"; // Thêm framer-motion
+import axios from "axios"; // Thêm axios
 
 export const ConsultantSelection = () => {
   const { updateBookingData, bookingData } = useBooking();
@@ -8,54 +10,13 @@ export const ConsultantSelection = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Dữ liệu cứng (mock data) cho consultants với GUID làm id và availableSlots ở định dạng mới
   useEffect(() => {
-    const mockConsultants = [
-      {
-        id: "DB7A5D22-28D9-4C93-8609-8426E8EB6585", // GUID cho Dr. Sarah
-        name: "Dr. Sarah",
-        role: "Counselor",
-        availableSlots: [
-          { slotId: 1, slotName: "8:00", isAvailable: true },
-          { slotId: 3, slotName: "10:00", isAvailable: true },
-          { slotId: 5, slotName: "13:00", isAvailable: false },
-          { slotId: 7, slotName: "15:00", isAvailable: true },
-        ],
-      },
-      {
-        id: "4b9a6c78-6823-4679-a9d4-3e8b1a2c9d0e", // GUID cho Dr. Emily
-        name: "Dr. Emily",
-        role: "Counselor",
-        availableSlots: [
-          { slotId: 2, slotName: "9:00", isAvailable: true },
-          { slotId: 4, slotName: "11:00", isAvailable: true },
-          { slotId: 6, slotName: "14:00", isAvailable: false },
-          { slotId: 8, slotName: "16:00", isAvailable: true },
-        ],
-      },
-      {
-        id: "5c0b7d89-7934-578a-b0e5-4f9c2b3d0f1f", // GUID cho Dr. Michael
-        name: "Dr. Michael",
-        role: "Counselor",
-        availableSlots: [
-          { slotId: 1, slotName: "8:00", isAvailable: true },
-          { slotId: 2, slotName: "9:00", isAvailable: true },
-          { slotId: 3, slotName: "10:00", isAvailable: false },
-          { slotId: 4, slotName: "11:00", isAvailable: true },
-        ],
-      },
-    ];
-    setConsultants(mockConsultants);
-    setIsLoading(false);
-
-    // Khi có API, uncomment đoạn code dưới và comment mock data trên
-    /*
     const fetchConsultants = async () => {
       try {
         setIsLoading(true);
         const authData = getAuthDataFromLocalStorage();
-        const response = await fetch(
-          `https://localhost:7192/api/consultants?type=${bookingData.consultantType}`,
+        const response = await axios.get(
+          `https://localhost:7192/api/psychologists`,
           {
             headers: {
               Authorization: `Bearer ${authData.accessToken}`,
@@ -64,27 +25,32 @@ export const ConsultantSelection = () => {
           }
         );
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch consultants");
+        if (response.data.isSuccess && response.data.statusCode === 200) {
+          // Ánh xạ dữ liệu từ API thành format cần thiết
+          const formattedConsultants = response.data.result.map(
+            (psychologist) => ({
+              id: psychologist.userId, // Sử dụng userId làm id (GUID)
+              name: psychologist.fullName, // Sử dụng fullName làm tên
+              role: "Counselor", // Đặt role cố định là "Counselor"
+            })
+          );
+          setConsultants(formattedConsultants);
+        } else {
+          throw new Error("Invalid response from API");
         }
-
-        const data = await response.json();
-        // Giả sử data là [{ id, name, role, availableSlots }]
-        setConsultants(data);
       } catch (error) {
-        setError(error.message);
+        setError(error.message || "Failed to fetch counselors");
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (bookingData.consultantType) {
+    if (bookingData.consultantType === "counselor") {
       fetchConsultants();
     } else {
       setIsLoading(false);
       setError("No consultant type selected");
     }
-    */
   }, [bookingData.consultantType]);
 
   const handleSelectConsultant = (consultant) => {
@@ -95,44 +61,58 @@ export const ConsultantSelection = () => {
     updateBookingData({
       consultantId: consultant.id,
       consultantName: consultant.name,
-      availableSlots: consultant.availableSlots, // Lưu availableSlots của consultant vào bookingData
+      availableSlots: [], // Lưu trống, sẽ fetch sau trong DateTimeSelection
     });
   };
 
-  if (isLoading) return <div>Loading consultants...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (isLoading)
+    return (
+      <div className="text-center text-gray-600">Loading counselors...</div>
+    );
+  if (error)
+    return <div className="text-center text-red-600">Error: {error}</div>;
 
   return (
     <div className="py-6">
-      <h2 className="text-xl font-semibold mb-4">Select Consultant</h2>
-      <div className="space-y-3">
-        {consultants.map((consultant) => (
-          <div
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+        Select Counselor
+      </h2>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-3"
+      >
+        {consultants.map((consultant, index) => (
+          <motion.div
             key={consultant.id}
-            onClick={() => handleSelectConsultant(consultant)}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }} // Hiệu ứng delay cho từng counselor
             className={`p-4 border rounded-md cursor-pointer transition-colors
               ${
                 bookingData.consultantId === consultant.id
                   ? "border-blue-500 bg-blue-50"
                   : "border-gray-200 hover:border-blue-300"
               }`}
+            onClick={() => handleSelectConsultant(consultant)}
           >
             <div className="flex items-center">
               <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                 {consultant.name?.charAt(0) || "C"}
               </div>
               <div className="ml-3">
-                <p className="font-medium">
-                  {consultant.name || "Unknown Consultant"}
+                <p className="font-medium text-gray-800">
+                  {consultant.name || "Unknown Counselor"}
                 </p>
                 <p className="text-sm text-gray-500">
                   {consultant.role || "Counselor"}
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };

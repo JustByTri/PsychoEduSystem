@@ -5,6 +5,7 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { motion } from "framer-motion"; // Thêm framer-motion
+import axios from "axios"; // Thêm axios
 
 // Thiết lập localizer cho react-big-calendar
 const localizer = momentLocalizer(moment);
@@ -13,7 +14,7 @@ export const DateTimeSelection = () => {
   const { updateBookingData, bookingData } = useBooking();
   const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày được chọn từ lịch
   const [slots, setSlots] = useState([]); // Tất cả các slot cứng từ 1 đến 8
-  const [availableSlots, setAvailableSlots] = useState([]); // Slots có sẵn từ bookingData hoặc API
+  const [availableSlots, setAvailableSlots] = useState([]); // Slots có sẵn từ API
   const [appointmentType, setAppointmentType] = useState("online"); // Mặc định online
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,26 +32,16 @@ export const DateTimeSelection = () => {
       { id: 8, time: "16:00" },
     ];
     setSlots(slotTimes);
-    // Sử dụng availableSlots từ bookingData nếu có
-    if (
-      bookingData.availableSlots &&
-      Array.isArray(bookingData.availableSlots)
-    ) {
-      setAvailableSlots(
-        bookingData.availableSlots
-          .filter((slot) => slot.isAvailable)
-          .map((slot) => slot.slotId)
-      );
-    }
-  }, [bookingData.availableSlots]);
+    // Không cần sử dụng availableSlots từ bookingData nữa vì sẽ fetch khi chọn ngày
+  }, []);
 
-  const fetchAvailableSlots = async (date) => {
+  const fetchAvailableSlots = async (date, consultantId) => {
     try {
       setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
       const formattedDate = moment(date).format("YYYY-MM-DD");
-      const response = await fetch(
-        `https://localhost:7192/api/Schedule/available-slots/${formattedDate}`,
+      const response = await axios.get(
+        `https://localhost:7192/api/User/${consultantId}/slots?selectedDate=${formattedDate}`,
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -59,17 +50,60 @@ export const DateTimeSelection = () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch available slots");
+      if (response.data.isSuccess && response.data.statusCode === 200) {
+        // Chuyển đổi mảng slotId thành định dạng { slotId, slotName, isAvailable }
+        const slotTimes = [
+          {
+            slotId: 1,
+            slotName: "8:00",
+            isAvailable: response.data.result.includes(1),
+          },
+          {
+            slotId: 2,
+            slotName: "9:00",
+            isAvailable: response.data.result.includes(2),
+          },
+          {
+            slotId: 3,
+            slotName: "10:00",
+            isAvailable: response.data.result.includes(3),
+          },
+          {
+            slotId: 4,
+            slotName: "11:00",
+            isAvailable: response.data.result.includes(4),
+          },
+          {
+            slotId: 5,
+            slotName: "13:00",
+            isAvailable: response.data.result.includes(5),
+          },
+          {
+            slotId: 6,
+            slotName: "14:00",
+            isAvailable: response.data.result.includes(6),
+          },
+          {
+            slotId: 7,
+            slotName: "15:00",
+            isAvailable: response.data.result.includes(7),
+          },
+          {
+            slotId: 8,
+            slotName: "16:00",
+            isAvailable: response.data.result.includes(8),
+          },
+        ];
+        setAvailableSlots(
+          slotTimes
+            .filter((slot) => slot.isAvailable)
+            .map((slot) => slot.slotId)
+        );
+      } else {
+        setAvailableSlots([]);
       }
-
-      const data = await response.json();
-      // Lọc các slot có isAvailable: true và lấy slotId
-      setAvailableSlots(
-        data.filter((slot) => slot.isAvailable).map((slot) => slot.slotId)
-      );
     } catch (error) {
-      setError(error.message);
+      setError(error.message || "Failed to fetch available slots");
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +117,9 @@ export const DateTimeSelection = () => {
     }
     setSelectedDate(date);
     updateBookingData({ date: moment(date).format("YYYY-MM-DD") }); // Cập nhật date vào bookingData
-    fetchAvailableSlots(date); // Fetch slots khi click chọn ngày
+    if (bookingData.consultantId) {
+      fetchAvailableSlots(date, bookingData.consultantId); // Fetch slots khi click chọn ngày, dựa trên counselor đã chọn
+    }
   };
 
   const handleSelectSlot = (slot) => {
@@ -116,12 +152,17 @@ export const DateTimeSelection = () => {
         Select Date, Time, and Appointment Type
       </h2>
 
-      <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
+      >
         {/* Lịch lớn với hiệu ứng motion */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
           className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
         >
           <Calendar
@@ -210,21 +251,21 @@ export const DateTimeSelection = () => {
 
         {/* Danh sách slots với hiệu ứng motion */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
           className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
         >
           <h3 className="text-lg font-medium mb-2 text-gray-800">
             Available Time Slots
           </h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {slots.map((slot) => (
+            {slots.map((slot, index) => (
               <motion.div
                 key={slot.id}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: slot.id * 0.1 }}
+                transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
                 className={`p-4 border rounded-md cursor-pointer transition-colors
                   ${
                     bookingData.time === slot.time
@@ -247,16 +288,19 @@ export const DateTimeSelection = () => {
 
         {/* Chọn loại appointment với hiệu ứng motion */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
           className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
         >
           <h3 className="text-lg font-medium mb-2 text-gray-800">
             Select Appointment Type
           </h3>
           <div className="space-y-3">
-            <div
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
               onClick={() => handleSelectAppointmentType("online")}
               className={`p-4 border rounded-md cursor-pointer transition-colors
                 ${
@@ -266,8 +310,11 @@ export const DateTimeSelection = () => {
                 }`}
             >
               <p className="text-center font-medium text-gray-800">Online</p>
-            </div>
-            <div
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
               onClick={() => handleSelectAppointmentType("offline")}
               className={`p-4 border rounded-md cursor-pointer transition-colors
                 ${
@@ -277,10 +324,10 @@ export const DateTimeSelection = () => {
                 }`}
             >
               <p className="text-center font-medium text-gray-800">Offline</p>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 };
