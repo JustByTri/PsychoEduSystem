@@ -15,13 +15,20 @@ const SchedulePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const studentId = "c65eaccf-94a4-4b91-b0f0-713c0e592064"; // ID cố định của student, có thể lấy từ context hoặc params
+  // Lấy userId từ token
+  const authData = getAuthDataFromLocalStorage();
+  const userId = authData?.userId; // Giả định getAuthDataFromLocalStorage trả về object có userId
 
   useEffect(() => {
+    if (!userId) {
+      setError("User ID not found in token. Please log in again.");
+      setIsLoading(false);
+      return;
+    }
+
     const fetchBookings = async () => {
       try {
         setIsLoading(true);
-        const authData = getAuthDataFromLocalStorage();
         const startDate = moment().startOf("month").format("YYYY-MM-DD"); // Lấy ngày đầu tháng hiện tại
         const endDate = moment()
           .endOf("month")
@@ -29,7 +36,7 @@ const SchedulePage = () => {
           .format("YYYY-MM-DD"); // Lấy ngày cuối tháng sau
 
         const response = await axios.get(
-          `https://localhost:7192/api/appointments/students/${studentId}/appointments?startDate=${startDate}&endDate=${endDate}`,
+          `https://localhost:7192/api/appointments/students/${userId}/appointments?startDate=${startDate}&endDate=${endDate}`,
           {
             headers: {
               Authorization: `Bearer ${authData.accessToken}`,
@@ -38,24 +45,34 @@ const SchedulePage = () => {
           }
         );
 
-        if (response.data.isSuccess && response.data.statusCode === 200) {
-          const events = response.data.result.map((appointment) => {
+        console.log("API Response for bookings:", response.data); // Debug response
+
+        if (response.status === 200) {
+          const appointments = response.data.result || [];
+          if (!Array.isArray(appointments)) {
+            setError("Invalid data format: expected an array of appointments");
+            setIsLoading(false);
+            return;
+          }
+
+          const events = appointments.map((appointment) => {
             const startDateTime = moment(
               `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
-              "YYYY-MM-DD hh:mm"
+              "YYYY-MM-DD HH:mm"
             ).toDate();
             const endDateTime = moment(startDateTime)
-              .add(30, "minutes")
-              .toDate(); // Giả sử mỗi appointment kéo dài 30 phút
+              .add(60, "minutes")
+              .toDate(); // Mỗi slot là 1 giờ
 
             return {
               id: appointment.appointmentId,
-              title: `Meeting with ${getConsultantName(
-                appointment.meetingWith
-              )} - ${appointment.isOnline ? "Online" : "In-person"}`,
+              title: `Meeting with Unknown Consultant - ${
+                appointment.isOnline ? "Online" : "In-person"
+              }`,
               start: startDateTime,
               end: endDateTime,
               details: {
+                studentId: appointment.appointmentFor || userId,
                 consultantId: appointment.meetingWith,
                 date: appointment.date,
                 slotId: appointment.slotId,
@@ -68,7 +85,7 @@ const SchedulePage = () => {
           setBookings(events);
         } else {
           throw new Error(
-            response.data.message || "Failed to fetch appointments"
+            response.data?.message || `API error: Status ${response.status}`
           );
         }
       } catch (error) {
@@ -79,31 +96,22 @@ const SchedulePage = () => {
     };
 
     fetchBookings();
-  }, [studentId]);
+  }, [userId, authData.accessToken]);
 
-  // Hàm lấy thời gian từ slotId (dựa trên slotId từ 1 đến 8)
+  // Hàm lấy thời gian từ slotId (dựa trên slotId từ 1 đến 8, mỗi slot 1 giờ)
   const getTimeFromSlotId = (slotId) => {
     const times = [
       "08:00",
       "09:00",
       "10:00",
       "11:00",
+      "12:00", // Thêm slot 12:00 vì mỗi slot 1 giờ
       "13:00",
       "14:00",
       "15:00",
       "16:00",
     ];
     return times[slotId - 1] || "Unknown";
-  };
-
-  // Hàm lấy tên counselor (giả định lấy từ API hoặc mock data)
-  const getConsultantName = (consultantId) => {
-    // Giả định mock data hoặc fetch từ API nếu cần
-    const consultants = {
-      "db7a5d22-28d9-4c93-8609-8426e8eb6585": "Nguyễn Thị G",
-      "e5d1d93b-7d9a-4f83-9374-bb042665cb20": "Trần Văn H",
-    };
-    return consultants[consultantId] || "Unknown Counselor";
   };
 
   // Xử lý khi click vào một sự kiện
@@ -195,9 +203,7 @@ const SchedulePage = () => {
             <div className="space-y-4">
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Consultant:</span>{" "}
-                {selectedEvent.details.consultantId
-                  ? getConsultantName(selectedEvent.details.consultantId)
-                  : "Unknown Counselor"}
+                Unknown Consultant
               </p>
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Date:</span>{" "}

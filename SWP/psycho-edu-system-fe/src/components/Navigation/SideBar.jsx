@@ -26,7 +26,7 @@ const SideBar = () => {
     { icon: faUser, label: "Account", path: "#" },
   ];
 
-  const handleToggleMenu = () => {
+  const handleToggleMenu = () => {  
     setIsCollapsed((prev) => !prev);
   };
 

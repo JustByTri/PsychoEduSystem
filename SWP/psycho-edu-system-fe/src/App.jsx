@@ -24,6 +24,8 @@ import ParentSurveyPage from "./pages/parent/SurveyPage";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import ClassDetails from "./pages/teacher/ClassDetails";
 import SurveyResult from "./pages/survey/SurveyResult";
+import ParentSchedulePage from "./pages/parent/ParentSchedulePage";
+import { BookingProvider } from "./context/BookingContext";
 function App() {
   return (
     <AuthProvider>
@@ -43,6 +45,8 @@ function App() {
               <Route path="student/" element={<PortalLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="program" element={<ProgramCoursePage />} />
+                <Route path="booking" element={<BookingPage />} />
+                <Route path="schedule" element={<SchedulePage />} />
               </Route>
             </Route>
           </Route>
@@ -50,6 +54,15 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={["Parent"]} />}>
             <Route path="parent/" element={<ParentLayout />}>
               <Route index element={<ParentDashboard />} />
+              <Route
+                path="schedule"
+                element={
+                  <BookingProvider>
+                    <ParentSchedulePage />
+                  </BookingProvider>
+                }
+              />
+              <Route path="booking" element={<BookingPage />} />
             </Route>
           </Route>
           <Route path="survey/:childId" element={<ParentSurveyPage />} />
