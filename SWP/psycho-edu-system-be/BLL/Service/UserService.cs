@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 using BLL.Interface;
 using BLL.Utilities;
@@ -213,6 +214,34 @@ namespace BLL.Service
                     return new ResponseDTO("No available slots.", 404, false, null);
 
                 return new ResponseDTO("Get available slots success", 200, true, availableSlots);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetPsychologistsAsync()
+        {
+            try
+            {
+                var psychologists = await _unitOfWork.User.GetAllByListAsync(u => u.RoleId == 2);
+                var list = psychologists.Select(p => new PsychologistResponseDTO
+                {
+                    UserId = p.UserId,
+                    FirstName = p.FirstName,
+                    LastName = p.LastName,
+                    FullName = p.FullName,
+                    PhoneNumber = p.Phone,
+                    Email = p.Email,
+                    BirthDay = p.BirthDay,
+                    Gender = p.Gender,
+                    Address = p.Address,
+                });
+
+                if (!list.Any()) return new ResponseDTO("No data available", 200, true, string.Empty);
+
+                return new ResponseDTO("Retrieve psychologists successfully", 200, true, list);
             }
             catch (Exception ex)
             {
