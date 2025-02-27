@@ -38,6 +38,22 @@ namespace PsychoEduSystem.Controller
                 return StatusCode(500, new ResponseDTO($"An unexpected error occurred: {ex.Message}", 500, false, null));
             }
         }
+        [HttpGet("{appointmentId}/cancellation")]
+        public async Task<IActionResult> CancelAppointment(Guid appointmentId)
+        {
+            try
+            {
+                if (appointmentId.Equals(Guid.Empty)) return BadRequest("Invalid appointment ID");
+
+                var response = await _appointmentService.CancelAppointmentAsync(appointmentId);
+
+                return StatusCode(response.StatusCode, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO($"An unexpected error occurred: {ex.Message}", 500, false, null));
+            }
+        }
         [HttpGet("students/{studentId}/appointments")]
         public async Task<IActionResult> GetAppointmentsForStudent(Guid studentId, [FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
         {
