@@ -21,9 +21,12 @@ export const BookingProvider = ({ children }) => {
     consultantId: "",
     consultantName: "",
     isHomeroomTeacher: false,
+    availableSlots: [], // Thêm trường để lưu availableSlots của consultant
     // Booking details
     date: "",
     time: "",
+    slotId: 0,
+    appointmentType: "online", // Thêm trường để lưu loại appointment
     duration: 30,
     reasonForBooking: "",
     additionalNotes: "",
@@ -63,8 +66,11 @@ export const BookingProvider = ({ children }) => {
       consultantId: "",
       consultantName: "",
       isHomeroomTeacher: false,
+      availableSlots: [], // Reset availableSlots
       date: "",
       time: "",
+      slotId: 0,
+      appointmentType: "online", // Reset appointmentType
       duration: 30,
       reasonForBooking: "",
       additionalNotes: "",

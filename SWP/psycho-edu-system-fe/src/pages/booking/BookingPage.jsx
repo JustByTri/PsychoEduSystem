@@ -9,6 +9,7 @@ import { UserInfoForm } from "../../components/Booking/BookingSteps/UserInfoForm
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getAuthDataFromLocalStorage } from "../../utils/auth"; // Import hàm này
 
 const BookingPageContent = () => {
   const { isParent, bookingData, resetBookingData } = useBooking();
@@ -18,18 +19,18 @@ const BookingPageContent = () => {
 
   useEffect(() => {
     if (isParent()) {
-      setTotalSteps(6);
+      setTotalSteps(6); // Parent: ChildSelection → ConsultantType → ... → Confirmation (6 steps)
     } else {
-      setTotalSteps(5);
+      setTotalSteps(5); // Student: ConsultantType → ... → Confirmation (5 steps)
     }
   }, [isParent]);
 
   const handleNext = () => {
     if (
       bookingData.consultantType === "homeroom" &&
-      step === (isParent() ? 2 : 1)
+      step === (isParent() ? 2 : 1) // Bước ConsultantTypeSelection
     ) {
-      setStep(step + 2);
+      setStep(step + 2); // Bỏ qua ConsultantSelection, chuyển thẳng đến DateTimeSelection
     } else {
       setStep(step + 1);
     }
@@ -38,16 +39,15 @@ const BookingPageContent = () => {
   const handleBack = () => {
     if (
       bookingData.consultantType === "homeroom" &&
-      step === (isParent() ? 4 : 3)
+      step === (isParent() ? 4 : 3) // Bước sau DateTimeSelection (UserInfoForm)
     ) {
-      setStep(step - 2);
+      setStep(step - 2); // Quay lại ConsultantTypeSelection
     } else {
       setStep(step - 1);
     }
   };
 
   const handleNextWithValidation = () => {
-    // Kiểm tra validation ở bước UserInfoForm
     const userInfoStep = isParent() ? 5 : 4; // Bước UserInfoForm
     if (step === userInfoStep) {
       if (!bookingData.userName || !bookingData.phone || !bookingData.email) {
@@ -67,26 +67,35 @@ const BookingPageContent = () => {
 
   const handleConfirm = async () => {
     try {
-      // // Gửi dữ liệu booking đến backend
-      //  const authData = getAuthDataFromLocalStorage();
-      //  const response = await fetch("https://localhost:7192/api/bookings", {
-      //    method: "POST",
-      //    headers: {
-      //      "Content-Type": "application/json",
-      //      Authorization: `Bearer ${authData.accessToken}`, // Thêm token xác thực
-      //    },
-      //    body: JSON.stringify(bookingData),
-      //  });
+      const authData = getAuthDataFromLocalStorage(); // Bây giờ đã được import, không lỗi nữa
+      const appointmentData = {
+        bookedBy: bookingData.userId, // ID của người đặt lịch (Parent hoặc Student)
+        appointmentFor: isParent() ? bookingData.childId : bookingData.userId, // ID của student
+        meetingWith: bookingData.consultantId, // ID của teacher hoặc counselor
+        date: bookingData.date, // Ngày từ bookingData
+        slotId: bookingData.slotId || 0, // Slot ID từ bookingData
+        isOnline: bookingData.appointmentType === "online", // Dựa trên appointmentType
+      };
 
-      //  if (!response.ok) {
-      //    const errorData = await response.json();
-      //    throw new Error(errorData.message || "Failed to save booking");
-      //  }
+      const response = await fetch("https://localhost:7192/api/appointments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authData.accessToken}`,
+        },
+        body: JSON.stringify(appointmentData),
+      });
 
-      //  const result = await response.json();
-      //  console.log("Booking saved successfully:", result);
+      console.log(appointmentData);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log(appointmentData);
+        throw new Error(errorData.message || "Failed to save appointment");
+      }
 
-      // Hiển thị thông báo thành công
+      const result = await response.json();
+      console.log("Appointment saved successfully:", result);
+
       toast.success("Booking registered successfully!", {
         position: "top-right",
         autoClose: 3000,
@@ -96,14 +105,13 @@ const BookingPageContent = () => {
         draggable: true,
       });
 
-      // Reset và chuyển hướng sau 3 giây
       setTimeout(() => {
         resetBookingData();
         navigate("/student/schedule");
       }, 3000);
     } catch (error) {
-      console.error("Error confirming booking:", error);
-      toast.error("Failed to register booking. Please try again.", {
+      console.error("Error confirming appointment:", error);
+      toast.error(`Failed to register appointment: ${error.message}`, {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -118,7 +126,7 @@ const BookingPageContent = () => {
     if (isParent()) {
       switch (step) {
         case 1:
-          return <ChildSelection />;
+          return <ChildSelection />; // Bước đầu tiên cho Parent
         case 2:
           return <ConsultantTypeSelection />;
         case 3:
@@ -148,7 +156,7 @@ const BookingPageContent = () => {
 
     switch (step) {
       case 1:
-        return <ConsultantTypeSelection />;
+        return <ConsultantTypeSelection />; // Bắt đầu từ ConsultantType cho Student
       case 2:
         return bookingData.consultantType === "counselor" ? (
           <ConsultantSelection />

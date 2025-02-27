@@ -44,6 +44,54 @@ export const ChildSelection = () => {
     }
   }, [bookingData.userId]);
 
+  const fetchClassAndTeacher = async (studentId) => {
+    try {
+      const authData = getAuthDataFromLocalStorage();
+      const response = await fetch(
+        `https://localhost:7192/api/User/${studentId}/class`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch class and teacher");
+      }
+
+      const data = await response.json();
+      if (data.isSuccess && data.statusCode === 200) {
+        return data.result.teacherId; // Chỉ trả về teacherId
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching class and teacher:", error);
+      return null;
+    }
+  };
+
+  const handleSelectChild = async (child) => {
+    const teacherId = await fetchClassAndTeacher(child.id);
+    if (teacherId) {
+      updateBookingData({
+        childId: child.id,
+        childName: child.name,
+        studentId: child.id, // For homeroom teacher lookup
+        consultantId: teacherId, // Lưu teacherId làm consultantId
+        consultantType: "homeroom", // Đặt mặc định là homeroom teacher
+        isHomeroomTeacher: true,
+      });
+    } else {
+      updateBookingData({
+        childId: child.id,
+        childName: child.name,
+        studentId: child.id, // For homeroom teacher lookup
+      });
+    }
+  };
+
   if (isLoading) return <div>Loading children data...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -54,13 +102,7 @@ export const ChildSelection = () => {
         {children.map((child) => (
           <div
             key={child.id}
-            onClick={() =>
-              updateBookingData({
-                childId: child.id,
-                childName: child.name,
-                studentId: child.id, // For homeroom teacher lookup
-              })
-            }
+            onClick={() => handleSelectChild(child)}
             className={`p-4 border rounded-md cursor-pointer transition-colors
               ${
                 bookingData.childId === child.id
