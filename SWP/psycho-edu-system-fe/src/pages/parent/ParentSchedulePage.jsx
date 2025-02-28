@@ -5,25 +5,35 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { motion } from "framer-motion"; // Thêm framer-motion
 import axios from "axios"; // Thêm axios
 import { getAuthDataFromLocalStorage } from "../../utils/auth"; // Đảm bảo import hàm này
+import ChildSelector from "../../components/Schedule/ChildSelector"; // Import component ChildSelector
 import { toast, ToastContainer } from "react-toastify"; // Thêm toast và ToastContainer
 import "react-toastify/dist/ReactToastify.css"; // Đảm bảo import CSS của toast
 
 // Thiết lập localizer cho react-big-calendar
 const localizer = momentLocalizer(moment);
 
-const SchedulePage = () => {
+const ParentSchedulePage = () => {
   const [bookings, setBookings] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Khởi tạo là false để tránh auto fetch
   const [error, setError] = useState(null);
+  const [selectedChildId, setSelectedChildId] = useState(null); // Child được chọn để xem lịch
 
-  // Lấy userId từ token
+  // Lấy parentId từ token
   const authData = getAuthDataFromLocalStorage();
-  const userId = authData?.userId; // Giả định getAuthDataFromLocalStorage trả về object có userId
+  const parentId = authData?.userId;
 
+  // Callback để nhận selectedChildId từ ChildSelector
+  const handleChildSelected = (childId) => {
+    console.log("Child selected in ParentSchedulePage:", childId);
+    setSelectedChildId(childId);
+  };
+
+  // Fetch bookings khi selectedChildId thay đổi (chỉ fetch khi có selectedChildId)
   useEffect(() => {
-    if (!userId) {
-      setError("User ID not found in token. Please log in again.");
+    if (!selectedChildId) {
+      setBookings([]);
+      setError(null); // Không hiển thị lỗi trừ khi fetch thất bại
       setIsLoading(false);
       return;
     }
@@ -31,14 +41,15 @@ const SchedulePage = () => {
     const fetchBookings = async () => {
       try {
         setIsLoading(true);
-        const startDate = moment().startOf("month").format("YYYY-MM-DD"); // Lấy ngày đầu tháng hiện tại
+        const startDate = moment().startOf("month").format("YYYY-MM-DD");
         const endDate = moment()
           .endOf("month")
           .add(1, "month")
-          .format("YYYY-MM-DD"); // Lấy ngày cuối tháng sau
+          .format("YYYY-MM-DD");
 
+        console.log(`Fetching bookings for studentId: ${selectedChildId}`);
         const response = await axios.get(
-          `https://localhost:7192/api/appointments/students/${userId}/appointments?startDate=${startDate}&endDate=${endDate}`,
+          `https://localhost:7192/api/appointments/students/${selectedChildId}/appointments?startDate=${startDate}&endDate=${endDate}`,
           {
             headers: {
               Authorization: `Bearer ${authData.accessToken}`,
@@ -47,58 +58,51 @@ const SchedulePage = () => {
           }
         );
 
-        console.log("API Response for bookings:", response.data); // Debug response
-
-        if (response.status === 200) {
-          const appointments = response.data.result || [];
-          if (!Array.isArray(appointments)) {
-            setError("Invalid data format: expected an array of appointments");
-            setIsLoading(false);
-            return;
-          }
-
-          const events = appointments.map((appointment) => {
-            const startDateTime = moment(
-              `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
-              "YYYY-MM-DD HH:mm"
-            ).toDate();
-            const endDateTime = moment(startDateTime)
-              .add(60, "minutes")
-              .toDate(); // Mỗi slot là 1 giờ
-
-            return {
-              id: appointment.appointmentId,
-              title: `Meeting with Unknown Consultant - ${
-                appointment.isOnline ? "Online" : "In-person"
-              }`,
-              start: startDateTime,
-              end: endDateTime,
-              details: {
-                studentId: appointment.appointmentFor || userId,
-                consultantId: appointment.meetingWith,
-                date: appointment.date,
-                slotId: appointment.slotId,
-                meetingType: appointment.isOnline ? "online" : "in-person",
-                isCompleted: appointment.isCompleted,
-                isCancelled: appointment.isCancelled,
-              },
-            };
-          });
-          setBookings(events);
-        } else {
-          throw new Error(
-            response.data?.message || `API error: Status ${response.status}`
-          );
+        const appointments = response.data.result || [];
+        if (!Array.isArray(appointments)) {
+          setError("Invalid data format: expected an array of appointments");
+          setIsLoading(false);
+          return;
         }
+
+        const events = appointments.map((appointment) => {
+          const startDateTime = moment(
+            `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
+            "YYYY-MM-DD HH:mm"
+          ).toDate();
+          const endDateTime = moment(startDateTime).add(60, "minutes").toDate();
+
+          return {
+            id: appointment.appointmentId,
+            title: `Meeting for Unknown Student with Unknown Consultant - ${
+              appointment.isOnline ? "Online" : "In-person"
+            }`,
+            start: startDateTime,
+            end: endDateTime,
+            details: {
+              studentId: appointment.appointmentFor || selectedChildId,
+              consultantId: appointment.meetingWith,
+              date: appointment.date,
+              slotId: appointment.slotId,
+              meetingType: appointment.isOnline ? "online" : "in-person",
+              isCompleted: appointment.isCompleted,
+              isCancelled: appointment.isCancelled,
+            },
+          };
+        });
+
+        setBookings(events);
+        setError(null);
+        setIsLoading(false);
       } catch (error) {
-        setError(error.message || "Failed to fetch appointments");
-      } finally {
+        console.error("Fetch bookings error:", error.message);
+        setError("Failed to fetch appointments");
         setIsLoading(false);
       }
     };
 
     fetchBookings();
-  }, [userId, authData.accessToken]);
+  }, [selectedChildId, authData.accessToken]);
 
   // Hàm lấy thời gian từ slotId
   const getTimeFromSlotId = (slotId) => {
@@ -133,8 +137,7 @@ const SchedulePage = () => {
     try {
       setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
-      const response = await axios.put(
-        // Thay đổi từ POST sang PUT để thử
+      const response = await axios.post(
         `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
         {},
         {
@@ -161,7 +164,7 @@ const SchedulePage = () => {
             .add(1, "month")
             .format("YYYY-MM-DD");
           const response = await axios.get(
-            `https://localhost:7192/api/appointments/students/${userId}/appointments?startDate=${startDate}&endDate=${endDate}`,
+            `https://localhost:7192/api/appointments/students/${selectedChildId}/appointments?startDate=${startDate}&endDate=${endDate}`,
             {
               headers: {
                 Authorization: `Bearer ${authData.accessToken}`,
@@ -180,13 +183,13 @@ const SchedulePage = () => {
               .toDate();
             return {
               id: appointment.appointmentId,
-              title: `Meeting with Unknown Consultant - ${
+              title: `Meeting for Unknown Student with Unknown Consultant - ${
                 appointment.isOnline ? "Online" : "In-person"
               }`,
               start: startDateTime,
               end: endDateTime,
               details: {
-                studentId: appointment.appointmentFor || userId,
+                studentId: appointment.appointmentFor || selectedChildId,
                 consultantId: appointment.meetingWith,
                 date: appointment.date,
                 slotId: appointment.slotId,
@@ -214,19 +217,14 @@ const SchedulePage = () => {
       }
     } catch (error) {
       console.error("Error cancelling appointment:", error);
-      toast.error(
-        `Failed to cancel appointment: ${
-          error.response?.data?.message || error.message
-        }`,
-        {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        }
-      );
+      toast.error(`Failed to cancel appointment: ${error.message}`, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -247,47 +245,56 @@ const SchedulePage = () => {
       >
         Your Schedule
       </motion.h1>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="bg-white p-6 rounded-lg shadow-md border border-gray-200"
-      >
-        <Calendar
-          localizer={localizer}
-          events={bookings}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 600 }} // Chiều cao lịch
-          defaultView="month" // Mặc định hiển thị tháng
-          views={["month", "week"]} // Cho phép chuyển giữa tháng và tuần
-          onSelectEvent={handleSelectEvent}
-          eventPropGetter={(event) => ({
-            style: {
-              backgroundColor:
-                event.details.meetingType === "online" ? "#3B82F6" : "#10B981", // Màu xanh cho online, xanh lá cho in-person
-              color: "white",
-              borderRadius: "0.5rem",
-              border: "none",
-              padding: "0.25rem 0.5rem",
-              fontSize: "0.875rem",
-            },
-          })}
-          components={{
-            event: (props) => (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="rbc-event-content"
-                style={props.style}
-              >
-                {props.title}
-              </motion.div>
-            ),
-          }}
-        />
-      </motion.div>
+      <ChildSelector onChildSelected={handleChildSelected} />{" "}
+      {/* Luôn hiển thị */}
+      {selectedChildId && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mt-6"
+        >
+          <Calendar
+            localizer={localizer}
+            events={bookings}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: 600 }}
+            defaultView="month"
+            views={["month", "week"]}
+            onSelectEvent={handleSelectEvent}
+            eventPropGetter={(event) => ({
+              style: {
+                backgroundColor:
+                  event.details.meetingType === "online"
+                    ? "#3B82F6"
+                    : "#10B981",
+                color: "white",
+                borderRadius: "0.5rem",
+                border: "none",
+                padding: "0.25rem 0.5rem",
+                fontSize: "0.875rem",
+              },
+            })}
+            components={{
+              event: (props) => (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="rbc-event-content"
+                  style={props.style}
+                >
+                  {props.title}
+                </motion.div>
+              ),
+            }}
+          />
+        </motion.div>
+      )}
+      {error && !selectedChildId && (
+        <div className="text-center text-red-600 mt-4">{error}</div>
+      )}
       {/* Modal hiển thị chi tiết với hiệu ứng motion và nút Cancel */}
       {selectedEvent && (
         <motion.div
@@ -353,7 +360,7 @@ const SchedulePage = () => {
                   onClick={handleCancelAppointment}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  Cancel
+                  Cancel Appointment
                 </motion.button>
               )}
             </div>
@@ -365,4 +372,4 @@ const SchedulePage = () => {
   );
 };
 
-export default SchedulePage;
+export default ParentSchedulePage;

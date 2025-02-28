@@ -4,14 +4,14 @@ import ProgressBar from "../../components/Survey/ProgressBar";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import { SurveyService } from "../../api/services/surveyService";
-
+import { useParams } from "react-router-dom";
 const SurveyPage = () => {
+  const { childId } = useParams();
   const [questionsData, setQuestionsData] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [answeredQuestions, setAnsweredQuestions] = useState([]);
   const questionsPerPage = 5;
   const navigate = useNavigate();
-
   useEffect(() => {
     const storedQuestions = localStorage.getItem("questions");
     if (storedQuestions) {
@@ -100,11 +100,12 @@ const SurveyPage = () => {
           })
           .filter(Boolean);
 
-        const surveyResult = { surveyId, responses };
+        const surveyResult = { surveyId, childId, responses };
         localStorage.setItem("surveyResponses", JSON.stringify(surveyResult));
 
         try {
           await SurveyService.submitSurvey(surveyResult);
+          localStorage.removeItem("questions");
           Swal.fire(
             "Survey submitted!",
             "Your responses have been saved.",

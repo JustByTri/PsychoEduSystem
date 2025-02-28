@@ -2,34 +2,32 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   faHome,
+  faChartBar,
   faClipboardList,
-  faCogs,
-  faHistory,
+  faBell,
   faFileAlt,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
-const SideBar = () => {
+const ParentSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const navItems = [
-    { icon: faHome, label: "Home", path: "/student" },
+    { icon: faHome, label: "Home", path: "/parent" },
+    { icon: faChartBar, label: "Student Progress", path: "/parent/progress" },
     {
       icon: faClipboardList,
-      label: "Survey",
-      path: "/student/start-up-survey",
+      label: "Assignments",
+      path: "/parent/assignments",
     },
-    { icon: faCogs, label: "Program", path: "/student/program" },
-    { icon: faHistory, label: "Schedules", path: "/student/schedule" },
-    { icon: faFileAlt, label: "Booking", path: "/student/booking" },
-    { icon: faUser, label: "Account", path: "#" },
+    { icon: faBell, label: "Schedule", path: "/parent/schedule" },
+    { icon: faFileAlt, label: "Booking", path: "/parent/booking" },
+    { icon: faUser, label: "Account", path: "/parent/account" },
   ];
 
-  const handleToggleMenu = () => {  
+  const handleToggleMenu = () => {
     setIsCollapsed((prev) => !prev);
   };
-
   return (
     <div
       className={`bg-[#65CCB8] text-[#002B36] shadow-md transition-all duration-300 h-full ${
@@ -86,4 +84,4 @@ const SideBar = () => {
   );
 };
 
-export default SideBar;
+export default ParentSidebar;
