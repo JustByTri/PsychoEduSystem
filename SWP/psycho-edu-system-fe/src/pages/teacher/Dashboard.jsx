@@ -107,7 +107,7 @@ const Dashboard = () => {
           transition={{ duration: 0.5 }}
           className="text-gray-600 text-center"
         >
-          No classes found.
+          No classes found
         </motion.p>
       )}
       <motion.div

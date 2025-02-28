@@ -1,32 +1,20 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  faHome,
-  faChartBar,
-  faClipboardList,
-  faBell,
-  faFileAlt,
-  faUser,
-} from "@fortawesome/free-solid-svg-icons";
+import { faHome, faBell } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-const ParentSidebar = () => {
+
+const PsychologistSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const navItems = [
-    { icon: faHome, label: "Home", path: "/parent" },
-    { icon: faChartBar, label: "Student Progress", path: "/parent/progress" },
-    {
-      icon: faClipboardList,
-      label: "Assignments",
-      path: "/parent/assignments",
-    },
-    { icon: faBell, label: "Schedule", path: "/parent/schedule" },
-    { icon: faFileAlt, label: "Booking", path: "/parent/booking" },
+    { icon: faHome, label: "Dashboard", path: "/psychologist" },
+    { icon: faBell, label: "Schedule", path: "/psychologist/schedule" },
   ];
 
   const handleToggleMenu = () => {
     setIsCollapsed((prev) => !prev);
   };
+
   return (
     <div
       className={`bg-[#65CCB8] text-[#002B36] shadow-md transition-all duration-300 h-full ${
@@ -58,7 +46,6 @@ const ParentSidebar = () => {
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-grow space-y-2 mt-6">
         {navItems.map((item, index) => (
           <Link
@@ -83,4 +70,4 @@ const ParentSidebar = () => {
   );
 };
 
-export default ParentSidebar;
+export default PsychologistSidebar;

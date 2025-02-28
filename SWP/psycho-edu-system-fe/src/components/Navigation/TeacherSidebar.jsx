@@ -13,16 +13,16 @@ const TeacherSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const navItems = [
-    { icon: faHome, label: "Home", path: "/parent" },
-    { icon: faChartBar, label: "Student Progress", path: "/parent/progress" },
+    { icon: faHome, label: "Home", path: "/teacher" },
+    { icon: faChartBar, label: "Student Progress", path: "/teacher/progress" },
     {
       icon: faClipboardList,
       label: "Assignments",
-      path: "/parent/assignments",
+      path: "/teacher/assignments",
     },
-    { icon: faBell, label: "Notifications", path: "/parent/notifications" },
-    { icon: faFileAlt, label: "Reports", path: "/parent/reports" },
-    { icon: faUser, label: "Account", path: "/parent/account" },
+    { icon: faBell, label: "Notifications", path: "/teacher/notifications" },
+    { icon: faFileAlt, label: "Reports", path: "/teacher/reports" },
+    { icon: faUser, label: "Account", path: "/teacher/account" },
   ];
 
   const handleToggleMenu = () => {

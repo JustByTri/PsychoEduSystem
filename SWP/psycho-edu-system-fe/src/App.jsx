@@ -26,6 +26,11 @@ import ClassDetails from "./pages/teacher/ClassDetails";
 import SurveyResult from "./pages/survey/SurveyResult";
 import ParentSchedulePage from "./pages/parent/ParentSchedulePage";
 import { BookingProvider } from "./context/BookingContext";
+import PsychologistLayout from "./components/Layouts/PsychologistLayout";
+import PsychologistDashboard from "./pages/couselor/PsychologistDashboard";
+import PsychologistSchedulePage from "./pages/couselor/PsychologistSchedulePage";
+import TeacherLayout from "./components/Layouts/TeacherLayout";
+
 function App() {
   return (
     <AuthProvider>
@@ -78,17 +83,18 @@ function App() {
             path="overall-survey-result/:studentId"
             element={<SurveyResult />}
           />
-          {/* Counselor Routes */}
-          <Route element={<ProtectedRoute allowedRoles={["Counselor"]} />}>
-            <Route
-              path="counselor-dashboard"
-              element={<div>Counselor Dashboard</div>}
-            />
+
+          {/* Psychologist Routes */}
+          <Route element={<ProtectedRoute allowedRoles={["Psychologist"]} />}>
+            <Route path="/psychologist/" element={<PsychologistLayout />}>
+              <Route index element={<PsychologistDashboard />} />
+              <Route path="schedule" element={<PsychologistSchedulePage />} />
+            </Route>
           </Route>
 
           {/* Teacher Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
-            <Route path="teacher/" element={<ParentLayout />}>
+            <Route path="teacher/" element={<TeacherLayout />}>
               <Route index element={<TeacherDashboard />} />
               <Route path="class/:classId" element={<ClassDetails />} />
             </Route>
