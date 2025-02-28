@@ -9,11 +9,23 @@ export const ConsultantTypeSelection = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Lấy authData một lần để sử dụng
+  const authData = getAuthDataFromLocalStorage();
+  const userId = authData?.userId;
+
   // Debug để kiểm tra giá trị
   useEffect(() => {
     console.log("isParent:", isParent());
     console.log("bookingData:", bookingData);
-  }, [isParent, bookingData]);
+    console.log("authData.userId:", userId);
+  }, [isParent, bookingData, userId]);
+
+  // Cập nhật bookingData.userId từ authData khi mount
+  useEffect(() => {
+    if (!bookingData.userId && userId && !isParent()) {
+      updateBookingData({ userId });
+    }
+  }, [userId, isParent, updateBookingData, bookingData.userId]);
 
   // Hàm fetch teacherId từ API với axios
   const fetchClassAndTeacher = async (studentId) => {
@@ -44,7 +56,11 @@ export const ConsultantTypeSelection = () => {
       return null;
     } catch (error) {
       console.error("Fetch class and teacher error:", error.message);
-      setError(error.message || "Failed to fetch class and teacher");
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch class and teacher"
+      );
       return null;
     } finally {
       setIsLoading(false);
@@ -57,12 +73,16 @@ export const ConsultantTypeSelection = () => {
     setError(null); // Reset lỗi
 
     let studentId;
-    // Lấy studentId: userId nếu không phải parent (student), childId nếu là parent
-    studentId = !isParent() ? bookingData.userId : bookingData.childId;
+    // Lấy studentId: authData.userId nếu không phải parent (Student), bookingData.childId nếu là parent
+    studentId = !isParent() ? userId : bookingData.childId;
 
     // Kiểm tra studentId trước khi tiếp tục
     if (!studentId) {
-      setError("No valid student ID available. Please check your data.");
+      setError(
+        isParent()
+          ? "No valid student ID available. Please ensure a child is selected for parents."
+          : "No valid user ID available. Please check your authentication."
+      );
       setIsLoading(false);
       return;
     }
@@ -73,7 +93,7 @@ export const ConsultantTypeSelection = () => {
         updateBookingData({
           consultantType: type,
           consultantId: teacherId,
-          consultantName: "",
+          consultantName: "", // Có thể fetch tên sau nếu cần
           isHomeroomTeacher: true,
         });
       } else {
@@ -81,7 +101,9 @@ export const ConsultantTypeSelection = () => {
           consultantType: type,
           isHomeroomTeacher: true,
         });
-        setError("Could not fetch homeroom teacher. Please try again.");
+        setError(
+          "Could not fetch homeroom teacher. Please try again or select a different type."
+        );
       }
     } else {
       updateBookingData({
@@ -94,18 +116,16 @@ export const ConsultantTypeSelection = () => {
     setIsLoading(false); // Kết thúc loading
   };
 
-  // useEffect để kiểm tra và fetch nếu đã có consultantType (optional)
+  // useEffect để kiểm tra và fetch nếu đã có consultantType (optional, chạy khi thay đổi)
   useEffect(() => {
-    if (bookingData.consultantType === "homeroom") {
-      const studentId = !isParent() ? bookingData.userId : bookingData.childId;
-      if (studentId) fetchClassAndTeacher(studentId);
+    if (
+      bookingData.consultantType === "homeroom" &&
+      bookingData.childId &&
+      isParent()
+    ) {
+      fetchClassAndTeacher(bookingData.childId);
     }
-  }, [
-    bookingData.consultantType,
-    bookingData.userId,
-    bookingData.childId,
-    isParent,
-  ]);
+  }, [bookingData.consultantType, bookingData.childId, isParent]);
 
   if (isLoading)
     return (

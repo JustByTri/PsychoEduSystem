@@ -6,6 +6,8 @@ import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { motion } from "framer-motion"; // Thêm framer-motion
 import axios from "axios"; // Thêm axios
+import { toast } from "react-toastify"; // Thêm toast từ react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Đảm bảo import CSS của toast
 
 // Thiết lập localizer cho react-big-calendar
 const localizer = momentLocalizer(moment);
@@ -87,29 +89,68 @@ export const DateTimeSelection = () => {
               isAvailable: slotsData.includes(8),
             },
           ];
-          setAvailableSlots(
-            slotTimes
-              .filter((slot) => slot.isAvailable)
-              .map((slot) => slot.slotId)
-          );
+          const filteredSlots = slotTimes
+            .filter((slot) => slot.isAvailable)
+            .map((slot) => slot.slotId);
+          setAvailableSlots(filteredSlots);
+          if (filteredSlots.length === 0) {
+            toast.warn("No available slots for the consultant on this date.", {
+              position: "top-right",
+              autoClose: 3000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+            });
+          }
         } else {
-          // Nếu không có slots (response rỗng hoặc không phải mảng), đặt availableSlots rỗng
           setAvailableSlots([]);
+          toast.warn("No available slots for the consultant on this date.", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
         }
       } else if (response.status === 404) {
-        // Xử lý 404 (Not Found) không báo lỗi, chỉ hiển thị tất cả slots ở dạng không khả dụng
+        // Xử lý 404 như trường hợp không có slot
         setAvailableSlots([]);
+        toast.warn("No available slots for the consultant on this date.", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       } else {
         console.warn(
           "Unexpected API response:",
           response.status,
           response.data
         );
-        setAvailableSlots([]); // Mặc định hiển thị slots rỗng nếu có lỗi khác
+        setAvailableSlots([]);
+        toast.error("Unexpected error while fetching slots.", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
     } catch (error) {
-      console.error("Error fetching available slots:", error);
-      setAvailableSlots([]); // Xử lý lỗi mạng hoặc khác, chỉ hiển thị slots rỗng
+      setAvailableSlots([]);
+      toast.error("No avaiable slots in this date", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -119,12 +160,12 @@ export const DateTimeSelection = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset giờ để so sánh ngày
     if (date < today) {
-      return; // Không cho chọn ngày đã qua, không hiển thị thông báo
+      return; // Không cho chọn ngày đã qua
     }
     setSelectedDate(date);
     updateBookingData({ date: moment(date).format("YYYY-MM-DD") }); // Cập nhật date vào bookingData
     if (bookingData.consultantId) {
-      fetchAvailableSlots(date, bookingData.consultantId); // Fetch slots khi click chọn ngày
+      fetchAvailableSlots(date, bookingData.consultantId); // Fetch slots khi chọn ngày
     }
   };
 
@@ -142,6 +183,11 @@ export const DateTimeSelection = () => {
     setAppointmentType(type);
     updateBookingData({ appointmentType: type }); // Lưu loại appointment vào bookingData
   };
+
+  // Hiển thị các bước dựa trên điều kiện
+  const showSlots =
+    selectedDate && bookingData.consultantId && availableSlots.length > 0;
+  const showAppointmentType = showSlots && bookingData.slotId;
 
   if (isLoading)
     return (
@@ -168,7 +214,7 @@ export const DateTimeSelection = () => {
         transition={{ duration: 0.5 }}
         className="space-y-6"
       >
-        {/* Lịch lớn với hiệu ứng motion (không đánh dấu ngày có slots nữa) */}
+        {/* Lịch lớn với hiệu ứng motion, ngày được chọn nổi bật */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -180,11 +226,11 @@ export const DateTimeSelection = () => {
             events={[]}
             startAccessor="start"
             endAccessor="end"
-            style={{ height: 400 }} // Chiều cao lịch
-            defaultView="month" // Mặc định hiển thị tháng
-            views={["month", "week"]} // Cho phép chuyển giữa tháng và tuần
+            style={{ height: 400 }}
+            defaultView="month"
+            views={["month", "week"]}
             onSelectSlot={(slotInfo) => handleSelectDate(slotInfo.start)}
-            selectable // Cho phép chọn ngày
+            selectable
             date={selectedDate}
             onNavigate={(newDate) => setSelectedDate(newDate)}
             slotPropGetter={(date) => {
@@ -208,17 +254,29 @@ export const DateTimeSelection = () => {
               return {
                 className: "rbc-hoverable",
                 style: { cursor: "pointer" },
-              }; // Tất cả các ngày khác có thể hover
+              };
             }}
             components={{
               dateCellWrapper: (props) => {
-                const isHovered = props.isHovered; // Kiểm tra trạng thái hover
-                const defaultStyle = props.style || {}; // Giá trị mặc định nếu props.style là undefined
+                const isHovered = props.isHovered;
+                const defaultStyle = props.style || {};
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
                 if (moment(props.value).isSame(selectedDate, "day")) {
-                  return <div {...props}>{props.children}</div>; // Giữ style cho ngày đã chọn
+                  return (
+                    <div
+                      {...props}
+                      style={{
+                        ...defaultStyle,
+                        backgroundColor: "#e0f7fa",
+                        border: "2px solid #3b82f6",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {props.children}
+                    </div>
+                  ); // Ngày được chọn sáng lên
                 }
                 if (props.value < today) {
                   return (
@@ -226,7 +284,7 @@ export const DateTimeSelection = () => {
                       {...props}
                       style={{
                         ...defaultStyle,
-                        backgroundColor: "#e5e7eb", // Màu xám nhạt với Tailwind (gray-200)
+                        backgroundColor: "#e5e7eb",
                         cursor: "not-allowed",
                         opacity: 0.5,
                       }}
@@ -242,11 +300,11 @@ export const DateTimeSelection = () => {
                       ...defaultStyle,
                       backgroundColor:
                         isHovered && moment(props.value).isAfter(today, "day")
-                          ? "#f5f5f5" // Màu xám rất nhạt (gray-100) khi hover
+                          ? "#f5f5f5"
                           : defaultStyle.backgroundColor || "transparent",
                       border:
                         isHovered && moment(props.value).isAfter(today, "day")
-                          ? "2px solid #3b82f6" // Màu xanh đậm (blue-600) với Tailwind
+                          ? "2px solid #3b82f6"
                           : "none",
                       cursor: "pointer",
                     }}
@@ -259,88 +317,94 @@ export const DateTimeSelection = () => {
           />
         </motion.div>
 
-        {/* Danh sách slots với hiệu ứng motion */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
-        >
-          <h3 className="text-lg font-medium mb-2 text-gray-800">
-            Available Time Slots
-          </h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {slots.map((slot, index) => (
+        {/* Danh sách slots chỉ hiển thị khi có ngày và slot khả dụng */}
+        {selectedDate &&
+          bookingData.consultantId &&
+          availableSlots.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
+            >
+              <h3 className="text-lg font-medium mb-2 text-gray-800">
+                Available Time Slots
+              </h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {slots.map((slot, index) => (
+                  <motion.div
+                    key={slot.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
+                    className={`p-4 border rounded-md cursor-pointer transition-colors
+                    ${
+                      bookingData.time === slot.time
+                        ? "border-blue-500 bg-blue-50"
+                        : availableSlots.includes(slot.id)
+                        ? "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                        : "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
+                    }`}
+                    onClick={() =>
+                      availableSlots.includes(slot.id) && handleSelectSlot(slot)
+                    }
+                  >
+                    <p className="text-center font-medium text-gray-800">
+                      {slot.time}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+        {/* Chọn loại appointment chỉ hiển thị khi slot đã được chọn */}
+        {selectedDate && bookingData.consultantId && bookingData.slotId && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
+          >
+            <h3 className="text-lg font-medium mb-2 text-gray-800">
+              Select Appointment Type
+            </h3>
+            <div className="space-y-3">
               <motion.div
-                key={slot.id}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
+                transition={{ duration: 0.3 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleSelectAppointmentType("online")}
                 className={`p-4 border rounded-md cursor-pointer transition-colors
                   ${
-                    bookingData.time === slot.time
-                      ? "border-blue-500 bg-blue-50"
-                      : availableSlots.includes(slot.id)
-                      ? "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
-                      : "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
+                    appointmentType === "online"
+                      ? "border-green-500 bg-green-50"
+                      : "border-gray-200 hover:border-green-300 hover:bg-green-50"
                   }`}
-                onClick={() =>
-                  availableSlots.includes(slot.id) && handleSelectSlot(slot)
-                }
               >
-                <p className="text-center font-medium text-gray-800">
-                  {slot.time}
-                </p>
+                <p className="text-center font-medium text-gray-800">Online</p>
               </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Chọn loại appointment với hiệu ứng motion */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
-        >
-          <h3 className="text-lg font-medium mb-2 text-gray-800">
-            Select Appointment Type
-          </h3>
-          <div className="space-y-3">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleSelectAppointmentType("online")}
-              className={`p-4 border rounded-md cursor-pointer transition-colors
-                ${
-                  appointmentType === "online"
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200 hover:border-green-300 hover:bg-green-50"
-                }`}
-            >
-              <p className="text-center font-medium text-gray-800">Online</p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleSelectAppointmentType("offline")}
-              className={`p-4 border rounded-md cursor-pointer transition-colors
-                ${
-                  appointmentType === "offline"
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200 hover:border-green-300 hover:bg-green-50"
-                }`}
-            >
-              <p className="text-center font-medium text-gray-800">Offline</p>
-            </motion.div>
-          </div>
-        </motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleSelectAppointmentType("offline")}
+                className={`p-4 border rounded-md cursor-pointer transition-colors
+                  ${
+                    appointmentType === "offline"
+                      ? "border-green-500 bg-green-50"
+                      : "border-gray-200 hover:border-green-300 hover:bg-green-50"
+                  }`}
+              >
+                <p className="text-center font-medium text-gray-800">Offline</p>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

@@ -5,7 +5,7 @@ import { motion } from "framer-motion"; // Thêm framer-motion
 import axios from "axios"; // Thêm axios
 
 export const ConsultantSelection = () => {
-  const { updateBookingData, bookingData } = useBooking();
+  const { updateBookingData, bookingData, isParent } = useBooking();
   const [consultants, setConsultants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,7 +15,68 @@ export const ConsultantSelection = () => {
       try {
         setIsLoading(true);
         const authData = getAuthDataFromLocalStorage();
-        if (bookingData.consultantType === "counselor") {
+        if (!bookingData.consultantType) {
+          setError("No consultant type selected. Please select a type first.");
+          setIsLoading(false);
+          return;
+        }
+
+        let consultantList = [];
+        if (bookingData.consultantType === "homeroom") {
+          let studentId;
+          if (!isParent()) {
+            // Student: Lấy studentId từ userId trong token
+            studentId = bookingData.userId || authData.userId; // Ưu tiên từ bookingData, nếu không dùng authData
+            if (!studentId) {
+              setError(
+                "No valid student ID available. Please check your authentication."
+              );
+              setIsLoading(false);
+              return;
+            }
+          } else {
+            // Parent: Yêu cầu childId đã được chọn từ ChildSelection
+            studentId = bookingData.childId;
+            if (!studentId) {
+              setError(
+                "No valid student ID available. Please select a child first."
+              );
+              setIsLoading(false);
+              return;
+            }
+          }
+
+          const response = await axios.get(
+            `https://localhost:7192/api/User/${studentId}/class`, // Truyền studentId để lấy teacherId
+            {
+              headers: {
+                Authorization: `Bearer ${authData.accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          console.log("API Response for homeroom teacher:", response.data);
+          if (response.status === 200) {
+            const teacherData = response.data.result || response.data;
+            if (!teacherData || typeof teacherData !== "object") {
+              throw new Error(
+                "Invalid data format: teacher data is not an object"
+              );
+            }
+            const teacherId = teacherData.teacherId;
+            consultantList = [
+              {
+                id: teacherId || "unknown-id",
+                name: `Teacher ${teacherId?.slice(0, 8) || "unknown"}`, // Sử dụng ID thay vì tên
+                role: "Homeroom Teacher",
+                availableSlots: [], // Sẽ fetch trong DateTimeSelection
+              },
+            ];
+          } else {
+            throw new Error(`API error: Status ${response.status}`);
+          }
+        } else if (bookingData.consultantType === "counselor") {
           const response = await axios.get(
             `https://localhost:7192/api/psychologists`,
             {
@@ -28,15 +89,14 @@ export const ConsultantSelection = () => {
 
           if (response.status === 200) {
             let data = response.data;
-            // Xử lý định dạng response: kiểm tra nếu data là object chứa mảng (data, result, v.v.)
+            // Xử lý định dạng response
             if (Array.isArray(data)) {
-              data = data; // Nếu trực tiếp là mảng
+              data = data;
             } else if (data.data && Array.isArray(data.data)) {
-              data = data.data; // Nếu có field 'data' là mảng
+              data = data.data;
             } else if (data.result && Array.isArray(data.result)) {
-              data = data.result; // Nếu có field 'result' là mảng
+              data = data.result;
             } else if (data && typeof data === "object") {
-              // Nếu là object đơn, chuyển thành mảng
               data = [data];
             } else {
               throw new Error(
@@ -51,52 +111,23 @@ export const ConsultantSelection = () => {
             }
 
             const formattedConsultants = data.map((psychologist) => ({
-              id: psychologist.userId || "unknown-id", // Đảm bảo id luôn có giá trị
+              id: psychologist.userId || "unknown-id",
               name:
                 psychologist.fullName ||
-                `Counselor ${psychologist.userId?.slice(0, 8) || "unknown"}`, // Giả định fullName từ API, kiểm tra trước khi slice
+                `Counselor ${psychologist.userId?.slice(0, 8) || "unknown"}`,
               role: "Counselor",
               availableSlots: [], // Sẽ fetch trong DateTimeSelection
             }));
-            setConsultants(formattedConsultants);
+            consultantList = formattedConsultants;
           } else {
             throw new Error(`API error: Status ${response.status}`);
           }
-        } else if (bookingData.consultantType === "homeroom") {
-          const response = await axios.get(
-            `https://localhost:7192/api/User/${bookingData.consultantId}/class`,
-            {
-              headers: {
-                Authorization: `Bearer ${authData.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+        }
 
-          console.log("API Response for homeroom teacher:", response.data); // Log response để kiểm tra định dạng
-          if (response.status === 200) {
-            const teacherData = response.data.result || response.data; // Giả định result hoặc data trực tiếp
-            if (!teacherData || typeof teacherData !== "object") {
-              throw new Error(
-                "Invalid data format: teacher data is not an object"
-              );
-            }
-            const teacherName = await fetchTeacherName(teacherData.teacherId);
-            setConsultants([
-              {
-                id: teacherData.teacherId || "unknown-id",
-                name:
-                  teacherName ||
-                  `Teacher ${teacherData.teacherId?.slice(0, 8) || "unknown"}`,
-                role: "Homeroom Teacher",
-                availableSlots: [], // Sẽ fetch trong DateTimeSelection
-              },
-            ]);
-          } else {
-            throw new Error(`API error: Status ${response.status}`);
-          }
+        if (consultantList.length === 0) {
+          setError("No consultants available.");
         } else {
-          throw new Error("No consultant type selected");
+          setConsultants(consultantList);
         }
       } catch (error) {
         console.error(
@@ -109,49 +140,30 @@ export const ConsultantSelection = () => {
       }
     };
 
-    const fetchTeacherName = async (teacherId) => {
-      try {
-        const authData = getAuthDataFromLocalStorage();
-        const response = await axios.get(
-          `https://localhost:7192/api/User/${teacherId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authData.accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response.status === 200) {
-          return (
-            response.data.fullName ||
-            `Teacher ${teacherId?.slice(0, 8) || "unknown"}`
-          );
-        }
-        return `Teacher ${teacherId?.slice(0, 8) || "unknown"}`;
-      } catch (error) {
-        console.error("Error fetching teacher name:", error);
-        return `Teacher ${teacherId?.slice(0, 8) || "unknown"}`;
-      }
-    };
-
     if (bookingData.consultantType) {
       fetchConsultants();
     } else {
       setIsLoading(false);
       setError("No consultant type selected");
     }
-  }, [bookingData.consultantType, bookingData.consultantId]);
+  }, [
+    bookingData.consultantType,
+    bookingData.isParent,
+    bookingData.userId,
+    bookingData.childId,
+    isParent, // Thêm isParent từ useBooking để kiểm tra vai trò
+  ]);
 
   const handleSelectConsultant = (consultant) => {
     if (!consultant) {
       console.error("Consultant is undefined");
       return;
     }
+    console.log("Selected consultant:", consultant);
     updateBookingData({
       consultantId: consultant.id,
       consultantName: consultant.name,
-      availableSlots: consultant.availableSlots, // Lưu availableSlots (dù trống, sẽ fetch trong DateTimeSelection)
+      availableSlots: consultant.availableSlots, // Sẽ cập nhật trong DateTimeSelection
     });
   };
 
@@ -169,14 +181,19 @@ export const ConsultantSelection = () => {
     );
 
   return (
-    <div className="py-6">
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="py-6"
+    >
       <h2 className="text-2xl font-semibold mb-4 text-gray-800">
         Select Consultant
       </h2>
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
         className="space-y-3"
       >
         {consultants.map((consultant, index) => (
@@ -184,7 +201,7 @@ export const ConsultantSelection = () => {
             key={consultant.id}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }} // Hiệu ứng delay cho từng consultant
+            transition={{ duration: 0.3, delay: index * 0.1 }}
             className={`p-4 border rounded-md cursor-pointer transition-colors
               ${
                 bookingData.consultantId === consultant.id
@@ -209,6 +226,6 @@ export const ConsultantSelection = () => {
           </motion.div>
         ))}
       </motion.div>
-    </div>
+    </motion.div>
   );
 };

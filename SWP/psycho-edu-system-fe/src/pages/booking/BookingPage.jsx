@@ -9,22 +9,83 @@ import { UserInfoForm } from "../../components/Booking/BookingSteps/UserInfoForm
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getAuthDataFromLocalStorage } from "../../utils/auth"; // Đảm bảo import
-import axios from "axios"; // Thêm axios
+import { getAuthDataFromLocalStorage } from "../../utils/auth";
+import axios from "axios";
 
 const BookingPageContent = () => {
-  const { isParent, bookingData, resetBookingData } = useBooking();
+  const { isParent, bookingData, updateBookingData, resetBookingData } =
+    useBooking();
   const [step, setStep] = useState(1);
   const [totalSteps, setTotalSteps] = useState(5);
+  const [studentId, setStudentId] = useState(null);
   const navigate = useNavigate();
 
+  // Lấy authData một lần ngoài useEffect để tránh thay đổi tham chiếu
+  const authData = getAuthDataFromLocalStorage();
+  const userId = authData?.userId;
+
+  // Xác định studentId dựa trên role (chỉ chạy khi mount hoặc role thay đổi)
   useEffect(() => {
-    if (isParent()) {
-      setTotalSteps(6); // Parent: ChildSelection → ConsultantType → ConsultantSelection → DateTimeSelection → UserInfoForm → ConfirmationStep
-    } else {
-      setTotalSteps(5); // Student: ConsultantType → ConsultantSelection → DateTimeSelection → UserInfoForm → ConfirmationStep
-    }
-  }, [isParent, bookingData]);
+    let isMounted = true;
+
+    const determineStudentId = async () => {
+      if (!isMounted) return;
+
+      if (studentId) return; // Tránh chạy lại nếu đã có studentId
+
+      if (!isParent()) {
+        // Role Student: Lấy studentId từ accessToken (userId)
+        if (isMounted) {
+          setStudentId(userId);
+          updateBookingData({ appointmentFor: userId });
+        }
+      } else {
+        // Role Parent: Lấy studentId từ bookingData.childId hoặc fetch nếu chưa có
+        if (bookingData.childId && isMounted) {
+          setStudentId(bookingData.childId);
+          updateBookingData({ appointmentFor: bookingData.childId });
+        } else {
+          try {
+            const response = await axios.get(
+              `https://localhost:7192/api/relationships/parent/${userId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${authData.accessToken}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+            console.log("API Response for children:", response.data);
+            const result = response.data.result || response.data;
+            if (Array.isArray(result) && result.length > 0 && isMounted) {
+              const firstChildId = result[0].studentId;
+              setStudentId(firstChildId);
+              updateBookingData({
+                appointmentFor: firstChildId,
+                childId: firstChildId,
+              });
+            } else if (isMounted) {
+              console.warn("No children found for this parent.");
+            }
+          } catch (error) {
+            console.error("Error fetching children:", error.message);
+          }
+        }
+      }
+    };
+
+    determineStudentId();
+
+    // Cleanup
+    return () => {
+      isMounted = false;
+    };
+  }, [isParent, userId]); // Loại bỏ authData.accessToken và bookingData.childId khỏi dependency
+
+  useEffect(() => {
+    // Cập nhật totalSteps dựa trên role
+    setTotalSteps(isParent() ? 6 : 5);
+  }, [isParent]);
 
   const handleNext = () => {
     setStep(step + 1);
@@ -35,7 +96,7 @@ const BookingPageContent = () => {
   };
 
   const handleNextWithValidation = () => {
-    const userInfoStep = isParent() ? 5 : 4; // Bước UserInfoForm (cập nhật do thêm ConsultantSelection)
+    const userInfoStep = isParent() ? 5 : 4; // Bước UserInfoForm
     if (step === userInfoStep) {
       if (!bookingData.userName || !bookingData.phone || !bookingData.email) {
         console.log("Missing fields:", {
@@ -58,15 +119,28 @@ const BookingPageContent = () => {
   };
 
   const handleConfirm = async () => {
+    if (
+      !studentId ||
+      !bookingData.consultantId ||
+      !bookingData.date ||
+      !bookingData.slotId
+    ) {
+      toast.error("Please complete all steps before confirming.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
     try {
       const authData = getAuthDataFromLocalStorage();
       const appointmentData = {
-        bookedBy: bookingData.userId, // ID của người đặt lịch (Parent hoặc Student)
-        appointmentFor: isParent() ? bookingData.childId : bookingData.userId, // ID của student
+        bookedBy: userId, // ID của người đặt lịch (Parent hoặc Student)
+        appointmentFor: studentId, // ID của student (từ userId hoặc childId)
         meetingWith: bookingData.consultantId, // ID của teacher hoặc counselor
-        date: bookingData.date, // Ngày từ bookingData
-        slotId: bookingData.slotId || 0, // Slot ID từ bookingData
-        isOnline: bookingData.appointmentType === "online", // Dựa trên appointmentType
+        date: bookingData.date,
+        slotId: bookingData.slotId,
+        isOnline: bookingData.appointmentType === "online",
       };
 
       console.log("Submitting appointment data:", appointmentData);
@@ -97,7 +171,6 @@ const BookingPageContent = () => {
         draggable: true,
       });
 
-      // Điều hướng đến trang schedule dựa trên role
       const schedulePath = isParent()
         ? "/parent/schedule"
         : "/student/schedule";

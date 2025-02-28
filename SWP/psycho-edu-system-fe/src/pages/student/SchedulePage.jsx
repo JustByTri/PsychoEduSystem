@@ -5,6 +5,8 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { motion } from "framer-motion"; // Thêm framer-motion
 import axios from "axios"; // Thêm axios
 import { getAuthDataFromLocalStorage } from "../../utils/auth"; // Đảm bảo import hàm này
+import { toast, ToastContainer } from "react-toastify"; // Thêm toast và ToastContainer
+import "react-toastify/dist/ReactToastify.css"; // Đảm bảo import CSS của toast
 
 // Thiết lập localizer cho react-big-calendar
 const localizer = momentLocalizer(moment);
@@ -98,14 +100,14 @@ const SchedulePage = () => {
     fetchBookings();
   }, [userId, authData.accessToken]);
 
-  // Hàm lấy thời gian từ slotId (dựa trên slotId từ 1 đến 8, mỗi slot 1 giờ)
+  // Hàm lấy thời gian từ slotId
   const getTimeFromSlotId = (slotId) => {
     const times = [
       "08:00",
       "09:00",
       "10:00",
       "11:00",
-      "12:00", // Thêm slot 12:00 vì mỗi slot 1 giờ
+      "12:00",
       "13:00",
       "14:00",
       "15:00",
@@ -122,6 +124,112 @@ const SchedulePage = () => {
   // Đóng modal
   const closeModal = () => {
     setSelectedEvent(null);
+  };
+
+  // Hủy appointment
+  const handleCancelAppointment = async () => {
+    if (!selectedEvent) return;
+
+    try {
+      setIsLoading(true);
+      const authData = getAuthDataFromLocalStorage();
+      const response = await axios.put(
+        // Thay đổi từ POST sang PUT để thử
+        `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("API Response for cancellation:", response.data);
+
+      if (response.data.isSuccess && response.data.statusCode === 200) {
+        // Cập nhật trạng thái isCancelled trong selectedEvent
+        setSelectedEvent((prevEvent) => ({
+          ...prevEvent,
+          details: { ...prevEvent.details, isCancelled: true },
+        }));
+        // Tải lại danh sách bookings
+        const fetchBookings = async () => {
+          const startDate = moment().startOf("month").format("YYYY-MM-DD");
+          const endDate = moment()
+            .endOf("month")
+            .add(1, "month")
+            .format("YYYY-MM-DD");
+          const response = await axios.get(
+            `https://localhost:7192/api/appointments/students/${userId}/appointments?startDate=${startDate}&endDate=${endDate}`,
+            {
+              headers: {
+                Authorization: `Bearer ${authData.accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          const appointments = response.data.result || [];
+          const events = appointments.map((appointment) => {
+            const startDateTime = moment(
+              `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
+              "YYYY-MM-DD HH:mm"
+            ).toDate();
+            const endDateTime = moment(startDateTime)
+              .add(60, "minutes")
+              .toDate();
+            return {
+              id: appointment.appointmentId,
+              title: `Meeting with Unknown Consultant - ${
+                appointment.isOnline ? "Online" : "In-person"
+              }`,
+              start: startDateTime,
+              end: endDateTime,
+              details: {
+                studentId: appointment.appointmentFor || userId,
+                consultantId: appointment.meetingWith,
+                date: appointment.date,
+                slotId: appointment.slotId,
+                meetingType: appointment.isOnline ? "online" : "in-person",
+                isCompleted: appointment.isCompleted,
+                isCancelled: appointment.isCancelled,
+              },
+            };
+          });
+          setBookings(events);
+        };
+        fetchBookings();
+        toast.success("Appointment cancelled successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      } else {
+        throw new Error(
+          response.data.message || "Failed to cancel appointment"
+        );
+      }
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+      toast.error(
+        `Failed to cancel appointment: ${
+          error.response?.data?.message || error.message
+        }`,
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading)
@@ -180,8 +288,7 @@ const SchedulePage = () => {
           }}
         />
       </motion.div>
-
-      {/* Modal hiển thị chi tiết với hiệu ứng motion */}
+      {/* Modal hiển thị chi tiết với hiệu ứng motion và nút Cancel */}
       {selectedEvent && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -202,8 +309,12 @@ const SchedulePage = () => {
             </h2>
             <div className="space-y-4">
               <p className="text-gray-700">
+                <span className="font-medium text-gray-900">Student:</span>{" "}
+                Student with ID: {selectedEvent.details.studentId}
+              </p>
+              <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Consultant:</span>{" "}
-                Unknown Consultant
+                Consultant with ID: {selectedEvent.details.consultantId}
               </p>
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Date:</span>{" "}
@@ -218,15 +329,15 @@ const SchedulePage = () => {
                 {selectedEvent.details.meetingType}
               </p>
               <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Status:</span>{" "}
-                {selectedEvent.details.isCancelled
-                  ? "Cancelled"
-                  : selectedEvent.details.isCompleted
-                  ? "Completed"
-                  : "Scheduled"}
+                <span className="font-medium text-gray-900">Completed:</span>{" "}
+                {selectedEvent.details.isCompleted ? "Yes" : "No"}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium text-gray-900">Cancelled:</span>{" "}
+                {selectedEvent.details.isCancelled ? "Yes" : "No"}
               </p>
             </div>
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end space-x-4">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -235,10 +346,21 @@ const SchedulePage = () => {
               >
                 Close
               </motion.button>
+              {!selectedEvent.details.isCancelled && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleCancelAppointment}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Cancel
+                </motion.button>
+              )}
             </div>
           </motion.div>
         </motion.div>
       )}
+      <ToastContainer /> {/* Thêm ToastContainer để hiển thị toast */}
     </div>
   );
 };
