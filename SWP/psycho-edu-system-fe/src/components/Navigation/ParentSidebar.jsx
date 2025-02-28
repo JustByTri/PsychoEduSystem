@@ -22,7 +22,6 @@ const ParentSidebar = () => {
     },
     { icon: faBell, label: "Schedule", path: "/parent/schedule" },
     { icon: faFileAlt, label: "Booking", path: "/parent/booking" },
-    { icon: faUser, label: "Account", path: "/parent/account" },
   ];
 
   const handleToggleMenu = () => {

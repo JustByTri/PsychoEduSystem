@@ -2,13 +2,12 @@ import { useState, useEffect } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { motion } from "framer-motion"; // Thêm framer-motion
-import axios from "axios"; // Thêm axios
-import { getAuthDataFromLocalStorage } from "../../utils/auth"; // Đảm bảo import hàm này
-import { toast, ToastContainer } from "react-toastify"; // Thêm toast và ToastContainer
-import "react-toastify/dist/ReactToastify.css"; // Đảm bảo import CSS của toast
+import { motion } from "framer-motion";
+import axios from "axios";
+import { getAuthDataFromLocalStorage } from "../../utils/auth";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-// Thiết lập localizer cho react-big-calendar
 const localizer = momentLocalizer(moment);
 
 const SchedulePage = () => {
@@ -17,9 +16,8 @@ const SchedulePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Lấy userId từ token
   const authData = getAuthDataFromLocalStorage();
-  const userId = authData?.userId; // Giả định getAuthDataFromLocalStorage trả về object có userId
+  const userId = authData?.userId;
 
   useEffect(() => {
     if (!userId) {
@@ -31,11 +29,11 @@ const SchedulePage = () => {
     const fetchBookings = async () => {
       try {
         setIsLoading(true);
-        const startDate = moment().startOf("month").format("YYYY-MM-DD"); // Lấy ngày đầu tháng hiện tại
+        const startDate = moment().startOf("month").format("YYYY-MM-DD");
         const endDate = moment()
           .endOf("month")
           .add(1, "month")
-          .format("YYYY-MM-DD"); // Lấy ngày cuối tháng sau
+          .format("YYYY-MM-DD");
 
         const response = await axios.get(
           `https://localhost:7192/api/appointments/students/${userId}/appointments?startDate=${startDate}&endDate=${endDate}`,
@@ -47,7 +45,7 @@ const SchedulePage = () => {
           }
         );
 
-        console.log("API Response for bookings:", response.data); // Debug response
+        console.log("API Response for bookings:", response.data);
 
         if (response.status === 200) {
           const appointments = response.data.result || [];
@@ -57,34 +55,48 @@ const SchedulePage = () => {
             return;
           }
 
-          const events = appointments.map((appointment) => {
-            const startDateTime = moment(
-              `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
-              "YYYY-MM-DD HH:mm"
-            ).toDate();
-            const endDateTime = moment(startDateTime)
-              .add(60, "minutes")
-              .toDate(); // Mỗi slot là 1 giờ
+          if (appointments.length === 0) {
+            setBookings([]);
+          } else {
+            const events = appointments.map((appointment) => {
+              const startDateTime = moment(
+                `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
+                "YYYY-MM-DD HH:mm"
+              ).toDate();
+              const endDateTime = moment(startDateTime)
+                .add(60, "minutes")
+                .toDate();
 
-            return {
-              id: appointment.appointmentId,
-              title: `Meeting with Unknown Consultant - ${
-                appointment.isOnline ? "Online" : "In-person"
-              }`,
-              start: startDateTime,
-              end: endDateTime,
-              details: {
-                studentId: appointment.appointmentFor || userId,
-                consultantId: appointment.meetingWith,
-                date: appointment.date,
-                slotId: appointment.slotId,
-                meetingType: appointment.isOnline ? "online" : "in-person",
-                isCompleted: appointment.isCompleted,
-                isCancelled: appointment.isCancelled,
-              },
-            };
-          });
-          setBookings(events);
+              let title = `Meeting with ${appointment.meetingWith}`;
+              if (appointment.role === "Counselor") {
+                title = "Meeting with Counselor";
+              } else if (appointment.role === "Teacher") {
+                title = "Meeting with Teacher";
+              }
+
+              return {
+                id: appointment.appointmentId,
+                title: `${title} - ${
+                  appointment.isOnline ? "Online" : "In-person"
+                }`,
+                start: startDateTime,
+                end: endDateTime,
+                details: {
+                  studentId: appointment.appointmentFor || userId,
+                  consultantId: appointment.meetingWith,
+                  date: appointment.date,
+                  slotId: appointment.slotId,
+                  meetingType: appointment.isOnline ? "online" : "in-person",
+                  isCompleted: appointment.isCompleted,
+                  isCancelled: appointment.isCancelled,
+                },
+              };
+            });
+            setBookings(events);
+          }
+        } else if (response.status === 404) {
+          setBookings([]);
+          setIsLoading(false);
         } else {
           throw new Error(
             response.data?.message || `API error: Status ${response.status}`
@@ -100,7 +112,6 @@ const SchedulePage = () => {
     fetchBookings();
   }, [userId, authData.accessToken]);
 
-  // Hàm lấy thời gian từ slotId
   const getTimeFromSlotId = (slotId) => {
     const times = [
       "08:00",
@@ -116,27 +127,22 @@ const SchedulePage = () => {
     return times[slotId - 1] || "Unknown";
   };
 
-  // Xử lý khi click vào một sự kiện
   const handleSelectEvent = (event) => {
     setSelectedEvent(event);
   };
 
-  // Đóng modal
   const closeModal = () => {
     setSelectedEvent(null);
   };
 
-  // Hủy appointment
   const handleCancelAppointment = async () => {
     if (!selectedEvent) return;
 
     try {
       setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
-      const response = await axios.put(
-        // Thay đổi từ POST sang PUT để thử
+      const response = await axios.get(
         `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
-        {},
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -148,57 +154,20 @@ const SchedulePage = () => {
       console.log("API Response for cancellation:", response.data);
 
       if (response.data.isSuccess && response.data.statusCode === 200) {
-        // Cập nhật trạng thái isCancelled trong selectedEvent
+        setBookings((prevBookings) =>
+          prevBookings.map((booking) =>
+            booking.id === selectedEvent.id
+              ? {
+                  ...booking,
+                  details: { ...booking.details, isCancelled: true },
+                }
+              : booking
+          )
+        );
         setSelectedEvent((prevEvent) => ({
           ...prevEvent,
           details: { ...prevEvent.details, isCancelled: true },
         }));
-        // Tải lại danh sách bookings
-        const fetchBookings = async () => {
-          const startDate = moment().startOf("month").format("YYYY-MM-DD");
-          const endDate = moment()
-            .endOf("month")
-            .add(1, "month")
-            .format("YYYY-MM-DD");
-          const response = await axios.get(
-            `https://localhost:7192/api/appointments/students/${userId}/appointments?startDate=${startDate}&endDate=${endDate}`,
-            {
-              headers: {
-                Authorization: `Bearer ${authData.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          const appointments = response.data.result || [];
-          const events = appointments.map((appointment) => {
-            const startDateTime = moment(
-              `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
-              "YYYY-MM-DD HH:mm"
-            ).toDate();
-            const endDateTime = moment(startDateTime)
-              .add(60, "minutes")
-              .toDate();
-            return {
-              id: appointment.appointmentId,
-              title: `Meeting with Unknown Consultant - ${
-                appointment.isOnline ? "Online" : "In-person"
-              }`,
-              start: startDateTime,
-              end: endDateTime,
-              details: {
-                studentId: appointment.appointmentFor || userId,
-                consultantId: appointment.meetingWith,
-                date: appointment.date,
-                slotId: appointment.slotId,
-                meetingType: appointment.isOnline ? "online" : "in-person",
-                isCompleted: appointment.isCompleted,
-                isCancelled: appointment.isCancelled,
-              },
-            };
-          });
-          setBookings(events);
-        };
-        fetchBookings();
         toast.success("Appointment cancelled successfully!", {
           position: "top-right",
           autoClose: 3000,
@@ -258,14 +227,14 @@ const SchedulePage = () => {
           events={bookings}
           startAccessor="start"
           endAccessor="end"
-          style={{ height: 600 }} // Chiều cao lịch
-          defaultView="month" // Mặc định hiển thị tháng
-          views={["month", "week"]} // Cho phép chuyển giữa tháng và tuần
+          style={{ height: 600 }}
+          defaultView="month"
+          views={["month", "week"]}
           onSelectEvent={handleSelectEvent}
           eventPropGetter={(event) => ({
             style: {
               backgroundColor:
-                event.details.meetingType === "online" ? "#3B82F6" : "#10B981", // Màu xanh cho online, xanh lá cho in-person
+                event.details.meetingType === "online" ? "#3B82F6" : "#10B981",
               color: "white",
               borderRadius: "0.5rem",
               border: "none",
@@ -288,7 +257,6 @@ const SchedulePage = () => {
           }}
         />
       </motion.div>
-      {/* Modal hiển thị chi tiết với hiệu ứng motion và nút Cancel */}
       {selectedEvent && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -310,11 +278,11 @@ const SchedulePage = () => {
             <div className="space-y-4">
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Student:</span>{" "}
-                Student with ID: {selectedEvent.details.studentId}
+                {selectedEvent.details.studentId}
               </p>
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Consultant:</span>{" "}
-                Consultant with ID: {selectedEvent.details.consultantId}
+                {selectedEvent.details.consultantId}
               </p>
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Date:</span>{" "}
@@ -360,7 +328,7 @@ const SchedulePage = () => {
           </motion.div>
         </motion.div>
       )}
-      <ToastContainer /> {/* Thêm ToastContainer để hiển thị toast */}
+      <ToastContainer />
     </div>
   );
 };

@@ -2,38 +2,34 @@ import { useState, useEffect } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { motion } from "framer-motion"; // Thêm framer-motion
-import axios from "axios"; // Thêm axios
-import { getAuthDataFromLocalStorage } from "../../utils/auth"; // Đảm bảo import hàm này
-import ChildSelector from "../../components/Schedule/ChildSelector"; // Import component ChildSelector
-import { toast, ToastContainer } from "react-toastify"; // Thêm toast và ToastContainer
-import "react-toastify/dist/ReactToastify.css"; // Đảm bảo import CSS của toast
+import { motion } from "framer-motion";
+import axios from "axios";
+import { getAuthDataFromLocalStorage } from "../../utils/auth";
+import ChildSelector from "../../components/ParentSchedule/ChildSelector";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-// Thiết lập localizer cho react-big-calendar
 const localizer = momentLocalizer(moment);
 
 const ParentSchedulePage = () => {
   const [bookings, setBookings] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isLoading, setIsLoading] = useState(false); // Khởi tạo là false để tránh auto fetch
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedChildId, setSelectedChildId] = useState(null); // Child được chọn để xem lịch
+  const [selectedChildId, setSelectedChildId] = useState(null);
 
-  // Lấy parentId từ token
   const authData = getAuthDataFromLocalStorage();
   const parentId = authData?.userId;
 
-  // Callback để nhận selectedChildId từ ChildSelector
   const handleChildSelected = (childId) => {
     console.log("Child selected in ParentSchedulePage:", childId);
     setSelectedChildId(childId);
   };
 
-  // Fetch bookings khi selectedChildId thay đổi (chỉ fetch khi có selectedChildId)
   useEffect(() => {
     if (!selectedChildId) {
       setBookings([]);
-      setError(null); // Không hiển thị lỗi trừ khi fetch thất bại
+      setError(null);
       setIsLoading(false);
       return;
     }
@@ -72,11 +68,22 @@ const ParentSchedulePage = () => {
           ).toDate();
           const endDateTime = moment(startDateTime).add(60, "minutes").toDate();
 
+          // Cập nhật title
+          let consultantTitle = `Consultant ${appointment.meetingWith}`;
+          if (appointment.role === "Counselor") {
+            consultantTitle = "Counselor";
+          } else if (appointment.role === "Teacher") {
+            consultantTitle = "Teacher";
+          }
+          const title = `Meeting for Student ${
+            appointment.appointmentFor || selectedChildId
+          } with ${consultantTitle} - ${
+            appointment.isOnline ? "Online" : "In-person"
+          }`;
+
           return {
             id: appointment.appointmentId,
-            title: `Meeting for Unknown Student with Unknown Consultant - ${
-              appointment.isOnline ? "Online" : "In-person"
-            }`,
+            title,
             start: startDateTime,
             end: endDateTime,
             details: {
@@ -104,7 +111,6 @@ const ParentSchedulePage = () => {
     fetchBookings();
   }, [selectedChildId, authData.accessToken]);
 
-  // Hàm lấy thời gian từ slotId
   const getTimeFromSlotId = (slotId) => {
     const times = [
       "08:00",
@@ -120,26 +126,22 @@ const ParentSchedulePage = () => {
     return times[slotId - 1] || "Unknown";
   };
 
-  // Xử lý khi click vào một sự kiện
   const handleSelectEvent = (event) => {
     setSelectedEvent(event);
   };
 
-  // Đóng modal
   const closeModal = () => {
     setSelectedEvent(null);
   };
 
-  // Hủy appointment
   const handleCancelAppointment = async () => {
     if (!selectedEvent) return;
 
     try {
       setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
-      const response = await axios.post(
+      const response = await axios.get(
         `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
-        {},
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -151,57 +153,22 @@ const ParentSchedulePage = () => {
       console.log("API Response for cancellation:", response.data);
 
       if (response.data.isSuccess && response.data.statusCode === 200) {
-        // Cập nhật trạng thái isCancelled trong selectedEvent
+        // Cập nhật trạng thái bookings trực tiếp
+        setBookings((prevBookings) =>
+          prevBookings.map((booking) =>
+            booking.id === selectedEvent.id
+              ? {
+                  ...booking,
+                  details: { ...booking.details, isCancelled: true },
+                }
+              : booking
+          )
+        );
+        // Cập nhật selectedEvent
         setSelectedEvent((prevEvent) => ({
           ...prevEvent,
           details: { ...prevEvent.details, isCancelled: true },
         }));
-        // Tải lại danh sách bookings
-        const fetchBookings = async () => {
-          const startDate = moment().startOf("month").format("YYYY-MM-DD");
-          const endDate = moment()
-            .endOf("month")
-            .add(1, "month")
-            .format("YYYY-MM-DD");
-          const response = await axios.get(
-            `https://localhost:7192/api/appointments/students/${selectedChildId}/appointments?startDate=${startDate}&endDate=${endDate}`,
-            {
-              headers: {
-                Authorization: `Bearer ${authData.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          const appointments = response.data.result || [];
-          const events = appointments.map((appointment) => {
-            const startDateTime = moment(
-              `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
-              "YYYY-MM-DD HH:mm"
-            ).toDate();
-            const endDateTime = moment(startDateTime)
-              .add(60, "minutes")
-              .toDate();
-            return {
-              id: appointment.appointmentId,
-              title: `Meeting for Unknown Student with Unknown Consultant - ${
-                appointment.isOnline ? "Online" : "In-person"
-              }`,
-              start: startDateTime,
-              end: endDateTime,
-              details: {
-                studentId: appointment.appointmentFor || selectedChildId,
-                consultantId: appointment.meetingWith,
-                date: appointment.date,
-                slotId: appointment.slotId,
-                meetingType: appointment.isOnline ? "online" : "in-person",
-                isCompleted: appointment.isCompleted,
-                isCancelled: appointment.isCancelled,
-              },
-            };
-          });
-          setBookings(events);
-        };
-        fetchBookings();
         toast.success("Appointment cancelled successfully!", {
           position: "top-right",
           autoClose: 3000,
@@ -217,14 +184,19 @@ const ParentSchedulePage = () => {
       }
     } catch (error) {
       console.error("Error cancelling appointment:", error);
-      toast.error(`Failed to cancel appointment: ${error.message}`, {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.error(
+        `Failed to cancel appointment: ${
+          error.response?.data?.message || error.message
+        }`,
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
     } finally {
       setIsLoading(false);
     }
@@ -232,8 +204,6 @@ const ParentSchedulePage = () => {
 
   if (isLoading)
     return <div className="text-center text-gray-600">Loading schedule...</div>;
-  if (error)
-    return <div className="text-center text-red-600">Error: {error}</div>;
 
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8">
@@ -243,11 +213,10 @@ const ParentSchedulePage = () => {
         transition={{ duration: 0.5 }}
         className="text-3xl font-bold text-gray-900 mb-6"
       >
-        Your Schedule
+        Your Child's Schedule
       </motion.h1>
-      <ChildSelector onChildSelected={handleChildSelected} />{" "}
-      {/* Luôn hiển thị */}
-      {selectedChildId && (
+      <ChildSelector onChildSelected={handleChildSelected} />
+      {selectedChildId ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -291,11 +260,14 @@ const ParentSchedulePage = () => {
             }}
           />
         </motion.div>
+      ) : (
+        <div className="text-center text-gray-600 mt-6">
+          Please select a child to view their schedule.
+        </div>
       )}
-      {error && !selectedChildId && (
+      {error && selectedChildId && (
         <div className="text-center text-red-600 mt-4">{error}</div>
       )}
-      {/* Modal hiển thị chi tiết với hiệu ứng motion và nút Cancel */}
       {selectedEvent && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -367,7 +339,7 @@ const ParentSchedulePage = () => {
           </motion.div>
         </motion.div>
       )}
-      <ToastContainer /> {/* Thêm ToastContainer để hiển thị toast */}
+      <ToastContainer />
     </div>
   );
 };
