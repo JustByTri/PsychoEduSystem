@@ -65,15 +65,20 @@ const PsychologistSchedulePage = () => {
                 .add(60, "minutes")
                 .toDate();
 
+              // Cập nhật title (giả định API không trả về studentId, dùng "Unknown" nếu không có)
+              const studentId = appointment.studentId || "Unknown"; // Thay đổi nếu API có studentId
+              const title = `Meeting with Student ${studentId} - ${
+                appointment.isOnline ? "Online" : "In-person"
+              }`;
+
               return {
                 id: appointment.appointmentId,
-                title: `Meeting - ${
-                  appointment.isOnline ? "Online" : "In-person"
-                }`,
+                title,
                 start: startDateTime,
                 end: endDateTime,
                 details: {
                   consultantId: appointment.meetingWith,
+                  studentId: appointment.studentId || "Unknown", // Thêm studentId nếu API hỗ trợ
                   date: appointment.date,
                   slotId: appointment.slotId,
                   meetingType: appointment.isOnline ? "online" : "in-person",
@@ -122,8 +127,78 @@ const PsychologistSchedulePage = () => {
     setSelectedEvent(null);
   };
 
-  if (isLoading) return <div>Loading schedule...</div>;
-  if (error) return <div className="text-red-600">Error: {error}</div>;
+  const handleCancelAppointment = async () => {
+    if (!selectedEvent) return;
+
+    try {
+      setIsLoading(true);
+      const authData = getAuthDataFromLocalStorage();
+      const response = await axios.get(
+        `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("API Response for cancellation:", response.data);
+
+      if (response.data.isSuccess && response.data.statusCode === 200) {
+        // Cập nhật trạng thái bookings trực tiếp
+        setBookings((prevBookings) =>
+          prevBookings.map((booking) =>
+            booking.id === selectedEvent.id
+              ? {
+                  ...booking,
+                  details: { ...booking.details, isCancelled: true },
+                }
+              : booking
+          )
+        );
+        // Cập nhật selectedEvent
+        setSelectedEvent((prevEvent) => ({
+          ...prevEvent,
+          details: { ...prevEvent.details, isCancelled: true },
+        }));
+        toast.success("Appointment cancelled successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      } else {
+        throw new Error(
+          response.data.message || "Failed to cancel appointment"
+        );
+      }
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+      toast.error(
+        `Failed to cancel appointment: ${
+          error.response?.data?.message || error.message
+        }`,
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading)
+    return <div className="text-center text-gray-600">Loading schedule...</div>;
+  if (error)
+    return <div className="text-center text-red-600">Error: {error}</div>;
 
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8">
@@ -161,6 +236,19 @@ const PsychologistSchedulePage = () => {
               fontSize: "0.875rem",
             },
           })}
+          components={{
+            event: (props) => (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="rbc-event-content"
+                style={props.style}
+              >
+                {props.title}
+              </motion.div>
+            ),
+          }}
         />
       </motion.div>
 
@@ -188,6 +276,10 @@ const PsychologistSchedulePage = () => {
                 {selectedEvent.details.consultantId}
               </p>
               <p>
+                <span className="font-medium">Student ID:</span>{" "}
+                {selectedEvent.details.studentId}
+              </p>
+              <p>
                 <span className="font-medium">Date:</span>{" "}
                 {moment(selectedEvent.details.date).format("YYYY-MM-DD")}
               </p>
@@ -208,7 +300,7 @@ const PsychologistSchedulePage = () => {
                 {selectedEvent.details.isCancelled ? "Yes" : "No"}
               </p>
             </div>
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end space-x-4">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -217,6 +309,16 @@ const PsychologistSchedulePage = () => {
               >
                 Close
               </motion.button>
+              {!selectedEvent.details.isCancelled && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleCancelAppointment}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Cancel Appointment
+                </motion.button>
+              )}
             </div>
           </motion.div>
         </motion.div>
