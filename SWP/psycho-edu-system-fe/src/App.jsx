@@ -31,6 +31,8 @@ import PsychologistDashboard from "./pages/couselor/PsychologistDashboard";
 import PsychologistSchedulePage from "./pages/couselor/PsychologistSchedulePage";
 import TeacherLayout from "./components/Layouts/TeacherLayout";
 import PsychologistScheduleRegistration from "./pages/couselor/PsychologistScheduleRegistration";
+import TeacherScheduleRegistration from "./pages/teacher/TeacherScheduleRegistration"; // Thêm import
+import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage"; // Thêm import
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -45,10 +47,8 @@ function App() {
 
           {/* Student Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Student"]} />}>
-            {/* Route riêng cho StartUpPage, không bị RequireSurvey chặn */}
             <Route path="student/start-up-survey" element={<StartUpPage />} />
             <Route path="student/survey-for-student" element={<SurveyPage />} />
-            {/* Các route yêu cầu kiểm tra khảo sát */}
             <Route element={<RequireSurvey />}>
               <Route path="student/" element={<PortalLayout />}>
                 <Route index element={<Dashboard />} />
@@ -59,6 +59,8 @@ function App() {
             </Route>
           </Route>
           <Route path="survey-result" element={<SurveyResultPage />} />
+
+          {/* Parent Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Parent"]} />}>
             <Route path="parent/" element={<ParentLayout />}>
               <Route index element={<ParentDashboard />} />
@@ -74,6 +76,7 @@ function App() {
             </Route>
           </Route>
           <Route path="survey/:childId" element={<ParentSurveyPage />} />
+
           {/* Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
             <Route path="admin/" element={<AdminPortalLayout />}>
@@ -104,6 +107,13 @@ function App() {
             <Route path="teacher/" element={<TeacherLayout />}>
               <Route index element={<TeacherDashboard />} />
               <Route path="class/:classId" element={<ClassDetails />} />
+              <Route
+                path="slot"
+                element={<TeacherScheduleRegistration />}
+              />{" "}
+              {/* Thêm route */}
+              <Route path="schedule" element={<TeacherSchedulePage />} />{" "}
+              {/* Thêm route */}
             </Route>
           </Route>
 

@@ -7,8 +7,11 @@ import {
   faBell,
   faFileAlt,
   faUser,
+  faCalendarPlus,
+  faCalendarAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 const TeacherSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
@@ -21,13 +24,15 @@ const TeacherSidebar = () => {
       path: "/teacher/assignments",
     },
     { icon: faBell, label: "Notifications", path: "/teacher/notifications" },
-    { icon: faFileAlt, label: "Reports", path: "/teacher/reports" },
+    { icon: faCalendarPlus, label: "Book Slots", path: "/teacher/slot" }, // Thêm mục mới
+    { icon: faCalendarAlt, label: "Schedule", path: "/teacher/schedule" }, // Thêm mục mới
     { icon: faUser, label: "Account", path: "/teacher/account" },
   ];
 
   const handleToggleMenu = () => {
     setIsCollapsed((prev) => !prev);
   };
+
   return (
     <div
       className={`bg-[#65CCB8] text-[#002B36] shadow-md transition-all duration-300 h-full ${
@@ -83,4 +88,5 @@ const TeacherSidebar = () => {
     </div>
   );
 };
+
 export default TeacherSidebar;
