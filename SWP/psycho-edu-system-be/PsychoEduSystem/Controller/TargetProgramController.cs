@@ -38,14 +38,12 @@ namespace PsychoEduSystem.Controller
                 // Chỉ trả về các trường cần thiết
                 return Ok(new
                 {
-                    createdProgram.ProgramId,
+
                     createdProgram.Name,
                     createdProgram.Description,
                     createdProgram.StartDate,
                     createdProgram.MinPoint,
                     createdProgram.Capacity,
-                    createdProgram.CreatedBy,
-                    createdProgram.CreateAt,
                     createdProgram.DimensionId
                 });
             }

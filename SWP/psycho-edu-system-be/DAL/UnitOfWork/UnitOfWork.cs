@@ -38,6 +38,7 @@ namespace DAL.UnitOfWork
             Class = new ClassRepository(_context);
             TargetProgram = new TargetProgramRepository(_context);
 
+
         }
 
         // Các repository được khởi tạo từ constructor
