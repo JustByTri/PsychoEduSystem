@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// Thiết lập localizer cho react-big-calendar (dù không sử dụng trong file này, cần cho tương lai)
+const localizer = null; // Placeholder
 
 const PsychologistSchedulePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -13,10 +16,12 @@ const PsychologistSchedulePage = () => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [noAppointments, setNoAppointments] = useState(false); // Thay error bằng noAppointments
+  const [noAppointments, setNoAppointments] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Modal xác nhận hủy
+  const [selectedSlotToCancel, setSelectedSlotToCancel] = useState(null); // Slot cần hủy
 
   const authData = getAuthDataFromLocalStorage();
-  const psychologistId = authData?.userId;
+  const teacherId = authData?.userId;
 
   const startDate = new Date(
     selectedDate.getFullYear(),
@@ -30,7 +35,7 @@ const PsychologistSchedulePage = () => {
   );
 
   useEffect(() => {
-    if (!psychologistId) {
+    if (!teacherId) {
       setNoAppointments(true);
       setIsLoading(false);
       return;
@@ -41,7 +46,7 @@ const PsychologistSchedulePage = () => {
         setIsLoading(true);
 
         const appointmentResponse = await axios.get(
-          `https://localhost:7192/api/appointments/consultants/${psychologistId}/appointments?startDate=${
+          `https://localhost:7192/api/appointments/consultants/${teacherId}/appointments?startDate=${
             startDate.toISOString().split("T")[0]
           }&endDate=${endDate.toISOString().split("T")[0]}`,
           {
@@ -72,7 +77,7 @@ const PsychologistSchedulePage = () => {
 
         if (appointments.length === 0) {
           const scheduleResponse = await axios.get(
-            `https://localhost:7192/api/Schedule/user-schedules/${psychologistId}`,
+            `https://localhost:7192/api/Schedule/user-schedules/${teacherId}`,
             {
               headers: {
                 Authorization: `Bearer ${authData.accessToken}`,
@@ -99,7 +104,7 @@ const PsychologistSchedulePage = () => {
           setAvailableSlots(unbookedSlots);
         } else {
           const scheduleResponse = await axios.get(
-            `https://localhost:7192/api/Schedule/user-schedules/${psychologistId}`,
+            `https://localhost:7192/api/Schedule/user-schedules/${teacherId}`,
             {
               headers: {
                 Authorization: `Bearer ${authData.accessToken}`,
@@ -155,7 +160,7 @@ const PsychologistSchedulePage = () => {
     };
 
     fetchData();
-  }, [psychologistId, authData?.accessToken]);
+  }, [teacherId, authData?.accessToken]);
 
   const getTimeFromSlotId = (slotId) => {
     const times = [
@@ -249,6 +254,26 @@ const PsychologistSchedulePage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Mở modal xác nhận hủy
+  const openConfirmModal = (slot) => {
+    setSelectedSlotToCancel(slot);
+    setIsConfirmModalOpen(true);
+  };
+
+  // Xác nhận hủy
+  const confirmCancelAppointment = async () => {
+    if (!selectedSlotToCancel) return;
+    await handleCancelAppointment();
+    setIsConfirmModalOpen(false);
+    setSelectedSlotToCancel(null);
+  };
+
+  // Đóng modal xác nhận
+  const closeConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+    setSelectedSlotToCancel(null);
   };
 
   if (isLoading)
@@ -465,7 +490,7 @@ const PsychologistSchedulePage = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleCancelAppointment}
+                  onClick={() => openConfirmModal(selectedSlot)}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Cancel
@@ -475,6 +500,55 @@ const PsychologistSchedulePage = () => {
           </motion.div>
         </motion.div>
       )}
+
+      {/* Modal xác nhận hủy */}
+      <AnimatePresence>
+        {isConfirmModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            >
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+                Confirm Cancellation
+              </h2>
+              <p className="text-gray-700 text-center mb-4">
+                Are you sure you want to cancel this appointment on{" "}
+                {new Date(selectedSlotToCancel?.date).toLocaleDateString(
+                  "en-GB"
+                )}{" "}
+                at {selectedSlotToCancel?.time}?
+              </p>
+              <div className="flex justify-center space-x-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={confirmCancelAppointment}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Yes
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={closeConfirmModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  No
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

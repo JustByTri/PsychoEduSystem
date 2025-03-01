@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import { toast, ToastContainer } from "react-toastify";
@@ -15,6 +15,8 @@ const SchedulePage = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Modal xác nhận hủy
+  const [selectedEventToCancel, setSelectedEventToCancel] = useState(null); // Sự kiện cần hủy
 
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
@@ -201,6 +203,26 @@ const SchedulePage = () => {
     }
   };
 
+  // Mở modal xác nhận hủy
+  const openConfirmModal = (event) => {
+    setSelectedEventToCancel(event);
+    setIsConfirmModalOpen(true);
+  };
+
+  // Xác nhận hủy
+  const confirmCancelAppointment = async () => {
+    if (!selectedEventToCancel) return;
+    await handleCancelAppointment();
+    setIsConfirmModalOpen(false);
+    setSelectedEventToCancel(null);
+  };
+
+  // Đóng modal xác nhận
+  const closeConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+    setSelectedEventToCancel(null);
+  };
+
   if (isLoading)
     return <div className="text-center text-gray-600">Loading schedule...</div>;
   if (error)
@@ -212,7 +234,7 @@ const SchedulePage = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-3xl font-bold text-gray-900 mb-6"
+        className="text-3xl font-bold text-gray-900 mb-6 text-center"
       >
         Your Schedule
       </motion.h1>
@@ -220,26 +242,40 @@ const SchedulePage = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="bg-white p-6 rounded-lg shadow-md border border-gray-200"
+        className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mx-auto max-w-6xl"
       >
         <Calendar
           localizer={localizer}
           events={bookings}
           startAccessor="start"
           endAccessor="end"
-          style={{ height: 600 }}
+          style={{ height: 800, width: "100%", minHeight: 600 }} // Tăng chiều cao, thêm minHeight
           defaultView="month"
           views={["month", "week"]}
           onSelectEvent={handleSelectEvent}
           eventPropGetter={(event) => ({
             style: {
               backgroundColor:
-                event.details.meetingType === "online" ? "#3B82F6" : "#10B981",
+                event.details.meetingType === "online"
+                  ? "#3B82F6"
+                  : "#10B981",
               color: "white",
               borderRadius: "0.5rem",
               border: "none",
-              padding: "0.25rem 0.5rem",
-              fontSize: "0.875rem",
+              padding: "0.75rem 1.25rem", // Tăng padding để sự kiện không bị khuất
+              fontSize: "1.1rem", // Tăng kích thước chữ
+              lineHeight: "1.5", // Điều chỉnh line-height
+              whiteSpace: "normal", // Đảm bảo văn bản không bị cắt
+              minHeight: "40px", // Đặt chiều cao tối thiểu
+              textAlign: "center",
+              cursor: "pointer",
+              overflow: "hidden", // Ngăn tràn nội dung
+            },
+          })}
+          slotPropGetter={(slotInfo) => ({
+            style: {
+              minHeight: "60px", // Tăng chiều cao slot để tránh chồng chéo
+              padding: "5px",
             },
           })}
           components={{
@@ -254,6 +290,17 @@ const SchedulePage = () => {
                 {props.title}
               </motion.div>
             ),
+            toolbar: (toolbarProps) => (
+              <div className="rbc-toolbar flex justify-center items-center p-4 bg-gray-100 rounded-t-lg">
+                <span className="text-lg font-semibold text-gray-800">
+                  {toolbarProps.label}
+                </span>
+              </div>
+            ),
+          }}
+          onNavigate={(newDate) => {
+            setSelectedDate(newDate);
+            setSelectedEvent(null); // Reset sự kiện khi chuyển tháng/tuần
           }}
         />
       </motion.div>
@@ -318,7 +365,7 @@ const SchedulePage = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleCancelAppointment}
+                  onClick={() => openConfirmModal(selectedEvent)}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Cancel
@@ -328,6 +375,56 @@ const SchedulePage = () => {
           </motion.div>
         </motion.div>
       )}
+
+      {/* Modal xác nhận hủy */}
+      <AnimatePresence>
+        {isConfirmModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            >
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+                Confirm Cancellation
+              </h2>
+              <p className="text-gray-700 text-center mb-4">
+                Are you sure you want to cancel this appointment on{" "}
+                {moment(selectedEventToCancel?.details?.date).format(
+                  "YYYY-MM-DD"
+                )}{" "}
+                at {getTimeFromSlotId(selectedEventToCancel?.details?.slotId)}?
+              </p>
+              <div className="flex justify-center space-x-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={confirmCancelAppointment}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Yes
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={closeConfirmModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  No
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <ToastContainer />
     </div>
   );
