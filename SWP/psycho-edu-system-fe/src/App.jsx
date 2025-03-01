@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
+import CreateParentAccount from "./pages/admin/CreateParentAccount"; // Thêm import
 import RequireSurvey from "./components/Survey/RequireSurvey";
 import ParentLayout from "./components/Layouts/ParentLayout";
 import ParentDashboard from "./pages/parent/Dashboard";
@@ -31,8 +32,8 @@ import PsychologistDashboard from "./pages/couselor/PsychologistDashboard";
 import PsychologistSchedulePage from "./pages/couselor/PsychologistSchedulePage";
 import TeacherLayout from "./components/Layouts/TeacherLayout";
 import PsychologistScheduleRegistration from "./pages/couselor/PsychologistScheduleRegistration";
-import TeacherScheduleRegistration from "./pages/teacher/TeacherScheduleRegistration"; // Thêm import
-import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage"; // Thêm import
+import TeacherScheduleRegistration from "./pages/teacher/TeacherScheduleRegistration";
+import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -83,6 +84,11 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="survey" element={<SurveyList />} />
               <Route path="survey/:id" element={<SurveyDetail />} />
+              <Route
+                path="create-parent"
+                element={<CreateParentAccount />}
+              />{" "}
+              {/* Thêm route */}
             </Route>
           </Route>
           <Route
@@ -107,13 +113,8 @@ function App() {
             <Route path="teacher/" element={<TeacherLayout />}>
               <Route index element={<TeacherDashboard />} />
               <Route path="class/:classId" element={<ClassDetails />} />
-              <Route
-                path="slot"
-                element={<TeacherScheduleRegistration />}
-              />{" "}
-              {/* Thêm route */}
-              <Route path="schedule" element={<TeacherSchedulePage />} />{" "}
-              {/* Thêm route */}
+              <Route path="slot" element={<TeacherScheduleRegistration />} />
+              <Route path="schedule" element={<TeacherSchedulePage />} />
             </Route>
           </Route>
 
