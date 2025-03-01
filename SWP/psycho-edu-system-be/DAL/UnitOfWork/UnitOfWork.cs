@@ -37,8 +37,7 @@ namespace DAL.UnitOfWork
             Relationship = new RelationshipRepository(_context);
             Class = new ClassRepository(_context);
             TargetProgram = new TargetProgramRepository(_context);
-
-
+            Schedule = new ScheduleRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
@@ -68,6 +67,9 @@ namespace DAL.UnitOfWork
         public IClassRepository Class { get; private set; }
 
         public ITargetProgramRepository TargetProgram { get; private set; }
+
+        public IScheduleRepository Schedule { get; private set; }
+
         public IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel)
         {
             return _context.Database.BeginTransaction(isolationLevel);

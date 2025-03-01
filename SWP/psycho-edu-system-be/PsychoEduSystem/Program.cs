@@ -61,8 +61,12 @@ namespace MIndAid
             builder.Services.AddScoped<IJwtProvider, JwtProvider>();
             builder.Services.AddScoped<IClassService, ClassService>();
             builder.Services.AddScoped<IRelationshipService, RelationshipService>();
+
             builder.Services.AddScoped<ITargetProgramService, TargetProgramService>();
 
+
+            builder.Services.AddScoped<IScheduleService, ScheduleService>();
+            builder.Services.AddScoped<IAppointmentService, AppointmentService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {

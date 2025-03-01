@@ -1,91 +1,69 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { getAuthDataFromLocalStorage } from "../utils/auth";
+// context/BookingContext.jsx
+import { createContext, useContext, useState } from "react";
+import { getAuthDataFromLocalStorage } from "../utils/auth"; // Đảm bảo import
 
 const BookingContext = createContext();
 
-export const useBooking = () => {
-  return useContext(BookingContext);
-};
-
 export const BookingProvider = ({ children }) => {
   const [bookingData, setBookingData] = useState({
-    // User info
     userId: "",
-    userName: "",
-    userRole: "",
-    // Child info (for parents)
-    childId: "",
-    childName: "",
-    // Consultant info
+    childId: "", // Thêm field để lưu ID của child được chọn
     consultantType: "",
     consultantId: "",
     consultantName: "",
-    isHomeroomTeacher: false,
-    // Booking details
     date: "",
     time: "",
-    duration: 30,
-    reasonForBooking: "",
-    additionalNotes: "",
-    email: "",
+    slotId: 0,
+    appointmentType: "online",
+    userName: "",
     phone: "",
+    email: "",
+    isHomeroomTeacher: false,
   });
 
-  useEffect(() => {
-    const authData = getAuthDataFromLocalStorage();
-    if (authData) {
-      updateBookingData({
-        userId: authData.userId,
-        userRole: authData.role,
-        email: authData.email,
-        userName: authData.username || "",
-      });
-    }
-  }, []);
-
-  const updateBookingData = (newData) => {
-    setBookingData((prev) => ({
-      ...prev,
-      ...newData,
-    }));
-  };
-
   const resetBookingData = () => {
-    const authData = getAuthDataFromLocalStorage();
     setBookingData({
-      userId: authData?.userId || "",
-      userName: authData?.username || "",
-      userRole: authData?.role || "",
-      email: authData?.email || "",
+      userId: "",
       childId: "",
-      childName: "",
       consultantType: "",
       consultantId: "",
       consultantName: "",
-      isHomeroomTeacher: false,
       date: "",
       time: "",
-      duration: 30,
-      reasonForBooking: "",
-      additionalNotes: "",
+      slotId: 0,
+      appointmentType: "online",
+      userName: "",
       phone: "",
+      email: "",
+      isHomeroomTeacher: false,
     });
   };
 
-  const isParent = () => bookingData.userRole === "Parent";
-  const isStudent = () => bookingData.userRole === "Student";
+  const updateBookingData = (newData) => {
+    setBookingData((prev) => ({ ...prev, ...newData }));
+  };
+
+  const isParent = () => {
+    const authData = getAuthDataFromLocalStorage();
+    return authData?.role === "Parent"; // Giả định role trong authData, bạn có thể điều chỉnh logic
+  };
+
+  const value = {
+    bookingData,
+    updateBookingData,
+    resetBookingData,
+    isParent,
+  };
 
   return (
-    <BookingContext.Provider
-      value={{
-        bookingData,
-        updateBookingData,
-        resetBookingData,
-        isParent,
-        isStudent,
-      }}
-    >
-      {children}
-    </BookingContext.Provider>
+    <BookingContext.Provider value={value}>{children}</BookingContext.Provider>
   );
+};
+
+export const useBooking = () => {
+  const context = useContext(BookingContext);
+  if (!context) {
+    throw new Error("useBooking must be used within a BookingProvider");
+  }
+  return context;
 };

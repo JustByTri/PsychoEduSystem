@@ -13,7 +13,7 @@ namespace DAL.Entities
         [Key]
         public Guid RequestId { get; set; }
         public Guid StudentId { get; set; }
-        public Guid SlotId { get; set; }
+        public int SlotId { get; set; }
         public Boolean IsBooking { get; set; }
         public Boolean IsSend { get; set; }
         public Boolean IsScheduled { get; set; }

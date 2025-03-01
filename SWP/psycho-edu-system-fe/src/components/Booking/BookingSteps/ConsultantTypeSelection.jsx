@@ -1,194 +1,188 @@
-// components/Booking/ConsultantTypeSelection.jsx
 import { useState, useEffect } from "react";
 import { useBooking } from "../../../context/BookingContext";
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
+import { motion } from "framer-motion"; // Thêm framer-motion
+import axios from "axios"; // Thêm axios
 
 export const ConsultantTypeSelection = () => {
-  const { bookingData, updateBookingData } = useBooking();
-  const [loading, setLoading] = useState(false);
+  const { updateBookingData, bookingData, isParent } = useBooking();
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleConsultantTypeSelect = async (type) => {
+  // Lấy authData một lần để sử dụng
+  const authData = getAuthDataFromLocalStorage();
+  const userId = authData?.userId;
+
+  // Debug để kiểm tra giá trị
+  useEffect(() => {
+    console.log("isParent:", isParent());
+    console.log("bookingData:", bookingData);
+    console.log("authData.userId:", userId);
+  }, [isParent, bookingData, userId]);
+
+  // Cập nhật bookingData.userId từ authData khi mount
+  useEffect(() => {
+    if (!bookingData.userId && userId && !isParent()) {
+      updateBookingData({ userId });
+    }
+  }, [userId, isParent, updateBookingData, bookingData.userId]);
+
+  // Hàm fetch teacherId từ API với axios
+  const fetchClassAndTeacher = async (studentId) => {
+    if (!studentId) {
+      setError("Student ID is required.");
+      return null;
+    }
+
     try {
-      setLoading(true);
-      setError(null);
-
-      if (type === "homeroom") {
-        // Determine which student ID to use
-        const studentId =
-          bookingData.userRole === "Parent"
-            ? bookingData.childId
-            : bookingData.userId;
-
-        //Them api de lay classId của student
-
-        // Fetch homeroom teacher for the student
-        const response = await fetch(
-          `https://localhost:7192/api/teachers/${classId}/students`,
-          {
-            headers: {
-              Authorization: `Bearer ${
-                getAuthDataFromLocalStorage().accessToken
-              }`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch homeroom teacher");
+      setIsLoading(true);
+      const authData = getAuthDataFromLocalStorage();
+      const response = await axios.get(
+        `https://localhost:7192/api/User/${studentId}/class`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
         }
-        const data = await response.json();
-        const teacher = {
-          id: data.teacherId || "default-id",
-          name: data.teacherName || "Your Homeroom Teacher",
-          // Các thông tin khác nếu cần
-        };
-        // Update booking data with homeroom teacher info
+      );
+
+      console.log("API Response for class and teacher:", response.data);
+
+      if (response.data.isSuccess && response.data.statusCode === 200) {
+        return response.data.result.teacherId; // Chỉ trả về teacherId
+      }
+      setError("Invalid response from server.");
+      return null;
+    } catch (error) {
+      console.error("Fetch class and teacher error:", error.message);
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch class and teacher"
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Hàm xử lý chọn loại consultant
+  const handleSelectType = async (type) => {
+    setIsLoading(true); // Bắt đầu loading khi click
+    setError(null); // Reset lỗi
+
+    let studentId;
+    // Lấy studentId: authData.userId nếu không phải parent (Student), bookingData.childId nếu là parent
+    studentId = !isParent() ? userId : bookingData.childId;
+
+    // Kiểm tra studentId trước khi tiếp tục
+    if (!studentId) {
+      setError(
+        isParent()
+          ? "No valid student ID available. Please ensure a child is selected for parents."
+          : "No valid user ID available. Please check your authentication."
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    if (type === "homeroom") {
+      const teacherId = await fetchClassAndTeacher(studentId);
+      if (teacherId) {
         updateBookingData({
           consultantType: type,
-          consultantId: teacher.id,
-          consultantName: teacher.name,
+          consultantId: teacherId,
+          consultantName: "", // Có thể fetch tên sau nếu cần
           isHomeroomTeacher: true,
         });
       } else {
-        // For counselor type, just update the type
         updateBookingData({
           consultantType: type,
-          consultantId: "",
-          consultantName: "",
-          isHomeroomTeacher: false,
+          isHomeroomTeacher: true,
         });
+        setError(
+          "Could not fetch homeroom teacher. Please try again or select a different type."
+        );
       }
-    } catch (err) {
-      setError(err.message);
-      // Reset consultant type on error
+    } else {
       updateBookingData({
-        consultantType: "",
+        consultantType: type,
         consultantId: "",
         consultantName: "",
         isHomeroomTeacher: false,
       });
-    } finally {
-      setLoading(false);
     }
+    setIsLoading(false); // Kết thúc loading
   };
 
-  const consultantTypes = [
-    {
-      type: "counselor",
-      title: "School Counselor",
-      description: "Book a session with one of our qualified counselors",
-      icon: "👨‍💼",
-      benefits: [
-        "Choose from multiple counselors",
-        "Specialized support for various needs",
-        "Flexible scheduling options",
-      ],
-    },
-    {
-      type: "homeroom",
-      title: "Homeroom Teacher",
-      description: "Schedule a meeting with your homeroom teacher",
-      icon: "👨‍🏫",
-      benefits: [
-        "Direct communication with your class teacher",
-        "Discuss academic progress",
-        "Address class-specific concerns",
-      ],
-    },
-  ];
+  // useEffect để kiểm tra và fetch nếu đã có consultantType (optional, chạy khi thay đổi)
+  useEffect(() => {
+    if (
+      bookingData.consultantType === "homeroom" &&
+      bookingData.childId &&
+      isParent()
+    ) {
+      fetchClassAndTeacher(bookingData.childId);
+    }
+  }, [bookingData.consultantType, bookingData.childId, isParent]);
+
+  if (isLoading)
+    return (
+      <motion.div className="text-center text-gray-600">Loading...</motion.div>
+    );
+  if (error)
+    return (
+      <motion.div className="text-center text-red-600">
+        Error: {error}
+      </motion.div>
+    );
 
   return (
-    <div className="py-6">
-      <h2 className="text-2xl font-semibold mb-2">Select Consultation Type</h2>
-      <p className="text-gray-600 mb-6">
-        Choose the type of consultation that best suits your needs
-      </p>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-600">
-          {error}
-        </div>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {consultantTypes.map(({ type, title, description, icon, benefits }) => (
-          <div
-            key={type}
-            onClick={() => !loading && handleConsultantTypeSelect(type)}
-            className={`
-              relative p-6 rounded-xl border-2 cursor-pointer transition-all
-              ${loading ? "opacity-50 cursor-not-allowed" : "hover:shadow-lg"}
-              ${
-                bookingData.consultantType === type
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-blue-300"
-              }
-            `}
-          >
-            {/* Icon and Title */}
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-2xl">
-                {icon}
-              </div>
-              <div className="ml-4">
-                <h3 className="font-semibold text-lg">{title}</h3>
-                <p className="text-sm text-gray-600">{description}</p>
-              </div>
-            </div>
-
-            {/* Benefits */}
-            <ul className="space-y-2">
-              {benefits.map((benefit, index) => (
-                <li
-                  key={index}
-                  className="flex items-center text-sm text-gray-700"
-                >
-                  <svg
-                    className="w-4 h-4 mr-2 text-green-500"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                  {benefit}
-                </li>
-              ))}
-            </ul>
-
-            {/* Selected indicator */}
-            {bookingData.consultantType === type && (
-              <div className="absolute top-4 right-4">
-                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {loading && (
-        <div className="mt-4 text-center text-gray-600">
-          Loading consultant information...
-        </div>
-      )}
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="py-6"
+    >
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+        Select Consultant Type
+      </h2>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="space-y-3"
+      >
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => handleSelectType("counselor")}
+          className={`p-4 border rounded-md cursor-pointer transition-colors
+            ${
+              bookingData.consultantType === "counselor"
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-200 hover:border-blue-300"
+            }`}
+        >
+          <p className="text-center font-medium text-gray-800">Counselor</p>
+        </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => handleSelectType("homeroom")}
+          className={`p-4 border rounded-md cursor-pointer transition-colors
+            ${
+              bookingData.consultantType === "homeroom"
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-200 hover:border-blue-300"
+            }`}
+        >
+          <p className="text-center font-medium text-gray-800">
+            Homeroom Teacher
+          </p>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };
-
-export default ConsultantTypeSelection;
