@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { faHome, faBell } from "@fortawesome/free-solid-svg-icons";
+import { faHome, faBell, faFileAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const PsychologistSidebar = () => {
@@ -9,6 +9,7 @@ const PsychologistSidebar = () => {
   const navItems = [
     { icon: faHome, label: "Dashboard", path: "/psychologist" },
     { icon: faBell, label: "Schedule", path: "/psychologist/schedule" },
+    { icon: faFileAlt, label: "Slots", path: "/psychologist/slot" },
   ];
 
   const handleToggleMenu = () => {

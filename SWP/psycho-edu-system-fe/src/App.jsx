@@ -30,6 +30,9 @@ import PsychologistLayout from "./components/Layouts/PsychologistLayout";
 import PsychologistDashboard from "./pages/couselor/PsychologistDashboard";
 import PsychologistSchedulePage from "./pages/couselor/PsychologistSchedulePage";
 import TeacherLayout from "./components/Layouts/TeacherLayout";
+import PsychologistScheduleRegistration from "./pages/couselor/PsychologistScheduleRegistration";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   return (
@@ -89,6 +92,10 @@ function App() {
             <Route path="/psychologist/" element={<PsychologistLayout />}>
               <Route index element={<PsychologistDashboard />} />
               <Route path="schedule" element={<PsychologistSchedulePage />} />
+              <Route
+                path="slot"
+                element={<PsychologistScheduleRegistration />}
+              />
             </Route>
           </Route>
 
@@ -102,6 +109,7 @@ function App() {
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <ToastContainer position="top-right" autoClose={3000} />
       </Router>
     </AuthProvider>
   );

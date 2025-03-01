@@ -1,23 +1,33 @@
 import { useState, useEffect } from "react";
-import { Calendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
-import "react-big-calendar/lib/css/react-big-calendar.css";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const localizer = momentLocalizer(moment);
-
 const PsychologistSchedulePage = () => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookings, setBookings] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const authData = getAuthDataFromLocalStorage();
   const psychologistId = authData?.userId;
+
+  const startDate = new Date(
+    selectedDate.getFullYear(),
+    selectedDate.getMonth(),
+    1
+  );
+  const endDate = new Date(
+    selectedDate.getFullYear(),
+    selectedDate.getMonth() + 1,
+    0
+  );
 
   useEffect(() => {
     if (!psychologistId) {
@@ -26,17 +36,14 @@ const PsychologistSchedulePage = () => {
       return;
     }
 
-    const fetchBookings = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const startDate = moment().startOf("month").format("YYYY-MM-DD");
-        const endDate = moment()
-          .endOf("month")
-          .add(1, "month")
-          .format("YYYY-MM-DD");
 
-        const response = await axios.get(
-          `https://localhost:7192/api/appointments/consultants/${psychologistId}/appointments?startDate=${startDate}&endDate=${endDate}`,
+        const appointmentResponse = await axios.get(
+          `https://localhost:7192/api/appointments/consultants/${psychologistId}/appointments?startDate=${
+            startDate.toISOString().split("T")[0]
+          }&endDate=${endDate.toISOString().split("T")[0]}`,
           {
             headers: {
               Authorization: `Bearer ${authData.accessToken}`,
@@ -45,64 +52,112 @@ const PsychologistSchedulePage = () => {
           }
         );
 
-        if (response.status === 200 && response.data.isSuccess) {
-          const appointments = response.data.result || [];
+        let appointments = [];
+        if (
+          appointmentResponse.status === 200 &&
+          appointmentResponse.data.isSuccess
+        ) {
+          appointments = appointmentResponse.data.result || [];
           if (!Array.isArray(appointments)) {
-            setError("Invalid data format: expected an array of appointments");
-            setIsLoading(false);
-            return;
-          }
-
-          if (appointments.length === 0) {
-            setBookings([]);
-          } else {
-            const events = appointments.map((appointment) => {
-              const startDateTime = moment(
-                `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
-                "YYYY-MM-DD HH:mm"
-              ).toDate();
-              const endDateTime = moment(startDateTime)
-                .add(60, "minutes")
-                .toDate();
-
-              // Cập nhật title (giả định API không trả về studentId, dùng "Unknown" nếu không có)
-              const studentId = appointment.studentId || "Unknown"; // Thay đổi nếu API có studentId
-              const title = `Meeting with Student ${studentId} - ${
-                appointment.isOnline ? "Online" : "In-person"
-              }`;
-
-              return {
-                id: appointment.appointmentId,
-                title,
-                start: startDateTime,
-                end: endDateTime,
-                details: {
-                  consultantId: appointment.meetingWith,
-                  studentId: appointment.studentId || "Unknown", // Thêm studentId nếu API hỗ trợ
-                  date: appointment.date,
-                  slotId: appointment.slotId,
-                  meetingType: appointment.isOnline ? "online" : "in-person",
-                  isCompleted: appointment.isCompleted,
-                  isCancelled: appointment.isCancelled,
-                },
-              };
-            });
-            setBookings(events);
+            throw new Error(
+              "Invalid data format: expected an array of appointments"
+            );
           }
         } else {
           throw new Error(
-            response.data?.message || "Failed to fetch appointments"
+            appointmentResponse.data?.message || "Failed to fetch appointments"
           );
         }
+
+        if (appointments.length === 0) {
+          const scheduleResponse = await axios.get(
+            `https://localhost:7192/api/Schedule/user-schedules/${psychologistId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${authData.accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const schedules = scheduleResponse.data || [];
+          if (!Array.isArray(schedules)) {
+            throw new Error(
+              "Invalid data format: expected an array of schedules"
+            );
+          }
+
+          const unbookedSlots = schedules.map((slot) => ({
+            slotId: slot.slotId,
+            date: slot.date.split("T")[0],
+            time: slot.slotName,
+            isBooked: false,
+            scheduleId: slot.scheduleId,
+          }));
+          setBookings(unbookedSlots);
+          setAvailableSlots(unbookedSlots);
+        } else {
+          const scheduleResponse = await axios.get(
+            `https://localhost:7192/api/Schedule/user-schedules/${psychologistId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${authData.accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          const schedules = scheduleResponse.data || [];
+          if (!Array.isArray(schedules)) {
+            throw new Error(
+              "Invalid data format: expected an array of schedules"
+            );
+          }
+
+          const allSlots = schedules.map((slot) => ({
+            slotId: slot.slotId,
+            date: slot.date.split("T")[0],
+            time: slot.slotName,
+            isBooked: false,
+            scheduleId: slot.scheduleId,
+          }));
+
+          const bookedSlots = appointments.map((appointment) => ({
+            slotId: appointment.slotId,
+            date: appointment.date,
+            time: getTimeFromSlotId(appointment.slotId),
+            isBooked: true,
+            appointmentId: appointment.appointmentId,
+            isOnline: appointment.isOnline,
+            isCompleted: appointment.isCompleted,
+            isCancelled: appointment.isCancelled,
+            studentId: appointment.studentId || "Unknown",
+          }));
+
+          const unbookedSlots = allSlots.filter(
+            (slot) =>
+              !bookedSlots.some(
+                (booked) =>
+                  booked.slotId === slot.slotId && booked.date === slot.date
+              )
+          );
+
+          setBookings([...bookedSlots, ...unbookedSlots]);
+          setAvailableSlots(allSlots);
+        }
       } catch (error) {
-        setError(error.message || "Failed to fetch appointments");
+        setError(error.message || "Failed to fetch data");
+        toast.error(error.message || "Failed to fetch data", {
+          position: "top-right",
+          autoClose: 5000,
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchBookings();
-  }, [psychologistId, authData.accessToken]);
+    fetchData();
+  }, [psychologistId, authData?.accessToken]);
 
   const getTimeFromSlotId = (slotId) => {
     const times = [
@@ -119,22 +174,20 @@ const PsychologistSchedulePage = () => {
     return times[slotId - 1] || "Unknown";
   };
 
-  const handleSelectEvent = (event) => {
-    setSelectedEvent(event);
-  };
+  const filteredBookings = bookings.filter(
+    (booking) => booking.date === selectedDate.toISOString().split("T")[0]
+  );
 
-  const closeModal = () => {
-    setSelectedEvent(null);
-  };
+  const closeModal = () => setSelectedSlot(null);
 
   const handleCancelAppointment = async () => {
-    if (!selectedEvent) return;
+    if (!selectedSlot) return;
 
     try {
       setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
       const response = await axios.get(
-        `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
+        `https://localhost:7192/api/appointments/${selectedSlot.appointmentId}/cancellation`,
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -146,21 +199,16 @@ const PsychologistSchedulePage = () => {
       console.log("API Response for cancellation:", response.data);
 
       if (response.data.isSuccess && response.data.statusCode === 200) {
-        // Cập nhật trạng thái bookings trực tiếp
         setBookings((prevBookings) =>
           prevBookings.map((booking) =>
-            booking.id === selectedEvent.id
-              ? {
-                  ...booking,
-                  details: { ...booking.details, isCancelled: true },
-                }
+            booking.appointmentId === selectedSlot.appointmentId
+              ? { ...booking, isCancelled: true }
               : booking
           )
         );
-        // Cập nhật selectedEvent
-        setSelectedEvent((prevEvent) => ({
-          ...prevEvent,
-          details: { ...prevEvent.details, isCancelled: true },
+        setSelectedSlot((prevSlot) => ({
+          ...prevSlot,
+          isCancelled: true,
         }));
         toast.success("Appointment cancelled successfully!", {
           position: "top-right",
@@ -201,58 +249,120 @@ const PsychologistSchedulePage = () => {
     return <div className="text-center text-red-600">Error: {error}</div>;
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-3xl font-bold text-gray-900 mb-6"
+        className="text-3xl font-bold text-gray-900 mb-6 text-center"
       >
         Your Psychology Schedule
       </motion.h1>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="bg-white p-6 rounded-lg shadow-md border border-gray-200"
-      >
-        <Calendar
-          localizer={localizer}
-          events={bookings}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 600 }}
-          defaultView="month"
-          views={["month", "week"]}
-          onSelectEvent={handleSelectEvent}
-          eventPropGetter={(event) => ({
-            style: {
-              backgroundColor:
-                event.details.meetingType === "online" ? "#3B82F6" : "#10B981",
-              color: "white",
-              borderRadius: "0.5rem",
-              border: "none",
-              padding: "0.25rem 0.5rem",
-              fontSize: "0.875rem",
-            },
-          })}
-          components={{
-            event: (props) => (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="rbc-event-content"
-                style={props.style}
-              >
-                {props.title}
-              </motion.div>
-            ),
-          }}
-        />
-      </motion.div>
 
-      {selectedEvent && (
+      {/* Container chính căn giữa */}
+      <div className="max-w-md mx-auto flex flex-col items-center gap-6">
+        {/* Lịch nhỏ gọn, căn giữa */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md flex flex-col items-center"
+        >
+          <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
+            Pick a Date
+          </h2>
+          <Calendar
+            onChange={setSelectedDate}
+            value={selectedDate}
+            minDate={new Date()}
+            navigationLabel={({ date }) =>
+              `${date.toLocaleString("default", {
+                month: "long",
+              })} ${date.getFullYear()}`
+            }
+            className="border-none rounded-lg shadow-sm w-full text-[#002B36] mx-auto"
+            tileClassName="hover:bg-[#65CCB8]/20 transition-all duration-200"
+            showNeighboringMonth={false}
+            prevLabel={<span className="text-[#002B36] font-bold">{"<"}</span>}
+            nextLabel={<span className="text-[#002B36] font-bold">{">"}</span>}
+            tileContent={({ date }) => {
+              const dateKey = date.toISOString().split("T")[0];
+              const dayBookings = bookings.filter(
+                (b) => b.date === dateKey && b.isBooked && !b.isCancelled
+              ).length;
+              const dayAvailables = bookings.filter(
+                (b) => b.date === dateKey && !b.isBooked
+              ).length;
+              return (
+                <div className="text-[10px] text-center mt-[2px]">
+                  {dayBookings > 0 && (
+                    <span className="text-blue-600">{dayBookings} B</span>
+                  )}
+                  {dayAvailables > 0 && (
+                    <span className="text-green-600 ml-1">
+                      {dayAvailables} A
+                    </span>
+                  )}
+                </div>
+              );
+            }}
+          />
+          <p className="mt-2 text-sm text-gray-600 text-center">
+            Selected: {selectedDate.toLocaleDateString("en-GB")}
+          </p>
+          <div className="mt-2 text-xs text-gray-500 text-center">
+            <span className="text-blue-600">B</span>: Booked |{" "}
+            <span className="text-green-600">A</span>: Available
+          </div>
+        </motion.div>
+
+        {/* Danh sách slot nằm bên dưới, căn giữa */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
+        >
+          <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
+            Slots for {selectedDate.toLocaleDateString("en-GB")}
+          </h2>
+          {filteredBookings.length === 0 ? (
+            <p className="text-gray-500 italic text-sm text-center">
+              No slots available or booked for this date.
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {filteredBookings.map((slot) => (
+                <div
+                  key={slot.appointmentId || slot.scheduleId}
+                  onClick={() => setSelectedSlot(slot)}
+                  className={`p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-all duration-200 text-sm ${
+                    slot.isBooked
+                      ? slot.isCancelled
+                        ? "bg-red-50"
+                        : "bg-blue-50"
+                      : "bg-green-50"
+                  }`}
+                >
+                  <span className="font-medium text-[#002B36]">
+                    {slot.time}
+                  </span>
+                  <span className="ml-2 text-gray-600">
+                    {slot.isBooked
+                      ? slot.isCancelled
+                        ? "(Cancelled)"
+                        : "(Booked)"
+                      : "(Available)"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Modal chi tiết slot */}
+      {selectedSlot && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -268,62 +378,79 @@ const PsychologistSchedulePage = () => {
             className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
           >
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Appointment Details
+              Slot Details
             </h2>
             <div className="space-y-4">
               <p>
-                <span className="font-medium">Psychologist ID:</span>{" "}
-                {selectedEvent.details.consultantId}
-              </p>
-              <p>
-                <span className="font-medium">Student ID:</span>{" "}
-                {selectedEvent.details.studentId}
-              </p>
-              <p>
                 <span className="font-medium">Date:</span>{" "}
-                {moment(selectedEvent.details.date).format("YYYY-MM-DD")}
+                {new Date(selectedSlot.date).toLocaleDateString("en-GB")}
               </p>
               <p>
-                <span className="font-medium">Time:</span>{" "}
-                {getTimeFromSlotId(selectedEvent.details.slotId)}
+                <span className="font-medium">Time:</span> {selectedSlot.time}
               </p>
-              <p>
-                <span className="font-medium">Meeting Type:</span>{" "}
-                {selectedEvent.details.meetingType}
-              </p>
-              <p>
-                <span className="font-medium">Completed:</span>{" "}
-                {selectedEvent.details.isCompleted ? "Yes" : "No"}
-              </p>
-              <p>
-                <span className="font-medium">Cancelled:</span>{" "}
-                {selectedEvent.details.isCancelled ? "Yes" : "No"}
-              </p>
+              {selectedSlot.isBooked ? (
+                <>
+                  <p>
+                    <span className="font-medium">Status:</span>{" "}
+                    {selectedSlot.isCancelled ? "Cancelled" : "Booked"}
+                  </p>
+                  {!selectedSlot.isCancelled && (
+                    <>
+                      <p>
+                        <span className="font-medium">Student ID:</span>{" "}
+                        {selectedSlot.studentId}
+                      </p>
+                      <p>
+                        <span className="font-medium">Meeting Type:</span>{" "}
+                        {selectedSlot.isOnline ? "Online" : "In-person"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Completed:</span>{" "}
+                        {selectedSlot.isCompleted ? "Yes" : "No"}
+                      </p>
+                    </>
+                  )}
+                  <p>
+                    <span className="font-medium">Appointment ID:</span>{" "}
+                    {selectedSlot.appointmentId}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>
+                    <span className="font-medium">Status:</span> Available (Not
+                    Booked)
+                  </p>
+                  <p>
+                    <span className="font-medium">Schedule ID:</span>{" "}
+                    {selectedSlot.scheduleId}
+                  </p>
+                </>
+              )}
             </div>
             <div className="mt-6 flex justify-end space-x-4">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={closeModal}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Close
               </motion.button>
-              {!selectedEvent.details.isCancelled && (
+              {selectedSlot.isBooked && !selectedSlot.isCancelled && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleCancelAppointment}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  Cancel Appointment
+                  Cancel
                 </motion.button>
               )}
             </div>
           </motion.div>
         </motion.div>
       )}
-      <ToastContainer />
     </div>
   );
 };
