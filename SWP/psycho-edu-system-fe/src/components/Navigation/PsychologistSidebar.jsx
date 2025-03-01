@@ -9,7 +9,7 @@ const PsychologistSidebar = () => {
   const navItems = [
     { icon: faHome, label: "Dashboard", path: "/psychologist" },
     { icon: faBell, label: "Schedule", path: "/psychologist/schedule" },
-    { icon: faFileAlt, label: "Slots", path: "/psychologist/slot" },
+    { icon: faFileAlt, label: "Book Slots", path: "/psychologist/slot" },
   ];
 
   const handleToggleMenu = () => {

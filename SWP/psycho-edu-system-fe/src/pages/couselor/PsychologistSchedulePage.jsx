@@ -13,7 +13,7 @@ const PsychologistSchedulePage = () => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [noAppointments, setNoAppointments] = useState(false); // Thay error bằng noAppointments
 
   const authData = getAuthDataFromLocalStorage();
   const psychologistId = authData?.userId;
@@ -31,7 +31,7 @@ const PsychologistSchedulePage = () => {
 
   useEffect(() => {
     if (!psychologistId) {
-      setError("Psychologist ID not found. Please log in again.");
+      setNoAppointments(true);
       setIsLoading(false);
       return;
     }
@@ -59,14 +59,15 @@ const PsychologistSchedulePage = () => {
         ) {
           appointments = appointmentResponse.data.result || [];
           if (!Array.isArray(appointments)) {
-            throw new Error(
-              "Invalid data format: expected an array of appointments"
-            );
+            setNoAppointments(true);
+            setIsLoading(false);
+            return;
           }
         } else {
-          throw new Error(
-            appointmentResponse.data?.message || "Failed to fetch appointments"
-          );
+          setNoAppointments(true);
+          setBookings([]);
+          setIsLoading(false);
+          return;
         }
 
         if (appointments.length === 0) {
@@ -82,9 +83,9 @@ const PsychologistSchedulePage = () => {
 
           const schedules = scheduleResponse.data || [];
           if (!Array.isArray(schedules)) {
-            throw new Error(
-              "Invalid data format: expected an array of schedules"
-            );
+            setNoAppointments(true);
+            setIsLoading(false);
+            return;
           }
 
           const unbookedSlots = schedules.map((slot) => ({
@@ -109,9 +110,9 @@ const PsychologistSchedulePage = () => {
 
           const schedules = scheduleResponse.data || [];
           if (!Array.isArray(schedules)) {
-            throw new Error(
-              "Invalid data format: expected an array of schedules"
-            );
+            setNoAppointments(true);
+            setIsLoading(false);
+            return;
           }
 
           const allSlots = schedules.map((slot) => ({
@@ -146,11 +147,8 @@ const PsychologistSchedulePage = () => {
           setAvailableSlots(allSlots);
         }
       } catch (error) {
-        setError(error.message || "Failed to fetch data");
-        toast.error(error.message || "Failed to fetch data", {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        setNoAppointments(true);
+        setBookings([]);
       } finally {
         setIsLoading(false);
       }
@@ -175,7 +173,17 @@ const PsychologistSchedulePage = () => {
   };
 
   const filteredBookings = bookings.filter(
-    (booking) => booking.date === selectedDate.toISOString().split("T")[0]
+    (booking) =>
+      booking.date ===
+      selectedDate
+        .toLocaleDateString("en-GB", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })
+        .split("/")
+        .reverse()
+        .join("-") // YYYY-MM-DD
   );
 
   const closeModal = () => setSelectedSlot(null);
@@ -245,121 +253,137 @@ const PsychologistSchedulePage = () => {
 
   if (isLoading)
     return <div className="text-center text-gray-600">Loading schedule...</div>;
-  if (error)
-    return <div className="text-center text-red-600">Error: {error}</div>;
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-3xl font-bold text-gray-900 mb-6 text-center"
+        className="text-3xl font-bold text-gray-900 mb-8 text-center"
       >
         Your Psychology Schedule
       </motion.h1>
 
       {/* Container chính căn giữa */}
-      <div className="max-w-md mx-auto flex flex-col items-center gap-6">
-        {/* Lịch nhỏ gọn, căn giữa */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md flex flex-col items-center"
-        >
-          <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
-            Pick a Date
-          </h2>
-          <Calendar
-            onChange={setSelectedDate}
-            value={selectedDate}
-            minDate={new Date()}
-            navigationLabel={({ date }) =>
-              `${date.toLocaleString("default", {
-                month: "long",
-              })} ${date.getFullYear()}`
-            }
-            className="border-none rounded-lg shadow-sm w-full text-[#002B36] mx-auto"
-            tileClassName="hover:bg-[#65CCB8]/20 transition-all duration-200"
-            showNeighboringMonth={false}
-            prevLabel={<span className="text-[#002B36] font-bold">{"<"}</span>}
-            nextLabel={<span className="text-[#002B36] font-bold">{">"}</span>}
-            tileContent={({ date }) => {
-              const dateKey = date.toISOString().split("T")[0];
-              const dayBookings = bookings.filter(
-                (b) => b.date === dateKey && b.isBooked && !b.isCancelled
-              ).length;
-              const dayAvailables = bookings.filter(
-                (b) => b.date === dateKey && !b.isBooked
-              ).length;
-              return (
-                <div className="text-[10px] text-center mt-[2px]">
-                  {dayBookings > 0 && (
-                    <span className="text-blue-600">{dayBookings} B</span>
-                  )}
-                  {dayAvailables > 0 && (
-                    <span className="text-green-600 ml-1">
-                      {dayAvailables} A
-                    </span>
-                  )}
-                </div>
-              );
-            }}
-          />
-          <p className="mt-2 text-sm text-gray-600 text-center">
-            Selected: {selectedDate.toLocaleDateString("en-GB")}
-          </p>
-          <div className="mt-2 text-xs text-gray-500 text-center">
-            <span className="text-blue-600">B</span>: Booked |{" "}
-            <span className="text-green-600">A</span>: Available
-          </div>
-        </motion.div>
-
-        {/* Danh sách slot nằm bên dưới, căn giữa */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
-        >
-          <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
-            Slots for {selectedDate.toLocaleDateString("en-GB")}
-          </h2>
-          {filteredBookings.length === 0 ? (
-            <p className="text-gray-500 italic text-sm text-center">
-              No slots available or booked for this date.
+      {noAppointments ? (
+        <p className="text-gray-500 text-center">
+          No appointments found for this month.
+        </p>
+      ) : (
+        <div className="max-w-md mx-auto flex flex-col items-center gap-6">
+          {/* Lịch nhỏ gọn, căn giữa */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md flex flex-col items-center"
+          >
+            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
+              Pick a Date
+            </h2>
+            <Calendar
+              onChange={setSelectedDate}
+              value={selectedDate}
+              minDate={new Date()}
+              navigationLabel={({ date }) =>
+                `${date.toLocaleString("default", {
+                  month: "long",
+                })} ${date.getFullYear()}`
+              }
+              className="border-none rounded-lg shadow-sm w-full text-[#002B36] mx-auto"
+              tileClassName="hover:bg-[#65CCB8]/20 transition-all duration-200"
+              showNeighboringMonth={false}
+              prevLabel={
+                <span className="text-[#002B36] font-bold">{"<"}</span>
+              }
+              nextLabel={
+                <span className="text-[#002B36] font-bold">{">"}</span>
+              }
+              tileContent={({ date }) => {
+                const dateKey = date
+                  .toLocaleDateString("en-GB", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })
+                  .split("/")
+                  .reverse()
+                  .join("-"); // YYYY-MM-DD
+                const dayBookings = bookings.filter(
+                  (b) => b.date === dateKey && b.isBooked && !b.isCancelled
+                ).length;
+                const dayAvailables = bookings.filter(
+                  (b) => b.date === dateKey && !b.isBooked
+                ).length;
+                return (
+                  <div className="text-[10px] text-center mt-[2px]">
+                    {dayBookings > 0 && (
+                      <span className="text-blue-600">{dayBookings} B</span>
+                    )}
+                    {dayAvailables > 0 && (
+                      <span className="text-green-600 ml-1">
+                        {dayAvailables} A
+                      </span>
+                    )}
+                  </div>
+                );
+              }}
+            />
+            <p className="mt-2 text-sm text-gray-600 text-center">
+              Selected: {selectedDate.toLocaleDateString("en-GB")}
             </p>
-          ) : (
-            <div className="space-y-2 max-h-80 overflow-y-auto">
-              {filteredBookings.map((slot) => (
-                <div
-                  key={slot.appointmentId || slot.scheduleId}
-                  onClick={() => setSelectedSlot(slot)}
-                  className={`p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-all duration-200 text-sm ${
-                    slot.isBooked
-                      ? slot.isCancelled
-                        ? "bg-red-50"
-                        : "bg-blue-50"
-                      : "bg-green-50"
-                  }`}
-                >
-                  <span className="font-medium text-[#002B36]">
-                    {slot.time}
-                  </span>
-                  <span className="ml-2 text-gray-600">
-                    {slot.isBooked
-                      ? slot.isCancelled
-                        ? "(Cancelled)"
-                        : "(Booked)"
-                      : "(Available)"}
-                  </span>
-                </div>
-              ))}
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              <span className="text-blue-600">B</span>: Booked |{" "}
+              <span className="text-green-600">A</span>: Available
             </div>
-          )}
-        </motion.div>
-      </div>
+          </motion.div>
+
+          {/* Danh sách slot nằm bên dưới, căn giữa */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
+          >
+            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
+              Slots for {selectedDate.toLocaleDateString("en-GB")}
+            </h2>
+            {filteredBookings.length === 0 ? (
+              <p className="text-gray-500 italic text-sm text-center">
+                No slots available or booked for this date.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {filteredBookings.map((slot) => (
+                  <div
+                    key={slot.appointmentId || slot.scheduleId}
+                    onClick={() => setSelectedSlot(slot)}
+                    className={`p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-all duration-200 text-sm ${
+                      slot.isBooked
+                        ? slot.isCancelled
+                          ? "bg-red-50"
+                          : "bg-blue-50"
+                        : "bg-green-50"
+                    }`}
+                  >
+                    <span className="font-medium text-[#002B36]">
+                      {slot.time}
+                    </span>
+                    <span className="ml-2 text-gray-600">
+                      {slot.isBooked
+                        ? slot.isCancelled
+                          ? "(Cancelled)"
+                          : "(Booked)"
+                        : "(Available)"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
 
       {/* Modal chi tiết slot */}
       {selectedSlot && (

@@ -52,7 +52,15 @@ const PsychologistScheduleRegistration = () => {
   const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
-    const dateKey = currentDate.toISOString().split("T")[0];
+    const dateKey = currentDate
+      .toLocaleDateString("en-GB", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+      .split("/")
+      .reverse()
+      .join("-"); // Định dạng YYYY-MM-DD
     setCurrentSelectedSlots(selectedDates[dateKey] || []);
     setErrorMessage(null);
   }, [currentDate, selectedDates]);
@@ -79,7 +87,15 @@ const PsychologistScheduleRegistration = () => {
       return;
     }
 
-    const dateKey = currentDate.toISOString().split("T")[0];
+    const dateKey = currentDate
+      .toLocaleDateString("en-GB", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+      .split("/")
+      .reverse()
+      .join("-"); // YYYY-MM-DD
     const duplicateSlots = currentSelectedSlots.filter((slotId) =>
       bookedSlots.some(
         (booked) => booked.slotId === slotId && booked.date === dateKey
@@ -262,7 +278,7 @@ const PsychologistScheduleRegistration = () => {
         transition={{ duration: 0.5 }}
         className="text-3xl font-bold text-[#002B36] mb-8 text-center"
       >
-        Register Your Available Slots
+        Register Your Available Slots - Psychologist
       </motion.h1>
 
       {/* Container chính căn giữa */}
@@ -290,7 +306,15 @@ const PsychologistScheduleRegistration = () => {
               }
               className="border-none rounded-lg shadow-sm w-full text-[#002B36] text-sm mx-auto"
               tileClassName={({ date }) => {
-                const dateKey = date.toISOString().split("T")[0];
+                const dateKey = date
+                  .toLocaleDateString("en-GB", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })
+                  .split("/")
+                  .reverse()
+                  .join("-"); // YYYY-MM-DD
                 const dayBookings = bookedSlots.filter(
                   (b) => b.date === dateKey && b.slotId
                 ).length;
@@ -306,7 +330,15 @@ const PsychologistScheduleRegistration = () => {
                 <span className="text-[#002B36] font-bold text-lg">{">"}</span>
               }
               tileContent={({ date }) => {
-                const dateKey = date.toISOString().split("T")[0];
+                const dateKey = date
+                  .toLocaleDateString("en-GB", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })
+                  .split("/")
+                  .reverse()
+                  .join("-"); // YYYY-MM-DD
                 const dayBookings = bookedSlots.filter(
                   (b) => b.date === dateKey
                 ).length;
