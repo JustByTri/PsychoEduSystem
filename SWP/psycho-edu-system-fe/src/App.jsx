@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
+import CreateParentAccount from "./pages/admin/CreateParentAccount"; // Thêm import
 import RequireSurvey from "./components/Survey/RequireSurvey";
 import ParentLayout from "./components/Layouts/ParentLayout";
 import ParentDashboard from "./pages/parent/Dashboard";
@@ -30,6 +31,11 @@ import PsychologistLayout from "./components/Layouts/PsychologistLayout";
 import PsychologistDashboard from "./pages/couselor/PsychologistDashboard";
 import PsychologistSchedulePage from "./pages/couselor/PsychologistSchedulePage";
 import TeacherLayout from "./components/Layouts/TeacherLayout";
+import PsychologistScheduleRegistration from "./pages/couselor/PsychologistScheduleRegistration";
+import TeacherScheduleRegistration from "./pages/teacher/TeacherScheduleRegistration";
+import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   return (
@@ -42,10 +48,8 @@ function App() {
 
           {/* Student Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Student"]} />}>
-            {/* Route riêng cho StartUpPage, không bị RequireSurvey chặn */}
             <Route path="student/start-up-survey" element={<StartUpPage />} />
             <Route path="student/survey-for-student" element={<SurveyPage />} />
-            {/* Các route yêu cầu kiểm tra khảo sát */}
             <Route element={<RequireSurvey />}>
               <Route path="student/" element={<PortalLayout />}>
                 <Route index element={<Dashboard />} />
@@ -56,6 +60,8 @@ function App() {
             </Route>
           </Route>
           <Route path="survey-result" element={<SurveyResultPage />} />
+
+          {/* Parent Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Parent"]} />}>
             <Route path="parent/" element={<ParentLayout />}>
               <Route index element={<ParentDashboard />} />
@@ -71,12 +77,18 @@ function App() {
             </Route>
           </Route>
           <Route path="survey/:childId" element={<ParentSurveyPage />} />
+
           {/* Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
             <Route path="admin/" element={<AdminPortalLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="survey" element={<SurveyList />} />
               <Route path="survey/:id" element={<SurveyDetail />} />
+              <Route
+                path="create-parent"
+                element={<CreateParentAccount />}
+              />{" "}
+              {/* Thêm route */}
             </Route>
           </Route>
           <Route
@@ -89,6 +101,10 @@ function App() {
             <Route path="/psychologist/" element={<PsychologistLayout />}>
               <Route index element={<PsychologistDashboard />} />
               <Route path="schedule" element={<PsychologistSchedulePage />} />
+              <Route
+                path="slot"
+                element={<PsychologistScheduleRegistration />}
+              />
             </Route>
           </Route>
 
@@ -97,11 +113,14 @@ function App() {
             <Route path="teacher/" element={<TeacherLayout />}>
               <Route index element={<TeacherDashboard />} />
               <Route path="class/:classId" element={<ClassDetails />} />
+              <Route path="slot" element={<TeacherScheduleRegistration />} />
+              <Route path="schedule" element={<TeacherSchedulePage />} />
             </Route>
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <ToastContainer position="top-right" autoClose={3000} />
       </Router>
     </AuthProvider>
   );

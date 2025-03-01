@@ -7,16 +7,16 @@ import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const PsychologistSchedulePage = () => {
+const TeacherSchedulePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookings, setBookings] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [noAppointments, setNoAppointments] = useState(false); // Thay error bằng noAppointments
+  const [noAppointments, setNoAppointments] = useState(false);
 
   const authData = getAuthDataFromLocalStorage();
-  const psychologistId = authData?.userId;
+  const teacherId = authData?.userId;
 
   const startDate = new Date(
     selectedDate.getFullYear(),
@@ -30,7 +30,7 @@ const PsychologistSchedulePage = () => {
   );
 
   useEffect(() => {
-    if (!psychologistId) {
+    if (!teacherId) {
       setNoAppointments(true);
       setIsLoading(false);
       return;
@@ -41,7 +41,7 @@ const PsychologistSchedulePage = () => {
         setIsLoading(true);
 
         const appointmentResponse = await axios.get(
-          `https://localhost:7192/api/appointments/consultants/${psychologistId}/appointments?startDate=${
+          `https://localhost:7192/api/appointments/consultants/${teacherId}/appointments?startDate=${
             startDate.toISOString().split("T")[0]
           }&endDate=${endDate.toISOString().split("T")[0]}`,
           {
@@ -72,7 +72,7 @@ const PsychologistSchedulePage = () => {
 
         if (appointments.length === 0) {
           const scheduleResponse = await axios.get(
-            `https://localhost:7192/api/Schedule/user-schedules/${psychologistId}`,
+            `https://localhost:7192/api/Schedule/user-schedules/${teacherId}`,
             {
               headers: {
                 Authorization: `Bearer ${authData.accessToken}`,
@@ -99,7 +99,7 @@ const PsychologistSchedulePage = () => {
           setAvailableSlots(unbookedSlots);
         } else {
           const scheduleResponse = await axios.get(
-            `https://localhost:7192/api/Schedule/user-schedules/${psychologistId}`,
+            `https://localhost:7192/api/Schedule/user-schedules/${teacherId}`,
             {
               headers: {
                 Authorization: `Bearer ${authData.accessToken}`,
@@ -155,7 +155,7 @@ const PsychologistSchedulePage = () => {
     };
 
     fetchData();
-  }, [psychologistId, authData?.accessToken]);
+  }, [teacherId, authData?.accessToken]);
 
   const getTimeFromSlotId = (slotId) => {
     const times = [
@@ -262,7 +262,7 @@ const PsychologistSchedulePage = () => {
         transition={{ duration: 0.5 }}
         className="text-3xl font-bold text-gray-900 mb-8 text-center"
       >
-        Your Psychology Schedule
+        Your Teacher Schedule
       </motion.h1>
 
       {/* Container chính căn giữa */}
@@ -479,4 +479,4 @@ const PsychologistSchedulePage = () => {
   );
 };
 
-export default PsychologistSchedulePage;
+export default TeacherSchedulePage;

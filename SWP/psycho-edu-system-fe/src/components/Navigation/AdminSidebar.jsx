@@ -7,6 +7,7 @@ import {
   faUsers,
   faCalendarCheck,
   faChartBar,
+  faUserPlus, // Thêm icon cho Create Parent Account
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -24,6 +25,7 @@ const AdminSidebar = () => {
       path: "/admin/appointments",
     },
     { icon: faChartBar, label: "Reports", path: "/admin/reports" },
+    { icon: faUserPlus, label: "Create Parent", path: "/admin/create-parent" }, // Thêm mục mới
   ];
 
   return (
@@ -37,7 +39,6 @@ const AdminSidebar = () => {
         borderRight: "1px solid rgba(255, 255, 255, 0.1)",
       }}
     >
-      {/* Sidebar Toggle Button */}
       <div className="flex items-center justify-between p-4">
         <button
           className="text-white p-2 w-full rounded-lg hover:bg-white/10 transition-all duration-300"
@@ -62,7 +63,6 @@ const AdminSidebar = () => {
         </button>
       </div>
 
-      {/* Navigation Links */}
       <nav className="flex-grow space-y-1 mt-6">
         {navItems.map((item, index) => (
           <Link
