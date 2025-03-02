@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -14,6 +14,8 @@ const CreateParentAccount = () => {
     { studentEmail: "", relationshipName: "" },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false); // State cho modal lỗi
+  const [errorDetails, setErrorDetails] = useState(""); // Chi tiết lỗi cho modal
 
   const authData = getAuthDataFromLocalStorage();
   const token = authData?.accessToken;
@@ -81,9 +83,25 @@ const CreateParentAccount = () => {
         pauseOnHover: true,
         draggable: true,
       });
+
+      // Hiển thị modal khi gặp lỗi 400
+      if (error.response && error.response.status === 400) {
+        const errorDetail =
+          error.response.data?.message ||
+          JSON.stringify(error.response.data) ||
+          "Bad request: Invalid data.";
+        setErrorDetails(errorDetail);
+        setIsErrorModalOpen(true);
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Đóng modal lỗi
+  const closeErrorModal = () => {
+    setIsErrorModalOpen(false);
+    setErrorDetails("");
   };
 
   return (
@@ -225,6 +243,41 @@ const CreateParentAccount = () => {
           </motion.button>
         </form>
       </motion.section>
+
+      {/* Modal lỗi khi gặp 400 Bad Request */}
+      <AnimatePresence>
+        {isErrorModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            >
+              <h2 className="text-2xl font-bold text-red-600 mb-4 text-center">
+                Notification
+              </h2>
+              <p className="text-gray-700 text-center mb-4">{errorDetails}</p>
+              <div className="flex justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={closeErrorModal}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

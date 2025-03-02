@@ -50,6 +50,8 @@ const PsychologistScheduleRegistration = () => {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false); // State cho modal lỗi
+  const [errorDetails, setErrorDetails] = useState(""); // Chi tiết lỗi cho modal
 
   useEffect(() => {
     const dateKey = currentDate
@@ -221,41 +223,13 @@ const PsychologistScheduleRegistration = () => {
     } catch (error) {
       let errorMsg = "An error occurred while booking.";
       if (error.response) {
-        if (error.response.status === 400 && error.response.data) {
-          errorMsg =
-            error.response.data || "Bad request: Invalid booking data.";
-          if (typeof errorMsg === "string") {
-            toast.error(errorMsg, {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-            });
-          } else {
-            errorMsg = errorMsg.message || JSON.stringify(errorMsg);
-            toast.error(errorMsg, {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-            });
-          }
-        } else {
-          errorMsg =
-            error.response.data?.message || "An error occurred while booking.";
-          toast.error(errorMsg, {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-        }
+        // Hiển thị modal cho mọi lỗi từ API
+        errorMsg =
+          error.response.data?.message ||
+          JSON.stringify(error.response.data) ||
+          `API error: Status ${error.response.status}`;
+        setErrorDetails(errorMsg);
+        setIsErrorModalOpen(true);
       } else {
         toast.error(errorMsg, {
           position: "top-right",
@@ -268,6 +242,12 @@ const PsychologistScheduleRegistration = () => {
       }
       setSubmissionStatus(errorMsg);
     }
+  };
+
+  // Đóng modal lỗi
+  const closeErrorModal = () => {
+    setIsErrorModalOpen(false);
+    setErrorDetails("");
   };
 
   return (
@@ -493,6 +473,41 @@ const PsychologistScheduleRegistration = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal lỗi khi gặp lỗi API */}
+      <AnimatePresence>
+        {isErrorModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            >
+              <h2 className="text-2xl font-bold text-red-600 mb-4 text-center">
+                Notification
+              </h2>
+              <p className="text-gray-700 text-center mb-4">{errorDetails}</p>
+              <div className="flex justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={closeErrorModal}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
