@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // Thiết lập localizer cho react-big-calendar (dù không sử dụng trong file này, cần cho tương lai)
-const localizer = null; // Placeholder, không cần vì không dùng Calendar từ react-big-calendar
+const localizer = null; // Placeholder
 
 const TeacherSchedulePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -17,8 +17,8 @@ const TeacherSchedulePage = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [noAppointments, setNoAppointments] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Modal xác nhận hủy
-  const [selectedSlotToCancel, setSelectedSlotToCancel] = useState(null); // Slot cần hủy
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [selectedSlotToCancel, setSelectedSlotToCancel] = useState(null);
 
   const authData = getAuthDataFromLocalStorage();
   const teacherId = authData?.userId;
@@ -188,7 +188,7 @@ const TeacherSchedulePage = () => {
         })
         .split("/")
         .reverse()
-        .join("-") // YYYY-MM-DD
+        .join("-")
   );
 
   const closeModal = () => setSelectedSlot(null);
@@ -256,13 +256,11 @@ const TeacherSchedulePage = () => {
     }
   };
 
-  // Mở modal xác nhận hủy
   const openConfirmModal = (slot) => {
     setSelectedSlotToCancel(slot);
     setIsConfirmModalOpen(true);
   };
 
-  // Xác nhận hủy
   const confirmCancelAppointment = async () => {
     if (!selectedSlotToCancel) return;
     await handleCancelAppointment();
@@ -270,7 +268,6 @@ const TeacherSchedulePage = () => {
     setSelectedSlotToCancel(null);
   };
 
-  // Đóng modal xác nhận
   const closeConfirmModal = () => {
     setIsConfirmModalOpen(false);
     setSelectedSlotToCancel(null);
@@ -446,10 +443,6 @@ const TeacherSchedulePage = () => {
                   {!selectedSlot.isCancelled && (
                     <>
                       <p>
-                        <span className="font-medium">Student ID:</span>{" "}
-                        {selectedSlot.studentId}
-                      </p>
-                      <p>
                         <span className="font-medium">Meeting Type:</span>{" "}
                         {selectedSlot.isOnline ? "Online" : "In-person"}
                       </p>
@@ -459,20 +452,11 @@ const TeacherSchedulePage = () => {
                       </p>
                     </>
                   )}
-                  <p>
-                    <span className="font-medium">Appointment ID:</span>{" "}
-                    {selectedSlot.appointmentId}
-                  </p>
                 </>
               ) : (
                 <>
                   <p>
-                    <span className="font-medium">Status:</span> Available (Not
-                    Booked)
-                  </p>
-                  <p>
-                    <span className="font-medium">Schedule ID:</span>{" "}
-                    {selectedSlot.scheduleId}
+                    <span className="font-medium">Status:</span> Available
                   </p>
                 </>
               )}

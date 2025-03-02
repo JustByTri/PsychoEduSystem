@@ -17,8 +17,9 @@ const PsychologistSchedulePage = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [noAppointments, setNoAppointments] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Modal xác nhận hủy
-  const [selectedSlotToCancel, setSelectedSlotToCancel] = useState(null); // Slot cần hủy
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [selectedSlotToCancel, setSelectedSlotToCancel] = useState(null);
+  const [studentProfiles, setStudentProfiles] = useState({}); // Thêm state cho profile student
 
   const authData = getAuthDataFromLocalStorage();
   const teacherId = authData?.userId;
@@ -57,6 +58,8 @@ const PsychologistSchedulePage = () => {
           }
         );
 
+        console.log("Appointment Response:", appointmentResponse.data); // Debug
+
         let appointments = [];
         if (
           appointmentResponse.status === 200 &&
@@ -86,6 +89,8 @@ const PsychologistSchedulePage = () => {
             }
           );
 
+          console.log("Schedule Response:", scheduleResponse.data); // Debug
+
           const schedules = scheduleResponse.data || [];
           if (!Array.isArray(schedules)) {
             setNoAppointments(true);
@@ -112,6 +117,8 @@ const PsychologistSchedulePage = () => {
               },
             }
           );
+
+          console.log("Schedule Response:", scheduleResponse.data); // Debug
 
           const schedules = scheduleResponse.data || [];
           if (!Array.isArray(schedules)) {
@@ -151,9 +158,12 @@ const PsychologistSchedulePage = () => {
           setBookings([...bookedSlots, ...unbookedSlots]);
           setAvailableSlots(allSlots);
         }
+
+        console.log("Bookings set:", bookings); // Debug
       } catch (error) {
         setNoAppointments(true);
         setBookings([]);
+        console.error("Fetch error:", error); // Debug
       } finally {
         setIsLoading(false);
       }
@@ -188,7 +198,7 @@ const PsychologistSchedulePage = () => {
         })
         .split("/")
         .reverse()
-        .join("-") // YYYY-MM-DD
+        .join("-")
   );
 
   const closeModal = () => setSelectedSlot(null);
@@ -256,13 +266,11 @@ const PsychologistSchedulePage = () => {
     }
   };
 
-  // Mở modal xác nhận hủy
   const openConfirmModal = (slot) => {
     setSelectedSlotToCancel(slot);
     setIsConfirmModalOpen(true);
   };
 
-  // Xác nhận hủy
   const confirmCancelAppointment = async () => {
     if (!selectedSlotToCancel) return;
     await handleCancelAppointment();
@@ -270,7 +278,6 @@ const PsychologistSchedulePage = () => {
     setSelectedSlotToCancel(null);
   };
 
-  // Đóng modal xác nhận
   const closeConfirmModal = () => {
     setIsConfirmModalOpen(false);
     setSelectedSlotToCancel(null);
@@ -287,7 +294,7 @@ const PsychologistSchedulePage = () => {
         transition={{ duration: 0.5 }}
         className="text-3xl font-bold text-gray-900 mb-8 text-center"
       >
-        Your Psychology Schedule
+        Your Psychologist Schedule
       </motion.h1>
 
       {/* Container chính căn giữa */}
@@ -446,10 +453,6 @@ const PsychologistSchedulePage = () => {
                   {!selectedSlot.isCancelled && (
                     <>
                       <p>
-                        <span className="font-medium">Student ID:</span>{" "}
-                        {selectedSlot.studentId}
-                      </p>
-                      <p>
                         <span className="font-medium">Meeting Type:</span>{" "}
                         {selectedSlot.isOnline ? "Online" : "In-person"}
                       </p>
@@ -459,20 +462,12 @@ const PsychologistSchedulePage = () => {
                       </p>
                     </>
                   )}
-                  <p>
-                    <span className="font-medium">Appointment ID:</span>{" "}
-                    {selectedSlot.appointmentId}
-                  </p>
                 </>
               ) : (
                 <>
                   <p>
                     <span className="font-medium">Status:</span> Available (Not
                     Booked)
-                  </p>
-                  <p>
-                    <span className="font-medium">Schedule ID:</span>{" "}
-                    {selectedSlot.scheduleId}
                   </p>
                 </>
               )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar } from "react-calendar"; // Sử dụng react-calendar
+import { Calendar } from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -13,10 +13,12 @@ const SchedulePage = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Modal xác nhận hủy
-  const [selectedEventToCancel, setSelectedEventToCancel] = useState(null); // Sự kiện cần hủy
-  const [isInitialLoad, setIsInitialLoad] = useState(true); // State để kiểm soát hiệu ứng ban đầu
-  const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày được chọn từ lịch
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [selectedEventToCancel, setSelectedEventToCancel] = useState(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [userProfile, setUserProfile] = useState(null); // Profile của student
+  const [consultantProfiles, setConsultantProfiles] = useState({}); // Profile của consultant
 
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
@@ -31,6 +33,30 @@ const SchedulePage = () => {
     const fetchBookings = async () => {
       try {
         setIsLoading(true);
+
+        // Fetch profile của student
+        const profileResponse = await axios.get(
+          `https://localhost:7192/api/User/profile?userId=${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authData.accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (profileResponse.status === 200 && profileResponse.data.isSuccess) {
+          setUserProfile(profileResponse.data.result);
+        } else {
+          toast.error("Failed to load user profile.", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        }
+
         const startDate = moment().startOf("month").format("YYYY-MM-DD");
         const endDate = moment()
           .endOf("month")
@@ -60,40 +86,82 @@ const SchedulePage = () => {
           if (appointments.length === 0) {
             setBookings([]);
           } else {
-            const events = appointments.map((appointment) => {
-              const startDateTime = moment(
-                `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
-                "YYYY-MM-DD HH:mm"
-              ).toDate();
-              const endDateTime = moment(startDateTime)
-                .add(60, "minutes")
-                .toDate();
+            const events = await Promise.all(
+              appointments.map(async (appointment) => {
+                const startDateTime = moment(
+                  `${appointment.date} ${getTimeFromSlotId(
+                    appointment.slotId
+                  )}`,
+                  "YYYY-MM-DD HH:mm"
+                ).toDate();
+                const endDateTime = moment(startDateTime)
+                  .add(60, "minutes")
+                  .toDate();
 
-              let title = `Meeting with ${appointment.meetingWith}`;
-              if (appointment.role === "Counselor") {
-                title = "Meeting with Counselor";
-              } else if (appointment.role === "Teacher") {
-                title = "Meeting with Teacher";
-              }
+                let title = `Meeting with ${appointment.meetingWith}`;
+                if (appointment.role === "Counselor") {
+                  title = "Meeting with Counselor";
+                } else if (appointment.role === "Teacher") {
+                  title = "Meeting with Teacher";
+                }
 
-              return {
-                id: appointment.appointmentId,
-                title: `${title} - ${
-                  appointment.isOnline ? "Online" : "In-person"
-                }`,
-                start: startDateTime,
-                end: endDateTime,
-                details: {
-                  studentId: appointment.appointmentFor || userId,
-                  consultantId: appointment.meetingWith,
-                  date: appointment.date,
-                  slotId: appointment.slotId,
-                  meetingType: appointment.isOnline ? "online" : "in-person",
-                  isCompleted: appointment.isCompleted,
-                  isCancelled: appointment.isCancelled,
-                },
-              };
-            });
+                // Fetch profile của consultant nếu chưa có
+                let consultantFullName = appointment.meetingWith;
+                if (!consultantProfiles[appointment.meetingWith]) {
+                  try {
+                    const consultantProfileResponse = await axios.get(
+                      `https://localhost:7192/api/User/profile?userId=${appointment.meetingWith}`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${authData.accessToken}`,
+                          "Content-Type": "application/json",
+                        },
+                      }
+                    );
+                    if (
+                      consultantProfileResponse.status === 200 &&
+                      consultantProfileResponse.data.isSuccess
+                    ) {
+                      consultantFullName =
+                        consultantProfileResponse.data.result.fullName ||
+                        appointment.meetingWith;
+                      setConsultantProfiles((prev) => ({
+                        ...prev,
+                        [appointment.meetingWith]: consultantFullName,
+                      }));
+                    }
+                  } catch (err) {
+                    console.error(
+                      `Failed to fetch consultant profile for ${appointment.meetingWith}:`,
+                      err
+                    );
+                    consultantFullName = appointment.meetingWith; // Giữ nguyên ID nếu fetch thất bại
+                  }
+                } else {
+                  consultantFullName =
+                    consultantProfiles[appointment.meetingWith];
+                }
+
+                return {
+                  id: appointment.appointmentId,
+                  title: `${title} - ${
+                    appointment.isOnline ? "Online" : "In-person"
+                  }`,
+                  start: startDateTime,
+                  end: endDateTime,
+                  details: {
+                    studentId: appointment.appointmentFor || userId,
+                    consultantId: appointment.meetingWith,
+                    consultantFullName: consultantFullName,
+                    date: appointment.date,
+                    slotId: appointment.slotId,
+                    meetingType: appointment.isOnline ? "online" : "in-person",
+                    isCompleted: appointment.isCompleted,
+                    isCancelled: appointment.isCancelled,
+                  },
+                };
+              })
+            );
             setBookings(events);
           }
         } else if (response.status === 404) {
@@ -108,9 +176,8 @@ const SchedulePage = () => {
         setError(error.message || "Failed to fetch appointments");
       } finally {
         setIsLoading(false);
-        // Tắt hiệu ứng sau khi load lần đầu
-        const timer = setTimeout(() => setIsInitialLoad(false), 500); // Đợi hiệu ứng hoàn tất (0.5s)
-        return () => clearTimeout(timer); // Dọn dẹp timer
+        const timer = setTimeout(() => setIsInitialLoad(false), 500);
+        return () => clearTimeout(timer);
       }
     };
 
@@ -206,13 +273,11 @@ const SchedulePage = () => {
     }
   };
 
-  // Mở modal xác nhận hủy
   const openConfirmModal = (event) => {
     setSelectedEventToCancel(event);
     setIsConfirmModalOpen(true);
   };
 
-  // Xác nhận hủy
   const confirmCancelAppointment = async () => {
     if (!selectedEventToCancel) return;
     await handleCancelAppointment();
@@ -220,7 +285,6 @@ const SchedulePage = () => {
     setSelectedEventToCancel(null);
   };
 
-  // Đóng modal xác nhận
   const closeConfirmModal = () => {
     setIsConfirmModalOpen(false);
     setSelectedEventToCancel(null);
@@ -231,10 +295,18 @@ const SchedulePage = () => {
   if (error)
     return <div className="text-center text-red-600">Error: {error}</div>;
 
-  // Lọc bookings theo ngày đã chọn
   const filteredBookings = bookings.filter((booking) =>
     moment(booking.start).isSame(selectedDate, "day")
   );
+
+  // Hàm xác định status duy nhất
+  const getStatus = (event) => {
+    const { isBooked, isCompleted, isCancelled } = event.details;
+    if (isCancelled) return "Cancelled";
+    if (isCompleted) return "Completed";
+    if (isBooked) return "Booked";
+    return "Booked";
+  };
 
   return (
     <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
@@ -265,7 +337,7 @@ const SchedulePage = () => {
               Pick a Date
             </h2>
             <Calendar
-              onChange={setSelectedDate} // Chọn ngày
+              onChange={setSelectedDate}
               value={selectedDate}
               minDate={new Date()}
               navigationLabel={({ date }) =>
@@ -299,7 +371,7 @@ const SchedulePage = () => {
                   <div className="text-[10px] text-center mt-[2px]">
                     <span className="text-[#10B981]">Appt</span>
                   </div>
-                ) : null; // Chỉ hiển thị "Appt" nếu có appointment
+                ) : null;
               }}
             />
             <p className="mt-2 text-sm text-gray-600 text-center">
@@ -335,7 +407,7 @@ const SchedulePage = () => {
                         ? booking.details.isCancelled
                           ? "bg-red-50"
                           : "bg-green-50"
-                        : "bg-green-50" // Loại bỏ "Available", chỉ hiển thị booked/cancelled
+                        : "bg-green-50"
                     }`}
                   >
                     <span className="font-medium text-[#002B36]">
@@ -346,7 +418,7 @@ const SchedulePage = () => {
                         ? booking.details.isCancelled
                           ? "(Cancelled)"
                           : "(Booked)"
-                        : "(Not Join Yet)"}{" "}
+                        : "(Not Joined Yet)"}
                     </span>
                   </div>
                 ))}
@@ -378,11 +450,18 @@ const SchedulePage = () => {
             <div className="space-y-4">
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Student:</span>{" "}
-                {selectedEvent.details.studentId}
+                {selectedEvent.details.studentId === userId
+                  ? userProfile?.fullName || "You"
+                  : userProfile?.fullName || "Unknown"}{" "}
+                {/* Dùng fullName của student */}
               </p>
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Consultant:</span>{" "}
-                {selectedEvent.details.consultantId}
+                {selectedEvent.details.consultantId === userId
+                  ? userProfile?.fullName || "You"
+                  : consultantProfiles[selectedEvent.details.consultantId] ||
+                    selectedEvent.details.consultantId}{" "}
+                {/* Dùng fullName của consultant */}
               </p>
               <p className="text-gray-700">
                 <span className="font-medium text-gray-900">Date:</span>{" "}
@@ -397,12 +476,8 @@ const SchedulePage = () => {
                 {selectedEvent.details.meetingType}
               </p>
               <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Completed:</span>{" "}
-                {selectedEvent.details.isCompleted ? "Yes" : "No"}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Cancelled:</span>{" "}
-                {selectedEvent.details.isCancelled ? "Yes" : "No"}
+                <span className="font-medium text-gray-900">Status:</span>{" "}
+                {getStatus(selectedEvent)}
               </p>
             </div>
             <div className="mt-6 flex justify-end space-x-4">

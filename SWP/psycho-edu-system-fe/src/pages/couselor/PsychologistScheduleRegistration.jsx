@@ -52,6 +52,8 @@ const PsychologistScheduleRegistration = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false); // State cho modal lỗi
   const [errorDetails, setErrorDetails] = useState(""); // Chi tiết lỗi cho modal
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); // State cho modal thành công
+  const [successMessage, setSuccessMessage] = useState(""); // Thông điệp thành công
 
   useEffect(() => {
     const dateKey = currentDate
@@ -201,29 +203,36 @@ const PsychologistScheduleRegistration = () => {
         }
       );
 
-      const booked = response.data.bookings.map((booking) => ({
-        bookingId: booking.bookingId,
-        slotId: booking.slotId,
-        date: booking.date.split("T")[0],
-        time: timeSlots.find((slot) => slot.id === booking.slotId)?.time,
-      }));
-      setBookedSlots((prev) => [...prev, ...booked]);
+      console.log("API Response:", response); // Debug toàn bộ response
+      console.log("API Data:", response.data); // Debug dữ liệu từ response
 
-      toast.success(response.data.message, {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      setSubmissionStatus(response.data.message);
-      setSelectedDates({});
-      setErrorMessage(null);
+      if (response.status === 200) {
+        const booked = response.data.bookings
+          ? response.data.bookings.map((booking) => ({
+              bookingId: booking.bookingId,
+              slotId: booking.slotId,
+              date: booking.date.split("T")[0],
+              time: timeSlots.find((slot) => slot.id === booking.slotId)?.time,
+            }))
+          : [];
+        setBookedSlots((prev) => [...prev, ...booked]);
+
+        // Mở modal thành công
+        const successMsg =
+          response.data.message || "Slots booked successfully!";
+        setSuccessMessage(successMsg);
+        setIsSuccessModalOpen(true);
+
+        setSubmissionStatus(successMsg);
+        setSelectedDates({});
+        setErrorMessage(null);
+      } else {
+        throw new Error(`Unexpected status: ${response.status}`);
+      }
     } catch (error) {
       let errorMsg = "An error occurred while booking.";
       if (error.response) {
-        // Hiển thị modal cho mọi lỗi từ API
+        // Hiển thị modal lỗi cho mọi lỗi từ API
         errorMsg =
           error.response.data?.message ||
           JSON.stringify(error.response.data) ||
@@ -249,6 +258,22 @@ const PsychologistScheduleRegistration = () => {
     setIsErrorModalOpen(false);
     setErrorDetails("");
   };
+
+  // Đóng modal thành công
+  const closeSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+    setSuccessMessage("");
+  };
+
+  // Tự động đóng modal thành công sau 5 giây
+  useEffect(() => {
+    if (isSuccessModalOpen) {
+      const timer = setTimeout(() => {
+        closeSuccessModal();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccessModalOpen]);
 
   return (
     <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
@@ -331,7 +356,7 @@ const PsychologistScheduleRegistration = () => {
                 );
               }}
             />
-            <p className="mt-2 text-sm text-gray-600 text-center">
+            <p className="mt-2 text-sm text-gray-700 text-center">
               Selected: {currentDate.toLocaleDateString("en-GB")}
             </p>
           </motion.div>
@@ -500,6 +525,41 @@ const PsychologistScheduleRegistration = () => {
                   whileTap={{ scale: 0.95 }}
                   onClick={closeErrorModal}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal thành công khi booking thành công */}
+      <AnimatePresence>
+        {isSuccessModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            >
+              <h2 className="text-2xl font-bold text-green-600 mb-4 text-center">
+                Success
+              </h2>
+              <p className="text-gray-700 text-center mb-4">{successMessage}</p>
+              <div className="flex justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={closeSuccessModal}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Close
                 </motion.button>
