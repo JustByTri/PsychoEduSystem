@@ -3,6 +3,8 @@ import { useState, useRef, useEffect, useContext } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { ToastContainer, toast } from "react-toastify";
 import AuthContext from "../../context/auth/AuthContext";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -132,7 +134,7 @@ const LoginModal = () => {
           className="block py-2 pr-4 pl-3 text-[#002B36] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
           onClick={() => setIsLoginModal(true)}
         >
-          Sign In
+          <FontAwesomeIcon icon={faUser} /> Sign In
         </a>
       ) : (
         <div className="relative cursor-pointer">
@@ -140,7 +142,7 @@ const LoginModal = () => {
             onClick={handleOpenMenu}
             className="block py-2 pr-4 pl-3 text-sm text-[#002B36] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
           >
-            User
+            <FontAwesomeIcon icon={faUser} /> <span>User</span>
           </div>
           {isOpenMenu && (
             <motion.div
