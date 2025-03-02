@@ -2,6 +2,21 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Bar } from "react-chartjs-2";
 import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Box,
+  CircularProgress,
+  Divider,
+} from "@mui/material";
+import { DateRange, School } from "@mui/icons-material";
+import { SurveyService } from "../../api/services/surveyService";
+import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
@@ -9,13 +24,16 @@ import {
   Title,
   Tooltip,
   Legend,
+  PointElement,
+  LineElement,
 } from "chart.js";
-import { SurveyService } from "../../api/services/surveyService";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   Title,
   Tooltip,
   Legend
@@ -48,10 +66,10 @@ const Dashboard = () => {
   }, [month, year]);
 
   const getBarColor = (points) => {
-    if (points <= 9) return "#2ECC71"; // Mild - Green
-    if (points <= 13) return "#F1C40F"; // Moderate - Yellow
-    if (points <= 20) return "#E67E22"; // Severe - Orange
-    return "#E74C3C"; // Extremely Severe - Red
+    if (points <= 9) return "#4CAF50";
+    if (points <= 13) return "#FFC107";
+    if (points <= 20) return "#FF9800";
+    return "#F44336";
   };
 
   const chartData = surveyResult
@@ -59,13 +77,26 @@ const Dashboard = () => {
         labels: surveyResult.dimensions.map((dim) => dim.dimensionName),
         datasets: [
           {
+            type: "bar",
             label: "DASS-21 Score",
             data: surveyResult.dimensions.map((dim) => dim.points),
             backgroundColor: surveyResult.dimensions.map((dim) =>
               getBarColor(dim.points)
             ),
-            borderColor: "#2C3E50",
+            borderRadius: 10,
+            order: 2,
+          },
+          {
+            type: "line",
+            label: "Average Score",
+            data: surveyResult.dimensions.map((dim) => dim.points),
+            borderColor: "#1976D2",
             borderWidth: 2,
+            fill: false,
+            tension: 0.4,
+            pointBackgroundColor: "#1976D2",
+            pointRadius: 5,
+            order: 1,
           },
         ],
       }
@@ -73,129 +104,161 @@ const Dashboard = () => {
 
   return (
     <motion.div
-      className="h-screen flex flex-col items-center justify-center bg-white text-gray-900 px-12"
+      className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-b from-white to-gray-100 px-6 py-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      <motion.h1
-        className="text-4xl font-extrabold mb-6 text-center"
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        📊 Mental Health Assessment -{" "}
-        <span className="text-blue-500">DASS-21 Results</span>
-      </motion.h1>
-
-      {/* Legend */}
+      {/* Title */}
       <motion.div
-        className="text-lg flex justify-center gap-8 bg-gray-100 px-6 py-3 rounded-lg shadow-md mb-6"
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <span className="text-green-600 text-xl">🟢 Mild: 0-9</span>
-        <span className="text-yellow-500 text-xl">🟡 Moderate: 10-13</span>
-        <span className="text-orange-500 text-xl">🟠 Severe: 14-20</span>
-        <span className="text-red-500 text-xl">🔴 Extremely Severe: 21+</span>
+        <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
+          📊 Mental Health Evaluation
+        </Typography>
       </motion.div>
 
-      {/* Month & Year Selector */}
-      <motion.div
-        className="flex gap-6 text-lg bg-gray-200 px-6 py-3 rounded-lg shadow-md"
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.6 }}
-      >
-        <select
-          value={month}
-          onChange={(e) => setMonth(Number(e.target.value))}
-          className="px-4 py-2 rounded-md border border-gray-300 shadow-sm cursor-pointer text-xl focus:ring-2 focus:ring-blue-500"
-        >
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-            <option key={m} value={m}>
-              Month {m}
-            </option>
-          ))}
-        </select>
+      {/* Month & Year Filters */}
+      <Grid container spacing={2} justifyContent="center" sx={{ mb: 4 }}>
+        <Grid item>
+          <FormControl
+            sx={{
+              minWidth: 160,
+              backgroundColor: "white",
+              boxShadow: 2,
+              borderRadius: 2,
+            }}
+          >
+            <InputLabel>Month</InputLabel>
+            <Select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <MenuItem key={m} value={m}>
+                  <DateRange sx={{ mr: 1, color: "#1976D2" }} /> Month {m}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
 
-        <select
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          className="px-4 py-2 rounded-md border border-gray-300 shadow-sm cursor-pointer text-xl focus:ring-2 focus:ring-blue-500"
-        >
-          {Array.from({ length: 5 }, (_, i) => currentYear - i).map((y) => (
-            <option key={y} value={y}>
-              Year {y}
-            </option>
-          ))}
-        </select>
-      </motion.div>
+        <Grid item>
+          <FormControl
+            sx={{
+              minWidth: 160,
+              backgroundColor: "white",
+              boxShadow: 2,
+              borderRadius: 2,
+            }}
+          >
+            <InputLabel>Year</InputLabel>
+            <Select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+            >
+              {Array.from({ length: 5 }, (_, i) => currentYear - i).map((y) => (
+                <MenuItem key={y} value={y}>
+                  <School sx={{ mr: 1, color: "#1976D2" }} /> Year {y}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
 
       {loading ? (
-        <motion.p
-          className="text-2xl mt-8 text-gray-500"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          Loading data...
-        </motion.p>
+        <CircularProgress size={60} sx={{ mt: 3, color: "#1976D2" }} />
       ) : surveyResult ? (
-        <motion.div
-          className="grid grid-cols-2 gap-8 items-center mt-8"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+        <Grid
+          container
+          spacing={4}
+          justifyContent="center"
+          sx={{ width: "100%", maxWidth: 1200 }}
         >
-          {/* Main Info */}
-
-          {/* Larger Chart */}
-          {chartData && (
+          {/* Bar Chart */}
+          <Grid item xs={12} md={8}>
             <motion.div
-              className="w-[700px] h-[450px]"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.05 }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.6 }}
             >
-              <Bar
-                data={chartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      max: 21,
-                      ticks: { font: { size: 16 } },
-                    },
-                    x: { ticks: { font: { size: 16 } } },
-                  },
-                  plugins: { legend: { display: false } },
-                }}
-              />
+              <Card sx={{ boxShadow: 6, borderRadius: 4, p: 3 }}>
+                <CardContent>
+                  {chartData && (
+                    <div className="w-full h-[400px]">
+                      <Bar
+                        data={chartData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          scales: { y: { beginAtZero: true, max: 21 } },
+                          plugins: { legend: { display: true } },
+                        }}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
-          )}
-          <motion.div className="text-2xl">
-            <p>
-              <strong className="text-blue-500">📌 Name:</strong>{" "}
-              {surveyResult.studentName}
-            </p>
-            <p>
-              <strong className="text-green-500">📅 Date:</strong>{" "}
-              {new Date(surveyResult.surveyDate).toLocaleDateString()}
-            </p>
-            <p className="text-3xl font-bold">
-              <strong className="text-yellow-500">⭐ Total Score:</strong>{" "}
-              {surveyResult.totalPoints}
-            </p>
-          </motion.div>
-        </motion.div>
+          </Grid>
+
+          {/* Legend */}
+          <Grid item xs={12} md={4}>
+            <motion.div
+              initial={{ x: 50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Card
+                sx={{
+                  boxShadow: 6,
+                  borderRadius: 4,
+                  p: 3,
+                  textAlign: "center",
+                  "&:hover": { transform: "scale(1.02)", transition: "0.3s" },
+                }}
+              >
+                <CardContent>
+                  <Typography variant="h6" fontWeight="bold">
+                    DASS-21 Levels
+                  </Typography>
+                  <Divider sx={{ my: 2 }} />
+                  {[
+                    { color: "#4CAF50", label: "Normal (0-9)" },
+                    { color: "#FFC107", label: "Moderate (10-13)" },
+                    { color: "#FF9800", label: "Severe (14-20)" },
+                    { color: "#F44336", label: "Extreme (21+)" },
+                  ].map(({ color, label }) => (
+                    <Box
+                      key={label}
+                      display="flex"
+                      alignItems="center"
+                      mt={2}
+                      gap={2}
+                    >
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          bgcolor: color,
+                          borderRadius: 1,
+                        }}
+                      />
+                      <Typography>{label}</Typography>
+                    </Box>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </Grid>
+        </Grid>
       ) : (
-        <motion.p className="text-2xl mt-8 text-gray-500">
-          No survey data found. Please select another period.
-        </motion.p>
+        <Typography variant="h6" color="gray" sx={{ mt: 3 }}>
+          No data available. Please select another period.
+        </Typography>
       )}
     </motion.div>
   );
