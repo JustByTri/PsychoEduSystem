@@ -19,5 +19,6 @@ namespace BLL.Interface
         Task<ResponseDTO> RetrieveUserClassInfoAsync(Guid studentId);
         Task<ResponseDTO> GetAvailableSlotsAsync(Guid userId, DateOnly date);
         Task<ResponseDTO> GetPsychologistsAsync();
+        Task<ResponseDTO> GetUserProfile(Guid userId);
     }
 }
