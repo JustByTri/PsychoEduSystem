@@ -12,11 +12,12 @@ export const DateTimeSelection = () => {
   const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày được chọn từ lịch
   const [slots, setSlots] = useState([]); // Tất cả các slot cứng từ 1 đến 8
   const [availableSlots, setAvailableSlots] = useState([]); // Slots có sẵn từ API
-  const [appointmentType, setAppointmentType] = useState("online"); // Mặc định online
+  const [appointmentType, setAppointmentType] = useState(null); // Không đặt mặc định, chỉ đặt khi click
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false); // State cho modal lỗi
   const [errorMessage, setErrorMessage] = useState(""); // Thông báo lỗi cho modal
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // State để kiểm soát hiệu ứng ban đầu
 
   // Dữ liệu cứng cho các slot (1-8 tương ứng với thời gian)
   useEffect(() => {
@@ -31,6 +32,9 @@ export const DateTimeSelection = () => {
       { id: 8, time: "16:00" },
     ];
     setSlots(slotTimes);
+    // Tắt hiệu ứng sau khi load lần đầu
+    const timer = setTimeout(() => setIsInitialLoad(false), 500); // Đợi hiệu ứng hoàn tất (0.5s)
+    return () => clearTimeout(timer); // Dọn dẹp timer
   }, []);
 
   const fetchAvailableSlots = async (date, consultantId) => {
@@ -119,7 +123,7 @@ export const DateTimeSelection = () => {
       }
     } catch (error) {
       setAvailableSlots([]);
-      setErrorMessage("No available slots on this date due to an error.");
+      setErrorMessage("No available slots on this date.");
       setIsErrorModalOpen(true);
     } finally {
       setIsLoading(false);
@@ -133,7 +137,12 @@ export const DateTimeSelection = () => {
       return; // Không cho chọn ngày đã qua
     }
     setSelectedDate(date);
-    updateBookingData({ date: moment(date).format("YYYY-MM-DD") }); // Cập nhật date vào bookingData
+    updateBookingData({
+      date: moment(date).format("YYYY-MM-DD"), // Cập nhật date
+      time: null, // Reset time khi chọn ngày mới
+      slotId: null, // Reset slotId khi chọn ngày mới
+      appointmentType: null, // Reset appointmentType khi chọn ngày mới
+    });
     if (bookingData.consultantId) {
       fetchAvailableSlots(date, bookingData.consultantId); // Fetch slots khi chọn ngày
     }
@@ -150,7 +159,7 @@ export const DateTimeSelection = () => {
   };
 
   const handleSelectAppointmentType = (type) => {
-    setAppointmentType(type);
+    setAppointmentType(type); // Chỉ đặt appointmentType khi user click
     updateBookingData({ appointmentType: type }); // Lưu loại appointment vào bookingData
   };
 
@@ -180,15 +189,15 @@ export const DateTimeSelection = () => {
       </h2>
 
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={isInitialLoad ? { opacity: 0, y: -20 } : false} // Chỉ áp dụng hiệu ứng ban đầu
+        animate={isInitialLoad ? { opacity: 1, y: 0 } : {}} // Chỉ animate khi load lần đầu
         transition={{ duration: 0.5 }}
         className="space-y-6"
       >
-        {/* Lịch lớn với hiệu ứng motion, ngày được chọn nổi bật */}
+        {/* Lịch lớn với màu xanh lá */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={isInitialLoad ? { opacity: 0, scale: 0.8 } : false}
+          animate={isInitialLoad ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.1 }}
           className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mx-auto max-w-6xl"
         >
@@ -208,34 +217,19 @@ export const DateTimeSelection = () => {
               if (date < today)
                 return "bg-gray-200 cursor-not-allowed opacity-50";
               if (moment(date).isSame(selectedDate, "day"))
-                return "bg-teal-100 border-2 border-teal-500 rounded";
-              return "hover:bg-teal-100 transition-all duration-200 rounded";
+                return "bg-green-100 border-2 border-green-500 rounded"; // Thay đổi thành màu xanh lá
+              return "hover:bg-green-100 transition-all duration-200 rounded"; // Thay đổi hover thành màu xanh lá
             }}
             showNeighboringMonth={false}
             prevLabel={<span className="text-gray-800 font-bold">{"<"}</span>}
             nextLabel={<span className="text-gray-800 font-bold">{">"}</span>}
-            tileContent={({ date }) => {
-              // Chỉ render tileContent khi có availableSlots và ngày khớp
-              const dateKey = moment(date).format("YYYY-MM-DD");
-              if (
-                availableSlots.length > 0 &&
-                moment(date).isSame(selectedDate, "day")
-              ) {
-                return (
-                  <div className="text-[10px] text-center mt-[2px]">
-                    <span className="text-blue-600">A</span>
-                  </div>
-                );
-              }
-              return null; // Không render gì nếu chưa có dữ liệu hoặc ngày không khớp
-            }}
           />
         </motion.div>
 
         {/* Danh sách slots luôn hiển thị */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={isInitialLoad ? { opacity: 0, scale: 0.8 } : false}
+          animate={isInitialLoad ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
         >
@@ -246,15 +240,16 @@ export const DateTimeSelection = () => {
             {slots.map((slot, index) => (
               <motion.div
                 key={slot.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={isInitialLoad ? { opacity: 0, scale: 0.8 } : false}
+                animate={isInitialLoad ? { opacity: 1, scale: 1 } : {}}
                 transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
                 className={`p-4 border rounded-md cursor-pointer transition-colors
                   ${
-                    bookingData.time === slot.time
-                      ? "border-blue-500 bg-blue-50"
+                    bookingData.time === slot.time &&
+                    availableSlots.includes(slot.id)
+                      ? "border-green-500 bg-green-50"
                       : availableSlots.includes(slot.id)
-                      ? "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                      ? "border-gray-200 hover:border-green-300 hover:bg-green-50"
                       : "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
                   }`}
                 onClick={() =>
@@ -269,10 +264,10 @@ export const DateTimeSelection = () => {
           </div>
         </motion.div>
 
-        {/* Lựa chọn loại appointment luôn hiển thị */}
+        {/* Lựa chọn loại appointment luôn hiển thị (không auto chọn) */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={isInitialLoad ? { opacity: 0, scale: 0.8 } : false}
+          animate={isInitialLoad ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.5 }}
           className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
         >
@@ -281,8 +276,8 @@ export const DateTimeSelection = () => {
           </h3>
           <div className="space-y-3">
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={isInitialLoad ? { opacity: 0, scale: 0.8 } : false}
+              animate={isInitialLoad ? { opacity: 1, scale: 1 } : {}}
               transition={{ duration: 0.3 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -297,8 +292,8 @@ export const DateTimeSelection = () => {
               <p className="text-center font-medium text-gray-800">Online</p>
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={isInitialLoad ? { opacity: 0, scale: 0.8 } : false}
+              animate={isInitialLoad ? { opacity: 1, scale: 1 } : {}}
               transition={{ duration: 0.3, delay: 0.1 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

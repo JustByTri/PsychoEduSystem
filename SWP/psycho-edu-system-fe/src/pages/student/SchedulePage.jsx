@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { Calendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
-import "react-big-calendar/lib/css/react-big-calendar.css";
+import { Calendar } from "react-calendar"; // Sử dụng react-calendar
+import "react-calendar/dist/Calendar.css";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-const localizer = momentLocalizer(moment);
+import moment from "moment";
 
 const SchedulePage = () => {
   const [bookings, setBookings] = useState([]);
@@ -17,6 +15,8 @@ const SchedulePage = () => {
   const [error, setError] = useState(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Modal xác nhận hủy
   const [selectedEventToCancel, setSelectedEventToCancel] = useState(null); // Sự kiện cần hủy
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // State để kiểm soát hiệu ứng ban đầu
+  const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày được chọn từ lịch
 
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
@@ -108,6 +108,9 @@ const SchedulePage = () => {
         setError(error.message || "Failed to fetch appointments");
       } finally {
         setIsLoading(false);
+        // Tắt hiệu ứng sau khi load lần đầu
+        const timer = setTimeout(() => setIsInitialLoad(false), 500); // Đợi hiệu ứng hoàn tất (0.5s)
+        return () => clearTimeout(timer); // Dọn dẹp timer
       }
     };
 
@@ -228,82 +231,132 @@ const SchedulePage = () => {
   if (error)
     return <div className="text-center text-red-600">Error: {error}</div>;
 
+  // Lọc bookings theo ngày đã chọn
+  const filteredBookings = bookings.filter((booking) =>
+    moment(booking.start).isSame(selectedDate, "day")
+  );
+
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8">
+    <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
       <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={isInitialLoad ? { opacity: 0, y: -20 } : false}
+        animate={isInitialLoad ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.5 }}
-        className="text-3xl font-bold text-gray-900 mb-6 text-center"
+        className="text-3xl font-bold text-gray-900 mb-8 text-center"
       >
         Your Schedule
       </motion.h1>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mx-auto max-w-6xl"
-      >
-        <Calendar
-          localizer={localizer}
-          events={bookings}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 800, width: "100%", minHeight: 600 }} // Tăng chiều cao, thêm minHeight
-          defaultView="month"
-          views={["month", "week"]}
-          onSelectEvent={handleSelectEvent}
-          eventPropGetter={(event) => ({
-            style: {
-              backgroundColor:
-                event.details.meetingType === "online"
-                  ? "#3B82F6"
-                  : "#10B981",
-              color: "white",
-              borderRadius: "0.5rem",
-              border: "none",
-              padding: "0.75rem 1.25rem", // Tăng padding để sự kiện không bị khuất
-              fontSize: "1.1rem", // Tăng kích thước chữ
-              lineHeight: "1.5", // Điều chỉnh line-height
-              whiteSpace: "normal", // Đảm bảo văn bản không bị cắt
-              minHeight: "40px", // Đặt chiều cao tối thiểu
-              textAlign: "center",
-              cursor: "pointer",
-              overflow: "hidden", // Ngăn tràn nội dung
-            },
-          })}
-          slotPropGetter={(slotInfo) => ({
-            style: {
-              minHeight: "60px", // Tăng chiều cao slot để tránh chồng chéo
-              padding: "5px",
-            },
-          })}
-          components={{
-            event: (props) => (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="rbc-event-content"
-                style={props.style}
-              >
-                {props.title}
-              </motion.div>
-            ),
-            toolbar: (toolbarProps) => (
-              <div className="rbc-toolbar flex justify-center items-center p-4 bg-gray-100 rounded-t-lg">
-                <span className="text-lg font-semibold text-gray-800">
-                  {toolbarProps.label}
-                </span>
+
+      {/* Container chính căn giữa */}
+      {bookings.length === 0 ? (
+        <p className="text-gray-500 text-center">
+          No appointments found for this month.
+        </p>
+      ) : (
+        <div className="max-w-md mx-auto flex flex-col items-center gap-6">
+          {/* Lịch nhỏ gọn, căn giữa */}
+          <motion.div
+            initial={isInitialLoad ? { opacity: 0, scale: 0.95 } : false}
+            animate={isInitialLoad ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md flex flex-col items-center"
+          >
+            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
+              Pick a Date
+            </h2>
+            <Calendar
+              onChange={setSelectedDate} // Chọn ngày
+              value={selectedDate}
+              minDate={new Date()}
+              navigationLabel={({ date }) =>
+                `${date.toLocaleString("default", {
+                  month: "long",
+                })} ${date.getFullYear()}`
+              }
+              className="border-none rounded-lg shadow-sm w-full text-[#002B36] mx-auto"
+              tileClassName={({ date }) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (date < today)
+                  return "bg-gray-200 cursor-not-allowed opacity-50";
+                if (moment(date).isSame(selectedDate, "day"))
+                  return "bg-green-100 border-2 border-green-500 rounded";
+                return "hover:bg-green-100 transition-all duration-200 rounded";
+              }}
+              showNeighboringMonth={false}
+              prevLabel={
+                <span className="text-[#002B36] font-bold">{"<"}</span>
+              }
+              nextLabel={
+                <span className="text-[#002B36] font-bold">{">"}</span>
+              }
+              tileContent={({ date }) => {
+                const dateKey = moment(date).format("YYYY-MM-DD");
+                const hasAppointment = bookings.some(
+                  (b) => b.details?.date === dateKey && !b.details?.isCancelled
+                );
+                return hasAppointment ? (
+                  <div className="text-[10px] text-center mt-[2px]">
+                    <span className="text-[#10B981]">Appt</span>
+                  </div>
+                ) : null; // Chỉ hiển thị "Appt" nếu có appointment
+              }}
+            />
+            <p className="mt-2 text-sm text-gray-600 text-center">
+              Selected: {selectedDate.toLocaleDateString("en-GB")}
+            </p>
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              <span className="text-[#10B981]">Appt</span>: Has Appointment
+            </div>
+          </motion.div>
+
+          {/* Danh sách slot */}
+          <motion.div
+            initial={isInitialLoad ? { opacity: 0, scale: 0.95 } : false}
+            animate={isInitialLoad ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
+          >
+            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
+              Appointments for {selectedDate.toLocaleDateString("en-GB")}
+            </h2>
+            {filteredBookings.length === 0 ? (
+              <p className="text-gray-500 italic text-sm text-center">
+                No appointments for this date.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {filteredBookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    onClick={() => handleSelectEvent(booking)}
+                    className={`p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-all duration-200 text-sm ${
+                      booking.details.isBooked
+                        ? booking.details.isCancelled
+                          ? "bg-red-50"
+                          : "bg-green-50"
+                        : "bg-green-50" // Loại bỏ "Available", chỉ hiển thị booked/cancelled
+                    }`}
+                  >
+                    <span className="font-medium text-[#002B36]">
+                      {getTimeFromSlotId(booking.details.slotId)}
+                    </span>
+                    <span className="ml-2 text-gray-600">
+                      {booking.details.isBooked
+                        ? booking.details.isCancelled
+                          ? "(Cancelled)"
+                          : "(Booked)"
+                        : "(Not Join Yet)"}{" "}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ),
-          }}
-          onNavigate={(newDate) => {
-            setSelectedDate(newDate);
-            setSelectedEvent(null); // Reset sự kiện khi chuyển tháng/tuần
-          }}
-        />
-      </motion.div>
+            )}
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal chi tiết sự kiện */}
       {selectedEvent && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
