@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using BLL.Interface;
@@ -242,6 +243,37 @@ namespace BLL.Service
                 if (!list.Any()) return new ResponseDTO("No data available", 200, true, string.Empty);
 
                 return new ResponseDTO("Retrieve psychologists successfully", 200, true, list);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetUserProfile(Guid userId)
+        {
+            try
+            {
+                var user = await _unitOfWork.User.GetByIdAsync(userId);
+
+                if (user == null) return new ResponseDTO("User not found", 400, false, string.Empty);
+
+                CultureInfo cultureInfo = new CultureInfo("vi-VN");
+
+
+                var profile = new UserProfileDTO
+                {
+                    FirstName = user.FirstName ?? "",
+                    LastName = user.LastName ?? "",
+                    FullName = user.FullName ?? "",
+                    BirthDay = user.BirthDay.ToString("d", cultureInfo),
+                    Gender = user.Gender,
+                    Address = user.Address,
+                    Email = user.Email,
+                    Phone = user.Phone,
+                };
+
+                return new ResponseDTO("Get user profile successfully", 200, true, profile);
             }
             catch (Exception ex)
             {

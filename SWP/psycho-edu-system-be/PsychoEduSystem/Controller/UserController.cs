@@ -76,7 +76,27 @@ namespace PsychoEduSystem.Controller
             }
         }
 
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetUserProfile(Guid userId)
+        {
+            if (Guid.Empty == userId) return BadRequest("User ID is required.");
 
+            try
+            {
+                var response = await _userService.GetUserProfile(userId);
+
+                if (response.IsSuccess && response.Result != null)
+                {
+                    return Ok(response);
+                }
+
+                return NotFound(response.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while fetching user profile.", Error = ex.Message });
+            }
+        }
 
 
 
