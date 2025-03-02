@@ -3,11 +3,26 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SurveyService } from "../../../api/services/surveyService";
 import { ToastContainer, toast } from "react-toastify";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Box,
+} from "@mui/material";
+import { motion } from "framer-motion";
 const SurveyList = () => {
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
   const [formData, setFormData] = useState({
     description: "",
     target: "",
@@ -46,18 +61,26 @@ const SurveyList = () => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
   };
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      setFileName(file.name); // Set the file name
+      setFile(file);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!file) {
-      alert("Please select a file to upload.");
+      toast.info("Please select a file to upload.");
       return;
     }
 
@@ -70,6 +93,13 @@ const SurveyList = () => {
     const success = await SurveyService.importSurvey(data);
     if (success) {
       toast.success("Survey imported successfully!");
+      setFile(null);
+      setFileName("");
+      setFormData({
+        description: "",
+        target: "",
+        title: "",
+      });
       setIsModalOpen(false);
       fetchSurveys();
     } else {
@@ -211,85 +241,138 @@ const SurveyList = () => {
       )}
 
       {isModalOpen && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-md"
-          onClick={() => setIsModalOpen(false)} // Close when clicking outside
-        >
-          <div
-            className="relative bg-gradient-to-br from-white to-gray-100 p-8 rounded-2xl shadow-2xl transform transition-transform hover:scale-[1.02] w-full max-w-lg border border-gray-300"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        <div>
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            variant="contained"
+            color="primary"
           >
-            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-2 rounded-full shadow-md">
-              Import Survey
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 font-semibold">Title</label>
-                <input
-                  type="text"
+            Open Modal
+          </Button>
+
+          {/* Modal with MUI Dialog and Framer Motion */}
+          <Dialog
+            open={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            maxWidth="sm"
+            fullWidth
+            scroll="body"
+            PaperComponent={motion.div}
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.3 }}
+            sx={{
+              backdropFilter: "blur(5px)", // Add backdrop blur effect
+              backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+            }}
+          >
+            <DialogTitle
+              sx={{
+                backgroundColor: "#ffffff",
+                textAlign: "center",
+                fontWeight: "bold",
+                color: "#000",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "inline-block",
+                  padding: "10px",
+                  color: "blue",
+                }}
+              >
+                Survey Information
+              </Box>
+            </DialogTitle>
+
+            <DialogContent sx={{ backgroundColor: "#ffffff", padding: "20px" }}>
+              <form onSubmit={handleSubmit}>
+                {/* Title Input */}
+                <TextField
+                  label="Title"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
                   required
                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 font-semibold">
-                  Description
-                </label>
-                <input
-                  type="text"
+
+                {/* Description Input */}
+                <TextField
+                  label="Description"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
                   required
                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 font-semibold">Target</label>
-                <select
-                  name="target"
-                  value={formData.target}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition bg-white"
-                  required
+
+                {/* Target Selection */}
+                <FormControl fullWidth margin="normal" required>
+                  <InputLabel>Target</InputLabel>
+                  <Select
+                    label="Target"
+                    name="target"
+                    value={formData.target}
+                    onChange={handleChange}
+                  >
+                    <MenuItem value="">Select Target</MenuItem>
+                    <MenuItem value="Student">Student</MenuItem>
+                    <MenuItem value="Parent">Parent</MenuItem>
+                    <MenuItem value="Teacher">Teacher</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* File Upload */}
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  margin="normal"
+                  component="label"
+                  className="cursor-pointer py-3"
                 >
-                  <option value="" disabled>
-                    Select Target
-                  </option>
-                  <option value="Student">Student</option>
-                  <option value="Parent">Parent</option>
-                  <option value="Teacher">Teacher</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 font-semibold">
                   Upload File (xlsx)
-                </label>
-                <input
-                  type="file"
-                  accept=".xlsx"
-                  onChange={handleFileChange}
-                  className="w-full px-4 py-3 border rounded-lg shadow-sm bg-gray-50 focus:ring-2 focus:ring-blue-400 focus:outline-none transition cursor-pointer"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transform transition-all duration-200 hover:shadow-lg"
+                  <input
+                    type="file"
+                    accept=".xlsx"
+                    onChange={handleFileChange}
+                    hidden
+                  />
+                </Button>
+                {fileName && (
+                  <p className="mt-2 text-gray-700 font-semibold">
+                    Selected File: {fileName}
+                  </p>
+                )}
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  sx={{ marginTop: "20px" }}
+                >
+                  Import Survey
+                </Button>
+              </form>
+            </DialogContent>
+
+            <DialogActions sx={{ backgroundColor: "#ffffff" }}>
+              <Button
+                onClick={() => setIsModalOpen(false)}
+                color="secondary"
+                fullWidth
               >
-                Import Survey
-              </button>
-            </form>
-            <button
-              className="mt-6 w-full px-4 py-3 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transform transition-all duration-200 hover:shadow-lg"
-              onClick={() => setIsModalOpen(false)}
-            >
-              Close
-            </button>
-          </div>
+                Close
+              </Button>
+            </DialogActions>
+          </Dialog>
         </div>
       )}
     </div>

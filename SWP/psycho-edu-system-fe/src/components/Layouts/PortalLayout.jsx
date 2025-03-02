@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Header from "../Header/Header";
 import SideBar from "../Navigation/SideBar";
-
+import Breadcrumbs from "../Breadcrumbs ";
 const PortalLayout = () => {
   return (
     <div className="flex flex-col h-screen">
@@ -17,6 +17,7 @@ const PortalLayout = () => {
 
         {/* Outlet (Scrollable Content) */}
         <div className="flex-1 overflow-auto p-4">
+          <Breadcrumbs />
           <Outlet />
         </div>
       </div>

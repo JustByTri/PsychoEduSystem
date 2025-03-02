@@ -14,12 +14,10 @@ import SurveyResultPage from "./pages/student/SurveyResultPage";
 import BookingPage from "./pages/booking/BookingPage";
 import SchedulePage from "./pages/student/SchedulePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
 import CreateParentAccount from "./pages/admin/CreateParentAccount"; // Thêm import
 import RequireSurvey from "./components/Survey/RequireSurvey";
-import ParentLayout from "./components/Layouts/ParentLayout";
 import ParentDashboard from "./pages/parent/Dashboard";
 import ParentSurveyPage from "./pages/parent/SurveyPage";
 import TeacherDashboard from "./pages/teacher/Dashboard";
@@ -27,10 +25,8 @@ import ClassDetails from "./pages/teacher/ClassDetails";
 import SurveyResult from "./pages/survey/SurveyResult";
 import ParentSchedulePage from "./pages/parent/ParentSchedulePage";
 import { BookingProvider } from "./context/BookingContext";
-import PsychologistLayout from "./components/Layouts/PsychologistLayout";
 import PsychologistDashboard from "./pages/couselor/PsychologistDashboard";
 import PsychologistSchedulePage from "./pages/couselor/PsychologistSchedulePage";
-import TeacherLayout from "./components/Layouts/TeacherLayout";
 import PsychologistScheduleRegistration from "./pages/couselor/PsychologistScheduleRegistration";
 import TeacherScheduleRegistration from "./pages/teacher/TeacherScheduleRegistration";
 import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
@@ -63,7 +59,7 @@ function App() {
 
           {/* Parent Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Parent"]} />}>
-            <Route path="parent/" element={<ParentLayout />}>
+            <Route path="parent/" element={<PortalLayout />}>
               <Route index element={<ParentDashboard />} />
               <Route
                 path="schedule"
@@ -80,7 +76,7 @@ function App() {
 
           {/* Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
-            <Route path="admin/" element={<AdminPortalLayout />}>
+            <Route path="admin/" element={<PortalLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="survey" element={<SurveyList />} />
               <Route path="survey/:id" element={<SurveyDetail />} />
@@ -98,7 +94,7 @@ function App() {
 
           {/* Psychologist Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Psychologist"]} />}>
-            <Route path="/psychologist/" element={<PsychologistLayout />}>
+            <Route path="/psychologist/" element={<PortalLayout />}>
               <Route index element={<PsychologistDashboard />} />
               <Route path="schedule" element={<PsychologistSchedulePage />} />
               <Route
@@ -110,7 +106,7 @@ function App() {
 
           {/* Teacher Routes */}
           <Route element={<ProtectedRoute allowedRoles={["Teacher"]} />}>
-            <Route path="teacher/" element={<TeacherLayout />}>
+            <Route path="teacher/" element={<PortalLayout />}>
               <Route index element={<TeacherDashboard />} />
               <Route path="class/:classId" element={<ClassDetails />} />
               <Route path="slot" element={<TeacherScheduleRegistration />} />

@@ -1,54 +1,81 @@
 import { Link, useLocation } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { Breadcrumbs, Typography, Tooltip } from "@mui/material";
+import { ChevronRight } from "@mui/icons-material";
 
-const Breadcrumbs = () => {
+const BreadcrumbsComponent = () => {
   const location = useLocation();
   const pathnames = location.pathname.split("/").filter((x) => x);
 
   return (
-    <nav className="p-4 text-gray-600 text-sm">
-      <div className="flex items-center space-x-2">
+    <nav className="p-4 text-sm">
+      <Breadcrumbs
+        separator={<ChevronRight fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{
+          color: "text.primary",
+          display: "flex",
+          flexWrap: "wrap",
+          maxWidth: "100%",
+          overflow: "hidden",
+        }}
+      >
         {/* Home Link */}
         <Link
           to="/"
-          className="text-blue-600 font-medium hover:underline transition duration-300"
+          style={{
+            color: "#1976d2",
+            fontWeight: "500",
+            textDecoration: "none",
+            cursor: "pointer",
+            padding: "0 8px",
+          }}
         >
           Home
         </Link>
 
         {/* Breadcrumb Items */}
-        {pathnames.length > 0 && (
-          <>
-            <ChevronRight size={16} className="text-gray-400" />
-            {pathnames.map((name, index) => {
-              const routeTo = `/${pathnames.slice(0, index + 1).join("/")}`;
-              const isLast = index === pathnames.length - 1;
+        {pathnames.length > 0 &&
+          pathnames.map((name, index) => {
+            const routeTo = `/${pathnames.slice(0, index + 1).join("/")}`;
+            const isLast = index === pathnames.length - 1;
 
-              return (
-                <div key={name} className="flex items-center space-x-2">
-                  {isLast ? (
-                    <span className="text-white font-semibold capitalize">
-                      {name.replace("-", " ")}
-                    </span>
-                  ) : (
-                    <Link
-                      to={routeTo}
-                      className="text-blue-600 font-medium hover:underline transition duration-300 capitalize"
+            return (
+              <div key={name}>
+                {isLast ? (
+                  <Tooltip title={name.replace("-", " ")} arrow>
+                    <Typography
+                      sx={{
+                        color: "text.secondary",
+                        fontWeight: "600",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
                     >
                       {name.replace("-", " ")}
-                    </Link>
-                  )}
-                  {index < pathnames.length - 1 && (
-                    <ChevronRight size={16} className="text-gray-400" />
-                  )}
-                </div>
-              );
-            })}
-          </>
-        )}
-      </div>
+                    </Typography>
+                  </Tooltip>
+                ) : (
+                  <Link
+                    to={routeTo}
+                    style={{
+                      color: "#1976d2",
+                      fontWeight: "500",
+                      textDecoration: "none",
+                      padding: "0 8px",
+                    }}
+                  >
+                    <Tooltip title={name.replace("-", " ")} arrow>
+                      <span>{name.replace("-", " ")}</span>
+                    </Tooltip>
+                  </Link>
+                )}
+              </div>
+            );
+          })}
+      </Breadcrumbs>
     </nav>
   );
 };
 
-export default Breadcrumbs;
+export default BreadcrumbsComponent;
