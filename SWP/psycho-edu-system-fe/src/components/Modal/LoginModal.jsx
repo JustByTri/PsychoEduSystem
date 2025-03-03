@@ -8,6 +8,7 @@ import { faUser } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+
 const LoginModal = () => {
   const { isAuthenticated, user, login, logout, loginGoogle } =
     useContext(AuthContext) || {};
@@ -65,11 +66,11 @@ const LoginModal = () => {
       text: "You will be logged out from your account.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, Log Out",
-      cancelButtonText: "No, Stay Logged In",
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
       confirmButtonColor: "#E63946",
       cancelButtonColor: "#3085d6",
-      reverseButtons: true,
+      reverseButtons: false, // Đặt Yes bên trái, No bên phải
       focusCancel: true,
       customClass: {
         popup: "rounded-xl shadow-md",
