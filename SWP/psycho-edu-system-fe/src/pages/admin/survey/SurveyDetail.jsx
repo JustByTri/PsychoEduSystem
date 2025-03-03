@@ -2,6 +2,20 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { SurveyService } from "../../../api/services/surveyService";
 import { ToastContainer, toast } from "react-toastify";
+import {
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+} from "@mui/material";
+import { Close, NavigateBefore, NavigateNext } from "@mui/icons-material";
+import { motion } from "framer-motion";
 const SurveyDetail = () => {
   const { id } = useParams();
   const [survey, setSurvey] = useState(null);
@@ -88,134 +102,127 @@ const SurveyDetail = () => {
   );
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-gradient-to-br from-white to-gray-100 shadow-2xl rounded-xl">
+    <>
       <ToastContainer />
-      <h1 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">
-        📝 Edit Survey
-      </h1>
-      <h2 className="text-2xl font-semibold text-gray-700 mb-4 text-center">
-        Questions
-      </h2>
-      <div className="space-y-4">
-        {currentQuestions.map((question) => (
-          <div
-            key={question.questionId}
-            className="border border-gray-300 bg-white shadow-lg rounded-lg p-4 hover:shadow-2xl"
-          >
-            <p
-              className="cursor-pointer text-blue-600 hover:underline font-medium"
-              onClick={() => showAnswers(question)}
-            >
-              {question.content}
-            </p>
-          </div>
-        ))}
-      </div>
 
-      {/* Pagination Controls */}
-      <div className="flex justify-center mt-6 space-x-4">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 shadow-lg"
-        >
-          ◀ Previous
-        </button>
-        <span className="text-lg font-semibold text-gray-700">
-          {currentPage} / {totalPages}
-        </span>
-        <button
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 shadow-lg"
-        >
-          Next ▶
-        </button>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex justify-center p-6"
+      >
+        <Card className="max-w-2xl w-full shadow-xl rounded-xl">
+          <CardContent>
+            <Typography variant="h4" className="font-extrabold text-center">
+              📝 Edit Survey
+            </Typography>
+            <Typography variant="h5" className="font-semibold text-center mt-4">
+              Questions
+            </Typography>
 
-      {/* Save Survey Button */}
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={handleSaveSurvey}
-          className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md transition-all"
-        >
-          Save Survey
-        </button>
-      </div>
+            <div className="mt-4 space-y-4">
+              {currentQuestions.map((question) => (
+                <motion.div
+                  key={question.questionId}
+                  whileHover={{ scale: 1.02 }}
+                  className="border border-gray-300 bg-white shadow-lg rounded-lg p-4 cursor-pointer"
+                  onClick={() => showAnswers(question)}
+                >
+                  <Typography color="primary" className="font-medium">
+                    {question.content}
+                  </Typography>
+                </motion.div>
+              ))}
+            </div>
 
-      {/* Answer Modal */}
-      {isModalOpen && selectedQuestion && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 p-4"
-          onClick={() => setIsModalOpen(false)}
-        >
-          <div
-            className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg border relative overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
+            <div className="flex justify-center mt-6 space-x-4">
+              <Button
+                variant="contained"
+                startIcon={<NavigateBefore />}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Typography className="text-lg font-semibold">
+                {currentPage} / {totalPages}
+              </Typography>
+              <Button
+                variant="contained"
+                endIcon={<NavigateNext />}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+
+            <div className="flex justify-center mt-6">
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleSaveSurvey}
+              >
+                Save Survey
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+          <DialogTitle>
+            Edit Question
+            <IconButton
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 w-8 h-8 flex items-center justify-center text-sm"
+              style={{ position: "absolute", right: 10, top: 10 }}
             >
-              ✖
-            </button>
+              <Close />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              fullWidth
+              value={editedQuestionContent}
+              onChange={(e) => setEditedQuestionContent(e.target.value)}
+              variant="outlined"
+              margin="dense"
+            />
 
-            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
-              <input
-                type="text"
-                value={editedQuestionContent}
-                onChange={(e) => setEditedQuestionContent(e.target.value)}
-                className="border px-3 py-2 rounded-lg w-full shadow-inner"
-              />
-            </h2>
-
-            <ul className="space-y-3 max-h-80 overflow-y-auto">
-              {selectedQuestion.answers.length > 0 ? (
+            <div className="mt-4 max-h-80 overflow-y-auto space-y-2">
+              {selectedQuestion?.answers.length > 0 ? (
                 selectedQuestion.answers.map((answer) => (
-                  <li
+                  <TextField
                     key={answer.answerId}
-                    className="border border-gray-300 bg-gray-100 p-3 rounded-lg flex items-center justify-between"
-                  >
-                    <input
-                      type="text"
-                      value={editedAnswers[answer.answerId]}
-                      onChange={(e) =>
-                        handleEditAnswer(answer.answerId, e.target.value)
-                      }
-                      className="border px-3 py-2 rounded-lg flex-grow shadow-inner"
-                    />
-                    <span className="text-gray-700 font-semibold ml-4">
-                      {answer.point} pts
-                    </span>
-                  </li>
+                    fullWidth
+                    value={editedAnswers[answer.answerId]}
+                    onChange={(e) =>
+                      handleEditAnswer(answer.answerId, e.target.value)
+                    }
+                    variant="outlined"
+                    margin="dense"
+                    label={`Points: ${answer.point}`}
+                  />
                 ))
               ) : (
-                <p className="text-gray-500 text-center">
+                <Typography className="text-gray-500 text-center mt-4">
                   No answers available.
-                </p>
+                </Typography>
               )}
-            </ul>
-
-            <div className="mt-6 flex justify-between">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveAnswers}
-                className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                Save Answers
-              </button>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsModalOpen(false)} color="secondary">
+              Cancel
+            </Button>
+            <Button color="primary" variant="contained" onClick={saveAnswers}>
+              Save Answers
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </motion.div>
+    </>
   );
 };
 
