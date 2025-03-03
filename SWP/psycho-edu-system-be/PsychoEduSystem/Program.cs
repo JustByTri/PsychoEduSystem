@@ -98,10 +98,9 @@ namespace MIndAid
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.WithOrigins("http://127.0.0.1:5500") 
+                    policy.AllowAnyOrigin()
                           .AllowAnyMethod()
-                          .AllowAnyHeader()
-                          .AllowCredentials(); 
+                          .AllowAnyHeader();
                 });
             });
             builder.Services.AddAuthorization(options =>
