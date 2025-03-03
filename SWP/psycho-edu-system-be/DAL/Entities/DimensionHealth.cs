@@ -1,10 +1,8 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DAL.Entities
 {
-    [Table("Categories")] // <- Định nghĩa bảng thật trong DB
     public class DimensionHealth
     {
         [Key]
