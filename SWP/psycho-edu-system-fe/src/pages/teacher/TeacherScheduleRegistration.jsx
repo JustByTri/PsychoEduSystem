@@ -50,8 +50,10 @@ const TeacherScheduleRegistration = () => {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false); // State cho modal lỗi
-  const [errorDetails, setErrorDetails] = useState(""); // Chi tiết lỗi cho modal
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorDetails, setErrorDetails] = useState("");
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); // State cho modal thành công
+  const [successMessage, setSuccessMessage] = useState(""); // Thông điệp thành công
 
   useEffect(() => {
     const dateKey = currentDate
@@ -201,30 +203,35 @@ const TeacherScheduleRegistration = () => {
         }
       );
 
-      const booked = response.data.bookings.map((booking) => ({
-        bookingId: booking.bookingId,
-        slotId: booking.slotId,
-        date: booking.date.split("T")[0],
-        time: timeSlots.find((slot) => slot.id === booking.slotId)?.time,
-      }));
-      setBookedSlots((prev) => [...prev, ...booked]);
+      console.log("API Response:", response.data); // Thêm log để kiểm tra dữ liệu
 
-      toast.success(response.data.message, {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      setSubmissionStatus(response.data.message);
-      setSelectedDates({});
-      setErrorMessage(null);
+      // Kiểm tra và mở modal thành công
+      if (response.status === 200 && response.data) {
+        const booked = response.data.bookings
+          ? response.data.bookings.map((booking) => ({
+              bookingId: booking.bookingId,
+              slotId: booking.slotId,
+              date: booking.date.split("T")[0],
+              time: timeSlots.find((slot) => slot.id === booking.slotId)?.time,
+            }))
+          : [];
+        setBookedSlots((prev) => [...prev, ...booked]);
+
+        const successMsg =
+          response.data.message || "Slots booked successfully!";
+        setSuccessMessage(successMsg);
+        setIsSuccessModalOpen(true);
+
+        setSubmissionStatus(successMsg);
+        setSelectedDates({});
+        setErrorMessage(null);
+      } else {
+        throw new Error("Unexpected response format");
+      }
     } catch (error) {
       let errorMsg = "An error occurred while booking.";
       if (error.response) {
         if (error.response.status === 400) {
-          // Hiển thị modal khi gặp lỗi 400
           const errorDetail =
             error.response.data?.message ||
             JSON.stringify(error.response.data) ||
@@ -256,6 +263,12 @@ const TeacherScheduleRegistration = () => {
       }
       setSubmissionStatus(errorMsg);
     }
+  };
+
+  // Đóng modal thành công
+  const closeSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+    setSuccessMessage("");
   };
 
   // Đóng modal lỗi
@@ -308,7 +321,7 @@ const TeacherScheduleRegistration = () => {
                   })
                   .split("/")
                   .reverse()
-                  .join("-"); // YYYY-MM-DD
+                  .join("-");
                 const dayBookings = bookedSlots.filter(
                   (b) => b.date === dateKey && b.slotId
                 ).length;
@@ -332,7 +345,7 @@ const TeacherScheduleRegistration = () => {
                   })
                   .split("/")
                   .reverse()
-                  .join("-"); // YYYY-MM-DD
+                  .join("-");
                 const dayBookings = bookedSlots.filter(
                   (b) => b.date === dateKey
                 ).length;
@@ -488,6 +501,41 @@ const TeacherScheduleRegistration = () => {
         </div>
       </div>
 
+      {/* Modal thành công */}
+      <AnimatePresence>
+        {isSuccessModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            >
+              <h2 className="text-2xl font-bold text-green-600 mb-4 text-center">
+                Success
+              </h2>
+              <p className="text-gray-700 text-center mb-4">{successMessage}</p>
+              <div className="flex justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={closeSuccessModal}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Modal lỗi khi gặp 400 Bad Request */}
       <AnimatePresence>
         {isErrorModalOpen && (
@@ -505,7 +553,7 @@ const TeacherScheduleRegistration = () => {
               className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
             >
               <h2 className="text-2xl font-bold text-red-600 mb-4 text-center">
-                Notificaiton
+                Notification
               </h2>
               <p className="text-gray-700 text-center mb-4">{errorDetails}</p>
               <div className="flex justify-center">

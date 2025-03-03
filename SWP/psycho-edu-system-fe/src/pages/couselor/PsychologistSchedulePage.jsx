@@ -1,42 +1,73 @@
 import { useState, useEffect } from "react";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  Box,
+  Modal,
+  Fade,
+  Button,
+  Typography,
+  Card,
+  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import axios from "axios";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
-// Thiết lập localizer cho react-big-calendar (dù không sử dụng trong file này, cần cho tương lai)
-const localizer = null; // Placeholder
+import moment from "moment";
+import { Clock } from "lucide-react";
+import { motion } from "framer-motion";
 
 const PsychologistSchedulePage = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [bookings, setBookings] = useState([]);
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [noAppointments, setNoAppointments] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false); // Modal xác nhận hủy
-  const [selectedSlotToCancel, setSelectedSlotToCancel] = useState(null); // Slot cần hủy
+  const [error, setError] = useState(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [selectedEventToCancel, setSelectedEventToCancel] = useState(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(moment());
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const authData = getAuthDataFromLocalStorage();
   const teacherId = authData?.userId;
 
-  const startDate = new Date(
-    selectedDate.getFullYear(),
-    selectedDate.getMonth(),
-    1
-  );
-  const endDate = new Date(
-    selectedDate.getFullYear(),
-    selectedDate.getMonth() + 1,
-    0
-  );
+  const daysInMonth = () => {
+    const days = [];
+    const startOfMonth = moment(currentMonth).startOf("month");
+    const endOfMonth = moment(currentMonth).endOf("month");
+    const totalDays = endOfMonth.date();
+    const firstDayOfWeek = startOfMonth.day();
+    const totalSlots = 42;
+
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    for (let i = 0; i < totalDays; i++) {
+      const date = startOfMonth.clone().add(i, "days").toDate();
+      days.push({
+        day: moment(date).date(),
+        weekday: ["S", "M", "T", "W", "T", "F", "S"][moment(date).day()],
+        fullDate: date,
+      });
+    }
+
+    const remainingSlots = totalSlots - days.length;
+    for (let i = 0; i < remainingSlots; i++) {
+      days.push(null);
+    }
+
+    return days;
+  };
+
+  const days = daysInMonth();
+  const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
 
   useEffect(() => {
     if (!teacherId) {
-      setNoAppointments(true);
+      setError("User ID not found in token. Please log in again.");
       setIsLoading(false);
       return;
     }
@@ -45,10 +76,10 @@ const PsychologistSchedulePage = () => {
       try {
         setIsLoading(true);
 
+        const selectedDateStr = moment(selectedDate).format("YYYY-MM-DD");
+
         const appointmentResponse = await axios.get(
-          `https://localhost:7192/api/appointments/consultants/${teacherId}/appointments?startDate=${
-            startDate.toISOString().split("T")[0]
-          }&endDate=${endDate.toISOString().split("T")[0]}`,
+          `https://localhost:7192/api/appointments/consultants/${teacherId}/appointments?selectedDate=${selectedDateStr}`,
           {
             headers: {
               Authorization: `Bearer ${authData.accessToken}`,
@@ -64,103 +95,69 @@ const PsychologistSchedulePage = () => {
         ) {
           appointments = appointmentResponse.data.result || [];
           if (!Array.isArray(appointments)) {
-            setNoAppointments(true);
+            setBookings([]);
             setIsLoading(false);
             return;
           }
         } else {
-          setNoAppointments(true);
           setBookings([]);
           setIsLoading(false);
           return;
         }
 
         if (appointments.length === 0) {
-          const scheduleResponse = await axios.get(
-            `https://localhost:7192/api/Schedule/user-schedules/${teacherId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${authData.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          const schedules = scheduleResponse.data || [];
-          if (!Array.isArray(schedules)) {
-            setNoAppointments(true);
-            setIsLoading(false);
-            return;
-          }
-
-          const unbookedSlots = schedules.map((slot) => ({
-            slotId: slot.slotId,
-            date: slot.date.split("T")[0],
-            time: slot.slotName,
-            isBooked: false,
-            scheduleId: slot.scheduleId,
-          }));
-          setBookings(unbookedSlots);
-          setAvailableSlots(unbookedSlots);
+          setBookings([]);
         } else {
-          const scheduleResponse = await axios.get(
-            `https://localhost:7192/api/Schedule/user-schedules/${teacherId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${authData.accessToken}`,
-                "Content-Type": "application/json",
+          const bookedSlots = appointments.map((appointment) => {
+            const startDateTime = moment(
+              `${moment(appointment.date, "DD/MM/YYYY").format(
+                "YYYY-MM-DD"
+              )} ${getTimeFromSlotId(appointment.slotId)}`,
+              "YYYY-MM-DD HH:mm"
+            ).toDate();
+            const endDateTime = moment(startDateTime)
+              .add(60, "minutes")
+              .toDate();
+
+            let title = `Meeting with ${
+              appointment.appointmentFor || "Student"
+            }`;
+            return {
+              id: appointment.appointmentId,
+              title: `${title} - ${
+                appointment.isOnline ? "Online" : "Offline"
+              }`,
+              start: startDateTime,
+              end: endDateTime,
+              details: {
+                studentId: appointment.appointmentFor || "Unknown",
+                consultantId: appointment.meetingWith || teacherId,
+                bookedBy: appointment.bookedBy || "Unknown",
+                appointmentFor: appointment.appointmentFor || "Unknown",
+                date: moment(appointment.date, "DD/MM/YYYY").format(
+                  "YYYY-MM-DD"
+                ),
+                slotId: appointment.slotId,
+                meetingType: appointment.isOnline ? "online" : "offline",
+                isCompleted: appointment.isCompleted,
+                isCancelled: appointment.isCancelled,
               },
-            }
-          );
-
-          const schedules = scheduleResponse.data || [];
-          if (!Array.isArray(schedules)) {
-            setNoAppointments(true);
-            setIsLoading(false);
-            return;
-          }
-
-          const allSlots = schedules.map((slot) => ({
-            slotId: slot.slotId,
-            date: slot.date.split("T")[0],
-            time: slot.slotName,
-            isBooked: false,
-            scheduleId: slot.scheduleId,
-          }));
-
-          const bookedSlots = appointments.map((appointment) => ({
-            slotId: appointment.slotId,
-            date: appointment.date,
-            time: getTimeFromSlotId(appointment.slotId),
-            isBooked: true,
-            appointmentId: appointment.appointmentId,
-            isOnline: appointment.isOnline,
-            isCompleted: appointment.isCompleted,
-            isCancelled: appointment.isCancelled,
-            studentId: appointment.studentId || "Unknown",
-          }));
-
-          const unbookedSlots = allSlots.filter(
-            (slot) =>
-              !bookedSlots.some(
-                (booked) =>
-                  booked.slotId === slot.slotId && booked.date === slot.date
-              )
-          );
-
-          setBookings([...bookedSlots, ...unbookedSlots]);
-          setAvailableSlots(allSlots);
+            };
+          });
+          setBookings(bookedSlots);
         }
       } catch (error) {
-        setNoAppointments(true);
         setBookings([]);
+        console.error("Fetch error:", error);
       } finally {
         setIsLoading(false);
+        const timer = setTimeout(() => setIsInitialLoad(false), 500);
+        return () => clearTimeout(timer);
       }
     };
 
     fetchData();
-  }, [teacherId, authData?.accessToken]);
+  }, [teacherId, authData?.accessToken, selectedDate]);
 
   const getTimeFromSlotId = (slotId) => {
     const times = [
@@ -177,30 +174,22 @@ const PsychologistSchedulePage = () => {
     return times[slotId - 1] || "Unknown";
   };
 
-  const filteredBookings = bookings.filter(
-    (booking) =>
-      booking.date ===
-      selectedDate
-        .toLocaleDateString("en-GB", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        })
-        .split("/")
-        .reverse()
-        .join("-") // YYYY-MM-DD
-  );
+  const handleSelectEvent = (event) => {
+    setSelectedEvent(event);
+  };
 
-  const closeModal = () => setSelectedSlot(null);
+  const closeModal = () => {
+    setSelectedEvent(null);
+  };
 
   const handleCancelAppointment = async () => {
-    if (!selectedSlot) return;
+    if (!selectedEvent) return;
 
     try {
       setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
       const response = await axios.get(
-        `https://localhost:7192/api/appointments/${selectedSlot.appointmentId}/cancellation`,
+        `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -209,346 +198,719 @@ const PsychologistSchedulePage = () => {
         }
       );
 
-      console.log("API Response for cancellation:", response.data);
-
       if (response.data.isSuccess && response.data.statusCode === 200) {
         setBookings((prevBookings) =>
           prevBookings.map((booking) =>
-            booking.appointmentId === selectedSlot.appointmentId
-              ? { ...booking, isCancelled: true }
+            booking.id === selectedEvent.id
+              ? {
+                  ...booking,
+                  details: { ...booking.details, isCancelled: true },
+                }
               : booking
           )
         );
-        setSelectedSlot((prevSlot) => ({
-          ...prevSlot,
-          isCancelled: true,
+        setSelectedEvent((prevEvent) => ({
+          ...prevEvent,
+          details: { ...prevEvent.details, isCancelled: true },
         }));
-        toast.success("Appointment cancelled successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
+        setIsConfirmModalOpen(false);
+        setSelectedEventToCancel(null);
+        setSelectedEvent(null);
+        setIsSuccessModalOpen(true);
       } else {
         throw new Error(
           response.data.message || "Failed to cancel appointment"
         );
       }
     } catch (error) {
-      console.error("Error cancelling appointment:", error);
-      toast.error(
-        `Failed to cancel appointment: ${
-          error.response?.data?.message || error.message
-        }`,
-        {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        }
-      );
+      console.error("Failed to cancel appointment:", error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Mở modal xác nhận hủy
-  const openConfirmModal = (slot) => {
-    setSelectedSlotToCancel(slot);
+  const openConfirmModal = (event) => {
+    setSelectedEventToCancel(event);
     setIsConfirmModalOpen(true);
   };
 
-  // Xác nhận hủy
   const confirmCancelAppointment = async () => {
-    if (!selectedSlotToCancel) return;
+    if (!selectedEventToCancel) return;
     await handleCancelAppointment();
-    setIsConfirmModalOpen(false);
-    setSelectedSlotToCancel(null);
   };
 
-  // Đóng modal xác nhận
   const closeConfirmModal = () => {
     setIsConfirmModalOpen(false);
-    setSelectedSlotToCancel(null);
+    setSelectedEventToCancel(null);
+  };
+
+  const closeSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
+  const handleDayClick = (fullDate) => {
+    setSelectedDate(fullDate);
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(moment(currentMonth).add(1, "month"));
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(moment(currentMonth).subtract(1, "month"));
   };
 
   if (isLoading)
     return <div className="text-center text-gray-600">Loading schedule...</div>;
+  if (error)
+    return <div className="text-center text-red-600">Error: {error}</div>;
+
+  const filteredBookings = bookings.filter((booking) =>
+    moment(booking.start).isSame(selectedDate, "day")
+  );
+
+  const getStatus = (event) => {
+    const { isCompleted, isCancelled } = event.details;
+    if (isCancelled) return "Cancelled";
+    if (isCompleted) return "Completed";
+    return "Booked";
+  };
 
   return (
-    <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-      <motion.h1
+    <div className="p-4 sm:p-6 bg-white min-h-screen text-black flex flex-col max-w-7xl mx-auto">
+      <motion.div
+        className="bg-orange-100 p-4 sm:p-6 rounded-2xl shadow-xl"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-3xl font-bold text-gray-900 mb-8 text-center"
       >
-        Your Psychology Schedule
-      </motion.h1>
-
-      {/* Container chính căn giữa */}
-      {noAppointments ? (
-        <p className="text-gray-500 text-center">
-          No appointments found for this month.
-        </p>
-      ) : (
-        <div className="max-w-md mx-auto flex flex-col items-center gap-6">
-          {/* Lịch nhỏ gọn, căn giữa */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md flex flex-col items-center"
-          >
-            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
-              Pick a Date
-            </h2>
-            <Calendar
-              onChange={setSelectedDate}
-              value={selectedDate}
-              minDate={new Date()}
-              navigationLabel={({ date }) =>
-                `${date.toLocaleString("default", {
-                  month: "long",
-                })} ${date.getFullYear()}`
-              }
-              className="border-none rounded-lg shadow-sm w-full text-[#002B36] mx-auto"
-              tileClassName="hover:bg-[#65CCB8]/20 transition-all duration-200"
-              showNeighboringMonth={false}
-              prevLabel={
-                <span className="text-[#002B36] font-bold">{"<"}</span>
-              }
-              nextLabel={
-                <span className="text-[#002B36] font-bold">{">"}</span>
-              }
-              tileContent={({ date }) => {
-                const dateKey = date
-                  .toLocaleDateString("en-GB", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                  })
-                  .split("/")
-                  .reverse()
-                  .join("-"); // YYYY-MM-DD
-                const dayBookings = bookings.filter(
-                  (b) => b.date === dateKey && b.isBooked && !b.isCancelled
-                ).length;
-                const dayAvailables = bookings.filter(
-                  (b) => b.date === dateKey && !b.isBooked
-                ).length;
-                return (
-                  <div className="text-[10px] text-center mt-[2px]">
-                    {dayBookings > 0 && (
-                      <span className="text-blue-600">{dayBookings} B</span>
-                    )}
-                    {dayAvailables > 0 && (
-                      <span className="text-green-600 ml-1">
-                        {dayAvailables} A
-                      </span>
-                    )}
-                  </div>
-                );
-              }}
-            />
-            <p className="mt-2 text-sm text-gray-600 text-center">
-              Selected: {selectedDate.toLocaleDateString("en-GB")}
-            </p>
-            <div className="mt-2 text-xs text-gray-500 text-center">
-              <span className="text-blue-600">B</span>: Booked |{" "}
-              <span className="text-green-600">A</span>: Available
-            </div>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 gap-2 sm:gap-0">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              onClick={handlePrevMonth}
+              className="bg-blue-500 text-white hover:bg-blue-600 rounded-lg w-full sm:w-auto"
+              sx={{ fontFamily: "Roboto, sans-serif", textTransform: "none" }}
+            >
+              Back
+            </Button>
           </motion.div>
-
-          {/* Danh sách slot nằm bên dưới, căn giữa */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: { xs: "1.5rem", sm: "2rem" },
+              fontWeight: "bold",
+              color: "#333",
+              fontFamily: "Roboto, sans-serif",
+              textAlign: "center",
+            }}
           >
-            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
-              Slots for {selectedDate.toLocaleDateString("en-GB")}
-            </h2>
-            {filteredBookings.length === 0 ? (
-              <p className="text-gray-500 italic text-sm text-center">
-                No slots available or booked for this date.
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {filteredBookings.map((slot) => (
-                  <div
-                    key={slot.appointmentId || slot.scheduleId}
-                    onClick={() => setSelectedSlot(slot)}
-                    className={`p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-all duration-200 text-sm ${
-                      slot.isBooked
-                        ? slot.isCancelled
-                          ? "bg-red-50"
-                          : "bg-blue-50"
-                        : "bg-green-50"
-                    }`}
-                  >
-                    <span className="font-medium text-[#002B36]">
-                      {slot.time}
-                    </span>
-                    <span className="ml-2 text-gray-600">
-                      {slot.isBooked
-                        ? slot.isCancelled
-                          ? "(Cancelled)"
-                          : "(Booked)"
-                        : "(Available)"}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            {moment(currentMonth).format("MMMM YYYY")}
+          </Typography>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              onClick={handleNextMonth}
+              className="bg-blue-500 text-white hover:bg-blue-600 rounded-lg w-full sm:w-auto"
+              sx={{ fontFamily: "Roboto, sans-serif", textTransform: "none" }}
+            >
+              Next
+            </Button>
+          </motion.div>
+        </div>
+        <div className="flex justify-center mb-4">
+          <Typography
+            variant="body1"
+            sx={{
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              color: "#555",
+              fontFamily: "Roboto, sans-serif",
+            }}
+          >
+            Selected: {moment(selectedDate).format("dddd, DD/MM/YYYY")}
+          </Typography>
+        </div>
+        <div className="max-w-full mx-auto">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            {weekdays.map((weekday, index) => (
+              <Typography
+                key={`weekday-${index}`}
+                sx={{
+                  fontFamily: "Roboto, sans-serif",
+                  fontWeight: 600,
+                  color: "#666",
+                  textAlign: "center",
+                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                }}
+              >
+                {weekday}
+              </Typography>
+            ))}
+          </div>
+          <motion.div
+            className="grid grid-cols-7 gap-1 sm:gap-2 mt-2"
+            key={currentMonth.format("YYYY-MM")}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {days.map((d, index) =>
+              d ? (
+                <motion.button
+                  key={`${currentMonth.format("YYYY-MM")}-${index}`}
+                  className={`w-full h-10 sm:h-12 flex flex-col items-center justify-center rounded-xl font-medium transition-all duration-300 ease-in-out shadow-md ${
+                    moment(d.fullDate).isSame(selectedDate, "day")
+                      ? "bg-green-500 text-white scale-105"
+                      : "bg-blue-200 hover:bg-blue-300"
+                  }`}
+                  onClick={() => handleDayClick(d.fullDate)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <span className="text-xs sm:text-sm font-bold">{d.day}</span>
+                </motion.button>
+              ) : (
+                <div
+                  key={`${currentMonth.format("YYYY-MM")}-${index}`}
+                  className="w-full h-10 sm:h-12 bg-gray-100 rounded-xl"
+                />
+              )
             )}
           </motion.div>
+          {filteredBookings.length === 0 && (
+            <Typography
+              variant="h6"
+              sx={{
+                color: "#666",
+                textAlign: "center",
+                mt: 4,
+                mb: 2,
+                fontFamily: "Roboto, sans-serif",
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                fontWeight: 500,
+              }}
+            >
+              No appointments for this date
+            </Typography>
+          )}
+        </div>
+      </motion.div>
+
+      {filteredBookings.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
+          {filteredBookings.map((booking) => (
+            <motion.div
+              key={booking.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              <Card className="rounded-xl shadow-lg bg-orange-50 border border-orange-200">
+                <CardContent className="p-4 sm:p-5">
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: "Roboto, sans-serif",
+                      fontWeight: 600,
+                      color: "#333",
+                      mb: 1,
+                      fontSize: { xs: "1rem", sm: "1.125rem" },
+                    }}
+                  >
+                    {booking.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontFamily: "Roboto, sans-serif",
+                      color: "#666",
+                      mb: 1,
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                    }}
+                  >
+                    Student ID: {booking.details.studentId}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontFamily: "Roboto, sans-serif",
+                      color: "#444",
+                      display: "flex",
+                      alignItems: "center",
+                      mb: 2,
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                    }}
+                  >
+                    <Clock className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-gray-700" />
+                    {moment(booking.start).format("HH:mm")} -{" "}
+                    {moment(booking.end).format("HH:mm")}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: "Roboto, sans-serif",
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        fontWeight: 500,
+                        color: "#fff",
+                        backgroundColor: "#4caf50",
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: "12px",
+                      }}
+                    >
+                      {booking.details.meetingType}
+                    </Typography>
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontFamily: "Roboto, sans-serif",
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        fontWeight: 500,
+                        color:
+                          getStatus(booking) === "Cancelled"
+                            ? "#ef5350"
+                            : getStatus(booking) === "Completed"
+                            ? "#4caf50"
+                            : "#1e88e5",
+                      }}
+                    >
+                      {getStatus(booking)}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      mt: 3,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                          fontFamily: "Roboto, sans-serif",
+                          color: "#1e88e5",
+                          borderColor: "#1e88e5",
+                          "&:hover": {
+                            backgroundColor: "#e3f2fd",
+                            borderColor: "#1e88e5",
+                          },
+                          textTransform: "none",
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        }}
+                        disabled={booking.details.isCancelled}
+                      >
+                        Join
+                      </Button>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                          fontFamily: "Roboto, sans-serif",
+                          color: "#f57c00",
+                          borderColor: "#f57c00",
+                          "&:hover": {
+                            backgroundColor: "#fff3e0",
+                            borderColor: "#f57c00",
+                          },
+                          textTransform: "none",
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        }}
+                        onClick={() => handleSelectEvent(booking)}
+                      >
+                        Details
+                      </Button>
+                    </motion.div>
+                  </Box>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
       )}
 
-      {/* Modal chi tiết slot */}
-      {selectedSlot && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      {selectedEvent && (
+        <Dialog
+          open={Boolean(selectedEvent)}
+          onClose={closeModal}
+          sx={{
+            "& .MuiDialog-paper": {
+              borderRadius: "16px",
+              p: 2,
+              width: { xs: "90%", sm: "400px" },
+              maxWidth: "400px",
+            },
+          }}
         >
-          <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -20, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+          <DialogTitle
+            sx={{
+              fontFamily: "Roboto, sans-serif",
+              fontWeight: 600,
+              color: "#333",
+              fontSize: { xs: "1.125rem", sm: "1.25rem" },
+            }}
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Slot Details
-            </h2>
-            <div className="space-y-4">
-              <p>
-                <span className="font-medium">Date:</span>{" "}
-                {new Date(selectedSlot.date).toLocaleDateString("en-GB")}
-              </p>
-              <p>
-                <span className="font-medium">Time:</span> {selectedSlot.time}
-              </p>
-              {selectedSlot.isBooked ? (
-                <>
-                  <p>
-                    <span className="font-medium">Status:</span>{" "}
-                    {selectedSlot.isCancelled ? "Cancelled" : "Booked"}
-                  </p>
-                  {!selectedSlot.isCancelled && (
-                    <>
-                      <p>
-                        <span className="font-medium">Student ID:</span>{" "}
-                        {selectedSlot.studentId}
-                      </p>
-                      <p>
-                        <span className="font-medium">Meeting Type:</span>{" "}
-                        {selectedSlot.isOnline ? "Online" : "In-person"}
-                      </p>
-                      <p>
-                        <span className="font-medium">Completed:</span>{" "}
-                        {selectedSlot.isCompleted ? "Yes" : "No"}
-                      </p>
-                    </>
-                  )}
-                  <p>
-                    <span className="font-medium">Appointment ID:</span>{" "}
-                    {selectedSlot.appointmentId}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p>
-                    <span className="font-medium">Status:</span> Available (Not
-                    Booked)
-                  </p>
-                  <p>
-                    <span className="font-medium">Schedule ID:</span>{" "}
-                    {selectedSlot.scheduleId}
-                  </p>
-                </>
-              )}
-            </div>
-            <div className="mt-6 flex justify-end space-x-4">
-              <motion.button
+            {selectedEvent.title}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    fontWeight: 500,
+                    color: "#555",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  Date:
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    color: "#777",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  {moment(selectedEvent.details.date).format("YYYY-MM-DD")}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    fontWeight: 500,
+                    color: "#555",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  Time:
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    color: "#777",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  {getTimeFromSlotId(selectedEvent.details.slotId)}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    fontWeight: 500,
+                    color: "#555",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  Student ID:
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    color: "#777",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  {selectedEvent.details.studentId}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    fontWeight: 500,
+                    color: "#555",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  Consultant:
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    color: "#777",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  {selectedEvent.details.consultantId}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    fontWeight: 500,
+                    color: "#555",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  Booked By:
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    color: "#777",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  {selectedEvent.details.bookedBy || "Unknown"}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    fontWeight: 500,
+                    color: "#555",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  Meeting Type:
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    color: "#777",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  {selectedEvent.details.meetingType}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    fontWeight: 500,
+                    color: "#555",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  Status:
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    color: "#777",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                  }}
+                >
+                  {getStatus(selectedEvent)}
+                </Typography>
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: "space-between", p: 2 }}>
+            {!selectedEvent.details.isCancelled && (
+              <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  onClick={() => openConfirmModal(selectedEvent)}
+                  variant="contained"
+                  color="error"
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    textTransform: "none",
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                  }}
+                >
+                  Cancel Appointment
+                </Button>
+              </motion.div>
+            )}
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
                 onClick={closeModal}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                variant="outlined"
+                sx={{
+                  fontFamily: "Roboto, sans-serif",
+                  color: "#555",
+                  borderColor: "#555",
+                  "&:hover": {
+                    borderColor: "#333",
+                    backgroundColor: "#f5f5f5",
+                  },
+                  textTransform: "none",
+                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                }}
               >
                 Close
-              </motion.button>
-              {selectedSlot.isBooked && !selectedSlot.isCancelled && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => openConfirmModal(selectedSlot)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Cancel
-                </motion.button>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
+              </Button>
+            </motion.div>
+          </DialogActions>
+        </Dialog>
       )}
 
-      {/* Modal xác nhận hủy */}
-      <AnimatePresence>
-        {isConfirmModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      <Modal
+        open={isConfirmModalOpen}
+        onClose={closeConfirmModal}
+        closeAfterTransition
+        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <Fade in={isConfirmModalOpen}>
+          <Box
+            sx={{
+              backgroundColor: "#fff",
+              borderRadius: 2,
+              p: 3,
+              width: "100%",
+              maxWidth: { xs: "90%", sm: "500px" },
+              boxShadow: 3,
+            }}
           >
-            <motion.div
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: "Roboto, sans-serif",
+                fontWeight: "bold",
+                mb: 2,
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+              }}
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
-                Confirm Cancellation
-              </h2>
-              <p className="text-gray-700 text-center mb-4">
-                Are you sure you want to cancel this appointment on{" "}
-                {new Date(selectedSlotToCancel?.date).toLocaleDateString(
-                  "en-GB"
-                )}{" "}
-                at {selectedSlotToCancel?.time}?
-              </p>
-              <div className="flex justify-center space-x-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+              Confirm Cancellation
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                fontFamily: "Roboto, sans-serif",
+                color: "#666",
+                mb: 2,
+                fontSize: { xs: "0.875rem", sm: "1rem" },
+              }}
+            >
+              Are you sure you want to cancel this appointment on{" "}
+              {moment(selectedEventToCancel?.details?.date).format(
+                "YYYY-MM-DD"
+              )}{" "}
+              at {getTimeFromSlotId(selectedEventToCancel?.details?.slotId)}?
+            </Typography>
+            <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
                   onClick={confirmCancelAppointment}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  variant="contained"
+                  color="error"
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    textTransform: "none",
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                  }}
                 >
                   Yes
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
                   onClick={closeConfirmModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  variant="outlined"
+                  sx={{
+                    fontFamily: "Roboto, sans-serif",
+                    color: "#666",
+                    borderColor: "#666",
+                    "&:hover": {
+                      borderColor: "#444",
+                      backgroundColor: "#f5f5f5",
+                    },
+                    textTransform: "none",
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                  }}
                 >
                   No
-                </motion.button>
-              </div>
+                </Button>
+              </motion.div>
+            </Box>
+          </Box>
+        </Fade>
+      </Modal>
+
+      <Modal
+        open={isSuccessModalOpen}
+        onClose={closeSuccessModal}
+        closeAfterTransition
+        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <Fade in={isSuccessModalOpen}>
+          <Box
+            sx={{
+              backgroundColor: "#fff",
+              borderRadius: "16px",
+              p: 4,
+              width: "100%",
+              maxWidth: { xs: "90%", sm: "400px" },
+              boxShadow: "0 10px 20px rgba(0, 0, 0, 0.2)",
+              border: "2px solid #4caf50",
+              textAlign: "center",
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: "Roboto, sans-serif",
+                fontWeight: "bold",
+                color: "#4caf50",
+                mb: 2,
+                fontSize: { xs: "1.5rem", sm: "1.75rem" },
+              }}
+            >
+              Success!
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                fontFamily: "Roboto, sans-serif",
+                color: "#333",
+                mb: 3,
+                fontSize: { xs: "1rem", sm: "1.125rem" },
+              }}
+            >
+              Appointment cancelled successfully.
+            </Typography>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={closeSuccessModal}
+                variant="contained"
+                sx={{
+                  fontFamily: "Roboto, sans-serif",
+                  backgroundColor: "#4caf50",
+                  "&:hover": { backgroundColor: "#388e3c" },
+                  textTransform: "none",
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
+                  px: 4,
+                  py: 1,
+                }}
+              >
+                Close
+              </Button>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </Box>
+        </Fade>
+      </Modal>
     </div>
   );
 };

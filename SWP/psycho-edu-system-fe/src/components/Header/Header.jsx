@@ -38,11 +38,11 @@ const Header = () => {
       text: "You will be logged out from your account.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, Log Out",
-      cancelButtonText: "No, Stay Logged In",
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
       confirmButtonColor: "#D32F2F",
       cancelButtonColor: "#1976D2",
-      reverseButtons: true,
+      reverseButtons: false,
       focusCancel: true,
     }).then((result) => {
       if (result.isConfirmed) {
