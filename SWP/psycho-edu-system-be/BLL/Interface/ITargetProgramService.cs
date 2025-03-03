@@ -10,13 +10,10 @@ namespace BLL.Interface
 {
     public interface ITargetProgramService
     {
-        Task<List<object>> GetAllProgramsAsync();
+        Task<List<TargetProgramDTO>> GetAllProgramsAsync();
         Task<TargetProgramDTO?> GetProgramByIdAsync(Guid programId);
         Task<TargetProgramDTO> AddProgramAsync(TargetProgramDTO dto);
         Task UpdateProgramAsync(TargetProgramDTO dto);
-        Task DeleteProgramAsync(Guid? programId);
+        Task DeleteProgramAsync(Guid programId);
     }
-
-
-
 }
