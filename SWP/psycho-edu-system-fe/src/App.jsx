@@ -26,7 +26,7 @@ import AdminPortalLayout from "./components/Layouts/AdminPortalLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
-import ProgramList from "./pages/admin/program/ProgramList";
+import ProgramList from "./pages/admin/program/ProgramLists"; // Fixed case sensitivity
 //CounselorPage
 //TeacherPage
 

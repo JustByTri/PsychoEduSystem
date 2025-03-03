@@ -6,13 +6,13 @@ const TargetProgramEdit = ({
   counselors, 
   dimensions 
 }) => {
-  if (!isOpen) return null;
-
+  if (!isOpen || !program) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 p-8 rounded-xl w-full max-w-2xl">
         <h2 className="text-xl font-bold mb-6 text-white">Edit Program</h2>
         <form onSubmit={onSubmit} className="space-y-4">
+          <input type="hidden" name="programId" value={program.id} />
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block mb-1 text-white">Program Name</label>
@@ -59,36 +59,31 @@ const TargetProgramEdit = ({
               />
             </div>
             <div>
-              <label className="block mb-1 text-white">Counselor</label>
-              <select 
-                name="counselorId"
-                className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white" 
-                required
-                defaultValue={program.counselorId}
-              >
-                <option value="">Select Counselor</option>
-                {counselors.map(counselor => (
-                  <option key={counselor.id} value={counselor.id}>
-                    {counselor.name} - {counselor.specialization}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label className="block mb-1 text-white">Dimension</label>
-              <select 
-                name="dimensionId"
-                className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white" 
-                required
-                defaultValue={program.dimensionId}
-              >
-                <option value="">Select Dimension</option>
-                {dimensions.map(dimension => (
-                  <option key={dimension.id} value={dimension.id}>
-                    {dimension.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select 
+                  name="dimensionId"
+                  className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white appearance-none" 
+                  required
+                  defaultValue={program.dimensionId}
+                  style={{ 
+                    WebkitAppearance: "none",
+                    MozAppearance: "none" 
+                  }}
+                >
+                  <option value="" className="bg-gray-700 text-white">Select Dimension</option>
+                  {dimensions.map(dimension => (
+                    <option key={dimension.id} value={dimension.id} className="bg-gray-700 text-white">
+                      {dimension.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                  </svg>
+                </div>
+              </div>
             </div>
             <div className="col-span-2">
               <label className="block mb-1 text-white">Description</label>

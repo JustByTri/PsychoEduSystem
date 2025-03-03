@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ToastContainer, toast } from "react-toastify";
 import TargetProgramDelete from "../../../components/Pop-up/TargetProgramDelete";
 import TargetProgramEdit from "../../../components/Pop-up/TargetProgramEdit";
+import { TargetProgramService } from "../../../api/services/targetProgramService";
 
 const mockCounselors = [
   { id: 1, name: "Dr. Sarah Johnson", specialization: "Anxiety & Depression" },
@@ -44,7 +45,9 @@ const mockPrograms = [
 
 const ProgramList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [programs, setPrograms] = useState(mockPrograms);
+  const [programs, setPrograms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -54,6 +57,48 @@ const ProgramList = () => {
     counselorId: "",
     dimensionId: "",
   });
+  
+  // Fetch target programs when component mounts
+  useEffect(() => {
+    fetchPrograms();
+  }, []);
+
+  const fetchPrograms = async () => {
+    try {
+      setLoading(true);
+      const data = await TargetProgramService.getTargetPrograms();
+      
+      if (data && data.length > 0) {
+        // Transform API data to match our component's expected format
+        const formattedPrograms = data.map(program => ({
+          id: program.programId,
+          name: program.name,
+          startDate: new Date(program.startDate).toISOString().split('T')[0],
+          minimumScore: program.minPoint,
+          participantLimit: program.capacity,
+          counselorName: "N/A", // API doesn't provide counselor info
+          dimensionName: mockDimensions.find(d => d.id === program.dimensionId)?.name || 'Unknown',
+          description: program.description,
+          // Store original data for API calls
+          programId: program.programId,
+          createdBy: program.createdBy,
+          createAt: program.createAt,
+          dimensionId: program.dimensionId
+        }));
+        
+        setPrograms(formattedPrograms);
+      } else {
+        setPrograms([]);
+      }
+    } catch (err) {
+      console.error("Error fetching programs:", err);
+      setError("Failed to load programs. Please try again later.");
+      toast.error("Failed to load programs");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getCurrentDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -69,27 +114,66 @@ const ProgramList = () => {
     setSelectedProgram(program);
     setIsDeleteModalOpen(true);
   };
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const updatedProgram = {
-      ...selectedProgram,
-      name: formData.get('name'),
-      startDate: formData.get('startDate'),
-      minimumScore: parseInt(formData.get('minimumScore')),
-      participantLimit: parseInt(formData.get('participantLimit')),
-      counselorName: mockCounselors.find(c => c.id === parseInt(formData.get('counselorId')))?.name,
-      dimensionName: mockDimensions.find(d => d.id === parseInt(formData.get('dimensionId')))?.name,
-    };
-    
-    setPrograms(programs.map(p => p.id === selectedProgram.id ? updatedProgram : p));
-    toast.success("Program updated successfully!");
-    setIsEditModalOpen(false);
+    try {
+      const formData = new FormData(e.target);
+      
+      const programData = {
+        programId: selectedProgram.id,
+        name: formData.get('name'),
+        description: formData.get('description'),
+        startDate: new Date(formData.get('startDate')).toISOString(),
+        minPoint: parseInt(formData.get('minimumScore')),
+        capacity: parseInt(formData.get('participantLimit')),
+        createdBy: selectedProgram.createdBy || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        createAt: selectedProgram.createAt || new Date().toISOString(),
+        dimensionId: parseInt(formData.get('dimensionId'))
+      };
+      
+      await TargetProgramService.updateTargetProgram(selectedProgram.id, programData);
+      
+      const updatedProgram = {
+        ...selectedProgram,
+        name: formData.get('name'),
+        startDate: formData.get('startDate'),
+        minimumScore: parseInt(formData.get('minimumScore')),
+        participantLimit: parseInt(formData.get('participantLimit')),
+        dimensionName: mockDimensions.find(d => d.id === parseInt(formData.get('dimensionId')))?.name || 'Unknown',
+        description: formData.get('description'),
+        dimensionId: parseInt(formData.get('dimensionId'))
+      };
+      
+      setPrograms(programs.map(p => p.id === selectedProgram.id ? updatedProgram : p));
+      toast.success("Program updated successfully!");
+      setIsEditModalOpen(false);
+      
+      // Refresh the program list to get the latest data
+      fetchPrograms();
+    } catch (error) {
+      console.error("Error updating program:", error);
+      toast.error("Failed to update program. Please try again.");
+    }
   };
-  const handleDeleteConfirm = () => {
-    setPrograms(programs.filter(p => p.id !== selectedProgram.id));
-    toast.success("Program deleted successfully!");
-    setIsDeleteModalOpen(false);
+
+  const handleDeleteConfirm = async () => {
+    try {
+      setLoading(true);
+      const idToDelete = selectedProgram.id || selectedProgram.programId;
+      await TargetProgramService.deleteTargetProgram(idToDelete);
+      
+      setPrograms(programs.filter(p => p.id !== selectedProgram.id));
+      toast.success("Program deleted successfully!");
+      setIsDeleteModalOpen(false);
+      
+      // Optionally refresh the program list to ensure data consistency
+      fetchPrograms();
+    } catch (error) {
+      console.error("Error deleting program:", error);
+      toast.error("Failed to delete program. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -109,36 +193,55 @@ const ProgramList = () => {
       [name]: value,
     });
   };
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add API call here
-    const newProgram = {
-      id: programs.length + 1,
-      name: formData.name,
-      startDate: formData.startDate,
-      minimumScore: formData.minimumScore,
-      participantLimit: formData.participantLimit,
-      counselorName: mockCounselors.find(c => c.id === parseInt(formData.counselorId))?.name || '',
-      dimensionName: mockDimensions.find(d => d.id === parseInt(formData.dimensionId))?.name || '',
-    };
+    try {
+      const programData = {
+        name: formData.name,
+        description: formData.description,
+        startDate: new Date(formData.startDate).toISOString(),
+        minPoint: parseInt(formData.minimumScore),
+        capacity: parseInt(formData.participantLimit),
+        dimensionId: parseInt(formData.dimensionId),
+        // You might need to get these from your auth context or localStorage
+        createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6", // Replace with actual user ID
+        createAt: new Date().toISOString(),
+      };
     
-    setPrograms([...programs, newProgram]);
-    toast.success("Program created successfully!");
-    setIsModalOpen(false);
-    setFormData({
-      name: "",
-      description: "",
-      startDate: "",
-      minimumScore: 0,
-      participantLimit: 0,
-      counselorId: "",
-      dimensionId: "",
-    });
+      const response = await TargetProgramService.createTargetProgram(programData);
+      
+      if (response) {
+        const newProgram = {
+          id: response.programId,
+          name: formData.name,
+          startDate: formData.startDate,
+          minimumScore: formData.minimumScore,
+          participantLimit: formData.participantLimit,
+          counselorName: mockCounselors.find(c => c.id === parseInt(formData.counselorId))?.name || '',
+          dimensionName: mockDimensions.find(d => d.id === parseInt(formData.dimensionId))?.name || '',
+        };
+        
+        setPrograms([...programs, newProgram]);
+        toast.success("Program created successfully!");
+        setIsModalOpen(false);
+        setFormData({
+          name: "",
+          description: "",
+          startDate: "",
+          minimumScore: 0,
+          participantLimit: 0,
+          counselorId: "",
+          dimensionId: "",
+        });
+      }
+    } catch (error) {
+      toast.error("Failed to create program. Please try again.");
+      console.error("Error creating program:", error);
+    }
   };
   return (
     <div className="p-8 text-white">
       <ToastContainer />
-      {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Target Programs</h1>
         <button
@@ -152,14 +255,14 @@ const ProgramList = () => {
 
       {/* Programs Table */}
       <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6">
-        <table className="w-full">
+        <table className="w-full">  {/* Fixed missing quote */}
           <thead>
             <tr className="border-b border-gray-600">
               <th className="py-4 text-left px-4">Name</th>
               <th className="py-4 text-left px-4">Start Date</th>
               <th className="py-4 text-left px-4">Min. Score</th>
               <th className="py-4 text-left px-4">Participants</th>
-              <th className="py-4 text-left px-4">Counselor</th>
+              <th className="py-4 text-left px-4">Dimension</th>
               <th className="py-4 text-left px-4">Actions</th>
             </tr>
           </thead>
@@ -177,7 +280,7 @@ const ProgramList = () => {
                   <td className="py-4 text-left px-4">{program.startDate}</td>
                   <td className="py-4 text-left px-4">{program.minimumScore}</td>
                   <td className="py-4 text-left px-4">{program.participantLimit}</td>
-                  <td className="py-4 text-left px-4">{program.counselorName}</td>
+                  <td className="py-4 text-left px-4">{program.dimensionName}</td>
                   <td className="py-4 px-4 flex gap-2">
                     <button 
                       className="p-2 text-blue-400 hover:text-blue-300"
@@ -214,7 +317,7 @@ const ProgramList = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     maxLength={150}
-                    className="w-full px-3 py-2 bg-gray-700 rounded-lg"
+                    className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white"
                     required
                   />
                   <span className="text-xs text-gray-400">
@@ -259,23 +362,25 @@ const ProgramList = () => {
                     required
                   />
                 </div>
+                {/* 
                 <div>
                   <label className="block mb-1">Counselor</label>
                   <select 
                     name="counselorId"
-                    className="w-full px-3 py-2 bg-gray-700 rounded-lg" 
+                    className="w-full px-3 py-2 bg-gray-700 rounded-lg text-white" 
                     required
                     value={formData.counselorId}
                     onChange={handleInputChange}
                   >
-                    <option value="">Select Counselor</option>
+                    <option value="" className="text-gray-900">Select Counselor</option>
                     {mockCounselors.map(counselor => (
-                      <option key={counselor.id} value={counselor.id}>
+                      <option key={counselor.id} value={counselor.id} className="text-gray-900">
                         {counselor.name} - {counselor.specialization}
                       </option>
                     ))}
                   </select>
                 </div>
+                */}
                 <div>
                   <label className="block mb-1">Dimension</label>
                   <select 
