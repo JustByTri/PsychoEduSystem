@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { createContext, useEffect, useReducer, useState } from "react";
 import { LoginService } from "../../api/services/loginService";
+import DecodeJWT from "../../utils/decodeJwt";
 
 const AuthContext = createContext();
 
@@ -31,7 +32,10 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("user");
 
     if (storedUser) {
-      dispatch({ type: "LOGIN", payload: JSON.parse(storedUser) });
+      const parsedUser = JSON.parse(storedUser);
+      const decodedData = DecodeJWT(parsedUser.accessToken);
+      parsedUser.role = decodedData.role; // Extract role from token
+      dispatch({ type: "LOGIN", payload: parsedUser });
     }
 
     setLoading(false);
@@ -40,39 +44,41 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const data = await LoginService.login(email, password);
+      const decodedData = DecodeJWT(data.result.accessToken);
       const userData = {
         accessToken: data.result.accessToken,
-        role: data.result.role,
-        username: data.result.username,
+        role: decodedData.role, // Extract role from token
+        username: decodedData.username || data.result.username,
       };
-
       localStorage.setItem("user", JSON.stringify(userData));
       dispatch({ type: "LOGIN", payload: userData });
 
-      return userData.role;
+      return decodedData.role;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
     }
   };
+
   const loginGoogle = async (idToken) => {
     try {
       const data = await LoginService.loginWithGoogle(idToken);
+      const decodedData = DecodeJWT(data.result.accessToken);
       const userData = {
         accessToken: data.result.accessToken,
-        role: "Student",
-        username: data.result.username,
+        role: decodedData.role, // Extract role from token
+        username: decodedData.username || data.result.username,
       };
-
       localStorage.setItem("user", JSON.stringify(userData));
       dispatch({ type: "LOGIN", payload: userData });
 
-      return userData.role;
+      return decodedData.role;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
     }
   };
+
   const logout = () => {
     localStorage.clear();
     dispatch({ type: "LOGOUT" });
