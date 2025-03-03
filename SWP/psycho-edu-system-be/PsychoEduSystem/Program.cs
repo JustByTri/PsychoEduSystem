@@ -17,6 +17,7 @@ using Common.Constant;
 using System.Security.Claims;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using Swashbuckle.AspNetCore.Filters;
+using BLL.Hubs;
 
 namespace MIndAid
 {
@@ -41,7 +42,7 @@ namespace MIndAid
             ValidateAudience = true,
             ValidAudience = JwtSettingModel.Audience,
             ValidateLifetime = true,
-            RoleClaimType = ClaimTypes.Role
+            NameClaimType = "userId"
         };
     });
             // Add services to the container.
@@ -95,13 +96,13 @@ namespace MIndAid
             );
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll",
-                    policy =>
-                    {
-                        policy.AllowAnyOrigin()
-                              .AllowAnyMethod()
-                              .AllowAnyHeader();
-                    });
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy.WithOrigins("http://127.0.0.1:5500") 
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials(); 
+                });
             });
             builder.Services.AddAuthorization(options =>
             {
@@ -110,6 +111,9 @@ namespace MIndAid
                           .RequireAuthenticatedUser());
             });
             builder.Logging.AddConsole();
+            builder.Services.AddSignalR();
+
+     
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -122,12 +126,13 @@ namespace MIndAid
                 app.UseSwagger();
             }
 
-            app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseHttpsRedirection();
             app.MapControllers();
-            app.UseCors("AllowAll");
+            app.MapHub<ChatHub>("/chatHub");
+       
             app.Run();
         }
     }

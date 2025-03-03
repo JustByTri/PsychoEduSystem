@@ -16,21 +16,21 @@ namespace Common.Setting
         /// <summary>
         /// The expire days of the jwt to generate access token.
         /// </summary>
-        public static int ExpireDayAccessToken { get; set; } = 1;
+        public static double ExpireDayAccessToken { get; set; } = 1;
 
         /// <summary>
         /// The expire days of the jwt to generate refresh token.
         /// </summary>
-        public static int ExpireDayRefreshToken { get; set; } = 30;
+        public static double ExpireDayRefreshToken { get; set; } = 7;
 
         /// <summary>
         /// The issuer of the token.
         /// </summary>
-        public static string Issuer { get; set; } = "https://localhost:7192"; // Thay đổi cho phù hợp
+        public static string Issuer { get; set; } = "http://localhost:7192"; // Thay đổi cho phù hợp
 
         /// <summary>
         /// The audience of the token.
         /// </summary>
-        public static string Audience { get; set; } = "https://localhost:5157"; // Thay đổi cho phù hợp
+        public static string Audience { get; set; } = "http://localhost:5157"; // Thay đổi cho phù hợp
     }
 }
