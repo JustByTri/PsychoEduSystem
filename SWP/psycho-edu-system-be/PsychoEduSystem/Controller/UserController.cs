@@ -76,7 +76,27 @@ namespace PsychoEduSystem.Controller
             }
         }
 
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetUserProfile(Guid userId)
+        {
+            if (Guid.Empty == userId) return BadRequest("User ID is required.");
 
+            try
+            {
+                var response = await _userService.GetUserProfile(userId);
+
+                if (response.IsSuccess && response.Result != null)
+                {
+                    return Ok(response);
+                }
+
+                return NotFound(response.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while fetching user profile.", Error = ex.Message });
+            }
+        }
 
 
 
@@ -113,6 +133,32 @@ namespace PsychoEduSystem.Controller
             }
 
             return Ok("Parent account and relationships created successfully.");
+        }
+        [HttpGet("{studentId}/class")]
+        public async Task<IActionResult> RetrieveUserClassInfo(Guid studentId)
+        {
+            if (studentId == Guid.Empty)
+                return BadRequest("Invalid student ID.");
+
+            var response = await _userService.RetrieveUserClassInfoAsync(studentId);
+
+            if (response == null)
+                return NotFound("Class information not found for the given student ID.");
+
+            return Ok(response);
+        }
+        [HttpGet("{userId}/slots")]
+        public async Task<IActionResult> GetAvailableSlots(Guid userId, [FromQuery] DateOnly selectedDate)
+        {
+            if (userId == Guid.Empty)
+                return BadRequest("Invalid user ID.");
+
+            var response = await _userService.GetAvailableSlotsAsync(userId, selectedDate);
+
+            if (!response.IsSuccess || response.Result == null)
+                return NotFound(response.Message);
+
+            return Ok(response);
         }
     }
 }

@@ -8,18 +8,18 @@ using System.Threading.Tasks;
 
 namespace BLL.Interface
 {
-  public interface ISurveyService
+    public interface ISurveyService
     {
- Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings);
+        Task<SurveyWithQuestionsAndAnswersDTO> ImportSurveyFromExcel(IFormFile file, SurveySettingsDTO settings);
         Task<bool> UpdateSurveyAsync(Guid surveyId, UpdateSurveyDTO updateDto);
         Task<IEnumerable<SurveyDTO>> GetAllSurveysAsync();
         Task<SurveyWithQuestionsAndAnswersDTO> GetSurveyByIdAsync(Guid surveyId);
-        Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid userId);
-        Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(Guid userId, SubmitSurveyRequestDTO request);
+        Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid takerId, Guid targetId);
+        Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(SubmitSurveyRequestDTO request);
         Task<SurveyAnswerResponseDTO> GetUserSurveyAnswersAsync(Guid userId, Guid surveyId);
         Task<SurveyWithQuestionsAndAnswersDTO> AdjustSurveyAsync(Guid surveyId);
         Task<ResponseDTO> UpdateSurveyWithValidationAsync(Guid surveyId, SurveyWithQuestionsAndAnswersDTO updatedSurvey);
-        Task<List<SurveyResultDTO>> GetSurveyResults(SurveyResultFilterDTO filter);
+        Task<List<SurveyResultDTO>> GetSurveyResults(Guid userId, SurveyResultFilterDTO filter);
 
     }
 }

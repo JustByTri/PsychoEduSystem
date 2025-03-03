@@ -18,37 +18,39 @@ namespace DAL.UnitOfWork
 
             // Khởi tạo các repository
             Appointment = new AppointmentRepository(_context);
-           DimensionHealth = new CategoryRepository(_context);
-       
+            DimensionHealth = new CategoryRepository(_context);
+
             MentalHealthPointDetail = new MentalHealthPointDetailRepository(_context);
 
             Message = new MessageRepository(_context);
             Role = new RoleRepository(_context);
             Slot = new SlotRepository(_context);
             User = new UserRepository(_context);
-        
+
             UserToken = new UserTokenRepository(_context);
             Answer = new AnswerRepository(_context);
             RefreshToken = new RefreshTokenRepository(_context);
-            Question = new QuestionRepository(_context);    
+            Question = new QuestionRepository(_context);
             Survey = new SurveyRepository(_context);
             SurveyResponse = new SurveyResponseRepository(_context);
             SurveyAnswerUser = new SurveyAnswerUserRepository(_context);
-            Relationship = new RelationshipRepository(_context);    
+            Relationship = new RelationshipRepository(_context);
             Class = new ClassRepository(_context);
+            TargetProgram = new TargetProgramRepository(_context);
+            Schedule = new ScheduleRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
         public IAppointmentRepository Appointment { get; private set; }
         public ICategoryRepository DimensionHealth { get; private set; }
-    
+
         public IMentalHealthPointDetailRepository MentalHealthPointDetail { get; private set; }
-      
+
         public IMessageRepository Message { get; private set; }
         public IRoleRepository Role { get; private set; }
         public ISlotRepository Slot { get; private set; }
         public IUserRepository User { get; private set; }
-        
+
 
         public IUserTokenRepository UserToken { get; private set; }
 
@@ -60,9 +62,14 @@ namespace DAL.UnitOfWork
         public IQuestionRepository Question { get; private set; }
         public ISurveyRepository Survey { get; private set; }
         public ISurveyResponseRepository SurveyResponse { get; private set; }
-        public ISurveyAnswerUserRepository  SurveyAnswerUser { get; private set; }
+        public ISurveyAnswerUserRepository SurveyAnswerUser { get; private set; }
         public IRelationshipRepository Relationship { get; private set; }
         public IClassRepository Class { get; private set; }
+
+        public ITargetProgramRepository TargetProgram { get; private set; }
+
+        public IScheduleRepository Schedule { get; private set; }
+
         public IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel)
         {
             return _context.Database.BeginTransaction(isolationLevel);

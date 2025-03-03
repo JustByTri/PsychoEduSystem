@@ -251,12 +251,12 @@ using System.Text;
                 };
 
             }
-            public async Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid userId)
+            public async Task<SurveyResponseDTO> GetSurveyByUserIdAsync(Guid takerId, Guid targetId)
             {
                 // Kiểm tra survey response trong tháng
                 var currentMonthStart = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                 var hasTakenSurvey = await _unitOfWork.SurveyResponse
-                    .FindAll(sr => sr.SurveyTakerId == userId && sr.CreateAt >= currentMonthStart)
+                    .FindAll(sr => sr.SurveyTakerId == takerId && sr.SurveyTargetId == targetId && sr.CreateAt >= currentMonthStart )
                     .AnyAsync();
 
                 if (hasTakenSurvey)
@@ -270,47 +270,59 @@ using System.Text;
 
                 // Lấy user với role
                 var user = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
-                    u => u.UserId == userId,
+                    u => u.UserId == takerId,
                     includes: q => q.Include(u => u.Role));
 
                 if (user?.Role == null) throw new Exception("Không tìm thấy thông tin người dùng");
+            var latestSurvey = await _unitOfWork.Survey
+   .FindAll(s => s.IsPublic &&
+       s.SurveyFor.Equals(user.Role.RoleName))
+   .OrderByDescending(s => s.CreateAt) // Sắp xếp theo ngày tạo giảm dần
+   .Include(s => s.Questions)
+   .ThenInclude(q => q.Answers)
+   .FirstOrDefaultAsync();
 
-                // Lấy survey theo role
-                var surveys = await _unitOfWork.Survey
-                    .FindAll(s => s.IsPublic &&
-                        s.SurveyFor.Equals(user.Role.RoleName))
-                    .Include(s => s.Questions)
-                    .ThenInclude(q => q.Answers)
-                    .ToListAsync();
-
+            if (latestSurvey == null)
+            {
                 return new SurveyResponseDTO
                 {
-                    Message = "Vui lòng thực hiện khảo sát",
-                    CanTakeSurvey = true,
-                    Surveys = surveys.Select(s => new SurveyDTO
-                    {
-                        SurveyId = s.SurveyId,
-                        SurveyName = s.SurveyName,
-                        Description = s.Description,
-                        IsPublic = s.IsPublic,
-                        SurveyFor = s.SurveyFor,
-                        CreateAt = s.CreateAt,
-                        Questions = s.Questions.Select(q => new QuestionDTO
-                        {
-                            QuestionID = q.QuestionId,
-                            Content = q.Content,
-                            Answers = q.Answers.Select(a => new AnswerDTO
-                            {
-                                AnswerId = a.AnswerId,
-                                Content = a.Content,
-                                Point = a.Point
-                            }).ToList()
-                        }).ToList()
-                    }).ToList()
+                    CanTakeSurvey = false,
+                    Message = "Không có survey nào phù hợp"
                 };
             }
 
-            public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync(Guid userId, SubmitSurveyRequestDTO request)
+
+            return new SurveyResponseDTO
+            {
+                Message = "Vui lòng thực hiện khảo sát",
+                CanTakeSurvey = true,
+                Surveys = new List<SurveyDTO>
+        {
+            new SurveyDTO
+            {
+                SurveyId = latestSurvey.SurveyId,
+                SurveyName = latestSurvey.SurveyName,
+                Description = latestSurvey.Description,
+                IsPublic = latestSurvey.IsPublic,
+                SurveyFor = latestSurvey.SurveyFor,
+                CreateAt = latestSurvey.CreateAt,
+                Questions = latestSurvey.Questions.Select(q => new QuestionDTO
+                {
+                    QuestionID = q.QuestionId,
+                    Content = q.Content,
+                    Answers = q.Answers.Select(a => new AnswerDTO
+                    {
+                        AnswerId = a.AnswerId,
+                        Content = a.Content,
+                        Point = a.Point
+                    }).ToList()
+                }).ToList()
+            }
+        }
+            };
+        }
+
+        public async Task<SubmitSurveyResponseDTO> SubmitSurveyAsync( SubmitSurveyRequestDTO request)
             {
            
                 var healthPoints = 0;
@@ -329,16 +341,22 @@ using System.Text;
                             throw new Exception("Survey is not public");
 
                   
-                        var user = await _unitOfWork.User.GetByIdAsync(userId);
-                        if (user == null)
-                            throw new Exception("User not found");
+                     
+                    var surveyTaker = await _unitOfWork.User.GetByIdAsync(request.SurveyTakerId);
+                    if (surveyTaker == null)
+                        throw new Exception("SurveyTaker not found");
 
-               
-                        surveyResponse = new SurveyResponse
+                    // Kiểm tra người được khảo sát (SurveyTarget)
+                    var surveyTarget = await _unitOfWork.User.GetByIdAsync(request.SurveyTargetId);
+                    if (surveyTarget == null)
+                        throw new Exception("SurveyTarget not found");
+
+
+                    surveyResponse = new SurveyResponse
                         {
                             SurveyResponseId = Guid.NewGuid(),
-                            SurveyTakerId = userId,
-                            SurveyTargetId = userId,
+                            SurveyTakerId = request.SurveyTakerId,
+                            SurveyTargetId = request.SurveyTargetId,
                             HealthPoints = 0, 
                             CreateAt = DateTime.Now,
                             SurveyId = request.SurveyId
@@ -381,7 +399,7 @@ using System.Text;
                             var surveyAnswerUser = new SurveyAnswerUser
                             {
                                 SurveyAnswerUserId = Guid.NewGuid(),
-                                UserId = userId,
+                                UserId = request.SurveyTargetId,
                                 SurveyId = request.SurveyId,
                                 SurveyResponseId = surveyResponse.SurveyResponseId, 
                                 QuestionId = question.QuestionId,
@@ -535,7 +553,7 @@ using System.Text;
             }
             public async Task<ResponseDTO> UpdateSurveyWithValidationAsync(Guid surveyId, SurveyWithQuestionsAndAnswersDTO updatedSurvey)
             {
-          
+                
                 var survey = await _unitOfWork.Survey.GetByIdAsync(surveyId);
                 if (survey == null)
                     return new ResponseDTO("Survey không tồn tại.", 404, false);
@@ -609,17 +627,17 @@ using System.Text;
 
                 return new ResponseDTO("Cập nhật survey thành công.", 200, true);
             }
-        public async Task<List<SurveyResultDTO>> GetSurveyResults(SurveyResultFilterDTO filter)
+        public async Task<List<SurveyResultDTO>> GetSurveyResults(Guid userId, SurveyResultFilterDTO filter)
         {
-            var currentUserId = GetUserIdFromToken();
             var currentUser = await _unitOfWork.User.GetByConditionWithIncludesAsyncc(
-       u => u.UserId == currentUserId,
-       includes: q => q.Include(u => u.Role));
+         u => u.UserId == userId,
+         includes: q => q.Include(u => u.Role));
 
             if (currentUser?.Role == null)
             {
                 throw new UnauthorizedAccessException("Invalid user role");
             }
+
             var results = new List<SurveyResultDTO>();
 
             // Base query
@@ -633,7 +651,12 @@ using System.Text;
             switch (currentUser.Role.RoleName)
             {
                 case "Student":
-                    query = query.Where(sr => sr.SurveyTargetId == currentUser.UserId);
+                    var student = await _unitOfWork.User.FindAll(u => u.UserId == userId).Select(u => u.UserId).ToListAsync();
+                    query = query.Where(sr => student.Contains(sr.SurveyTargetId))
+              .Include(sr => sr.SurveyTaker)
+              .Where(sr => student.Contains(sr.SurveyTaker.UserId));
+
+
                     break;
 
                 case "Parent":
