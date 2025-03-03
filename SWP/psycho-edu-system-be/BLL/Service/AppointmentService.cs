@@ -116,6 +116,8 @@ namespace BLL.Service
                 {
                     AppointmentId = a.AppointmentId,
                     MeetingWith = a.MeetingWith,
+                    AppointmentFor = a.AppointmentFor,
+                    BookedBy = a.BookedBy,
                     Date = a.Date,
                     SlotId = a.SlotId,
                     IsOnline = a.IsOnline,
@@ -158,6 +160,8 @@ namespace BLL.Service
                 {
                     AppointmentId = a.AppointmentId,
                     MeetingWith = a.MeetingWith,
+                    AppointmentFor = a.AppointmentFor,
+                    BookedBy = a.BookedBy,
                     Date = a.Date,
                     SlotId = a.SlotId,
                     IsOnline = a.IsOnline,
