@@ -1,16 +1,37 @@
-import LogoHeader from "../../assets/logo-header.png";
-import Avatar from "../../assets/avatar.png";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Avatar,
+  Menu,
+  MenuItem,
+  Typography,
+  Box,
+  Divider,
+  Fade,
+  ListItemIcon,
+} from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
+import HomeIcon from "@mui/icons-material/Home";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import MailIcon from "@mui/icons-material/Mail";
+import PersonIcon from "@mui/icons-material/Person";
+import SettingsIcon from "@mui/icons-material/Settings";
 import Swal from "sweetalert2";
 import AuthContext from "../../context/auth/AuthContext";
+import LogoHeader from "../../assets/logo-header.png";
+import AvatarImg from "../../assets/avatar.png";
+
 const Header = () => {
   const { logout } = useContext(AuthContext) || {};
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const toggleDropdown = () => setDropdownOpen((prev) => !prev);
+  const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
+
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
   const handleLogout = () => {
     Swal.fire({
       title: "Are you sure?",
@@ -19,74 +40,173 @@ const Header = () => {
       showCancelButton: true,
       confirmButtonText: "Yes, Log Out",
       cancelButtonText: "No, Stay Logged In",
-      confirmButtonColor: "#E63946",
-      cancelButtonColor: "#3085d6",
+      confirmButtonColor: "#D32F2F",
+      cancelButtonColor: "#1976D2",
       reverseButtons: true,
       focusCancel: true,
-      customClass: {
-        popup: "rounded-xl shadow-md",
-        title: "text-lg font-semibold",
-        confirmButton: "px-4 py-2 text-sm font-medium",
-        cancelButton: "px-4 py-2 text-sm font-medium",
-      },
     }).then((result) => {
       if (result.isConfirmed) {
         logout();
-        // Show success message with auto-close
         Swal.fire({
           title: "Logged Out",
           text: "You have successfully logged out.",
           icon: "success",
           timer: 1500,
           showConfirmButton: false,
-          willClose: () => {
-            navigate("/");
-          },
+          willClose: () => navigate("/"),
         });
       }
     });
+    handleMenuClose();
   };
+
   return (
-    <header className="flex items-center justify-between sticky top-0 z-50 shadow-sm p-2 bg-[#C9EDE4]">
-      <img src={LogoHeader} className="w-32 h-15" />
-      <div className="flex items-center space-x-6">
-        <div className="relative hidden md:block">
-          <FontAwesomeIcon
-            icon={faSearch}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300"
-          />
-          <input
-            type="text"
-            placeholder="Search"
-            className="pl-10 pr-4 py-2 w-full max-w-md rounded-full bg-white focus:ring-4 outline-none shadow-lg transition-all duration-300"
-          />
-        </div>
-        <div className="relative">
+    <AppBar
+      position="sticky"
+      sx={{ backgroundColor: "white", boxShadow: 3, px: 2 }}
+    >
+      <Toolbar
+        sx={{ display: "flex", justifyContent: "space-between", py: 0.2 }}
+      >
+        {/* Logo */}
+        <Box display="flex" alignItems="center">
           <img
-            src={Avatar}
-            alt="Profile"
-            className="w-12 h-12 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform duration-300"
-            onClick={toggleDropdown}
+            src={LogoHeader}
+            alt="Logo"
+            style={{ width: 130, height: "auto" }}
           />
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-3 py-2 z-50 w-48 bg-[#AEF2E1] rounded-lg shadow-lg transition-all duration-300">
-              <Link
-                to="/"
-                className="block px-4 py-2 text-left text-gray-800 font-medium shadow-md hover:bg-white/20 hover:scale-90 transition-all duration-300"
-              >
-                Home
-              </Link>
-              <button
-                className="block px-4 py-2 w-full text-left text-gray-800 font-medium shadow-md hover:bg-white/20 hover:scale-90 transition-all duration-300"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
+        </Box>
+
+        {/* Profile Avatar */}
+        <Box display="flex" alignItems="center">
+          <IconButton
+            onClick={handleMenuOpen}
+            sx={{ display: "flex", alignItems: "center", color: "#333" }}
+          >
+            <Avatar
+              src={AvatarImg}
+              alt="Profile"
+              sx={{
+                width: 44,
+                height: 44,
+                boxShadow: 3,
+                transition: "0.3s",
+                "&:hover": { transform: "scale(1.1)", boxShadow: 6 },
+              }}
+            />
+            <Typography
+              sx={{ ml: 1, fontWeight: 500, fontSize: "1rem", color: "#333" }}
+            >
+              Peter Parker
+            </Typography>
+            <ArrowDropDownIcon sx={{ color: "#555" }} />
+          </IconButton>
+        </Box>
+
+        {/* Dropdown Menu */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          TransitionComponent={Fade}
+          sx={{ mt: 1 }}
+          PaperProps={{
+            elevation: 4,
+            sx: {
+              borderRadius: 3,
+              minWidth: 250,
+              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+              p: 1,
+              backgroundColor: "#fff",
+            },
+          }}
+        >
+          {/* User Info */}
+          <Box display="flex" alignItems="center" px={2} py={1}>
+            <Avatar
+              src={AvatarImg}
+              sx={{ width: 50, height: 50, boxShadow: 2, mr: 1 }}
+            />
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Peter Parker
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <MailIcon fontSize="small" sx={{ mr: 0.5, color: "#1976D2" }} />
+                peterparker@example.com
+              </Typography>
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 1 }} />
+
+          <MenuItem
+            component={Link}
+            to="/profile"
+            onClick={handleMenuClose}
+            sx={{
+              fontSize: "0.95rem",
+              py: 1,
+              "&:hover": { backgroundColor: "#f5f5f5" },
+            }}
+          >
+            <ListItemIcon>
+              <PersonIcon fontSize="small" sx={{ color: "#1976D2" }} />
+            </ListItemIcon>
+            Profile
+          </MenuItem>
+
+          <MenuItem
+            component={Link}
+            to="/settings"
+            onClick={handleMenuClose}
+            sx={{
+              fontSize: "0.95rem",
+              py: 1,
+              "&:hover": { backgroundColor: "#f5f5f5" },
+            }}
+          >
+            <ListItemIcon>
+              <SettingsIcon fontSize="small" sx={{ color: "#1976D2" }} />
+            </ListItemIcon>
+            Settings
+          </MenuItem>
+
+          <MenuItem
+            component={Link}
+            to="/"
+            onClick={handleMenuClose}
+            sx={{
+              fontSize: "0.95rem",
+              py: 1,
+              "&:hover": { backgroundColor: "#f5f5f5" },
+            }}
+          >
+            <ListItemIcon>
+              <HomeIcon fontSize="small" sx={{ color: "#1976D2" }} />
+            </ListItemIcon>
+            Home
+          </MenuItem>
+
+          <Divider sx={{ my: 1 }} />
+
+          <MenuItem
+            onClick={handleLogout}
+            sx={{
+              fontSize: "0.95rem",
+              py: 1,
+              color: "#D32F2F",
+              "&:hover": { backgroundColor: "#f5f5f5" },
+            }}
+          >
+            <ListItemIcon>
+              <LogoutIcon fontSize="small" sx={{ color: "#D32F2F" }} />
+            </ListItemIcon>
+            Logout
+          </MenuItem>
+        </Menu>
+      </Toolbar>
+    </AppBar>
   );
 };
 

@@ -1,16 +1,21 @@
 import { useState } from "react";
 import LoginModal from "../Modal/LoginModal";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faHome,
+  faInfoCircle,
+  faEnvelope,
+} from "@fortawesome/free-solid-svg-icons"; // Import Font Awesome icons
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const clientId =
     "1018910450198-m8sitc37vcjdg1qbe7d3cp00nca00840.apps.googleusercontent.com";
 
   const links = [
-    { href: "", title: "About" },
-    { href: "", title: "News" },
-    { href: "/survey", title: "Survey" },
-    { href: "", title: "Contact" },
+    { href: "", title: "About", icon: <FontAwesomeIcon icon={faInfoCircle} /> },
+    { href: "", title: "Home", icon: <FontAwesomeIcon icon={faHome} /> },
+    { href: "", title: "Contact", icon: <FontAwesomeIcon icon={faEnvelope} /> },
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -25,41 +30,6 @@ const Navbar = () => {
             </span>
           </a>
           <div className="flex items-center lg:order-2">
-            <form className="flex items-center max-w-sm mx-auto">
-              <label htmlFor="simple-search" className="sr-only">
-                Search
-              </label>
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  id="simple-search"
-                  className="bg-slate-50 text-sm text-gray-500 shadow-inner rounded-sm block w-full p-2 focus:text-slate-950 focus:ring-0 focus:outline-none"
-                  placeholder="Search..."
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="p-2.5 border-none bg-blue-800 rounded-sm hover:bg-blue-600 transition focus:ring-0 focus:outline-none"
-              >
-                <svg
-                  className="w-4 h-4"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                  />
-                </svg>
-                <span className="sr-only">Search</span>
-              </button>
-            </form>
             <button
               onClick={toggleMenu}
               type="button"
@@ -107,7 +77,7 @@ const Navbar = () => {
                     href={link.href}
                     className="block py-2 pr-4 pl-3 text-sm text-[#002B36] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
                   >
-                    {link.title}
+                    {link.icon} <span>{link.title}</span>
                   </a>
                 </li>
               ))}
