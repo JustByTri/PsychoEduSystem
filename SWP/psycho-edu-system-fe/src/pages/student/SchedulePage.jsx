@@ -21,6 +21,7 @@ import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import moment from "moment";
 import { Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const SchedulePage = () => {
   const [bookings, setBookings] = useState([]);
@@ -36,6 +37,7 @@ const SchedulePage = () => {
 
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
+  const navigate = useNavigate();
 
   const daysInMonth = () => {
     const days = [];
@@ -120,7 +122,7 @@ const SchedulePage = () => {
 
             return {
               id: appointment.appointmentId,
-              title: `${title}  ${appointment.isOnline ? "Online" : "Offline"}`,
+              title: `${title} ${appointment.isOnline ? "Online" : "Offline"}`,
               start: startDateTime,
               end: endDateTime,
               details: {
@@ -167,6 +169,7 @@ const SchedulePage = () => {
   };
 
   const handleSelectEvent = (event) => setSelectedEvent(event);
+  const handleJoinChat = (id) => navigate(`/chat/${id}`);
   const closeModal = () => setSelectedEvent(null);
 
   const handleCancelAppointment = async () => {
@@ -361,14 +364,6 @@ const SchedulePage = () => {
               {weekday}
             </Typography>
           ))}
-        </div>
-        <motion.div
-          className="grid grid-cols-7 gap-2 mt-4"
-          key={currentMonth.format("YYYY-MM")}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
           {days.map((d, index) =>
             d ? (
               <motion.button
@@ -395,7 +390,7 @@ const SchedulePage = () => {
               />
             )
           )}
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Bookings Section */}
@@ -416,44 +411,43 @@ const SchedulePage = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <Card
-                    className="rounded-xl shadow-lg bg-orange-50 border border-orange-200 hover:shadow-xl transition-shadow duration-300"
-                    sx={{ minWidth: 280, maxWidth: 350 }}
-                  >
-                    <CardContent sx={{ p: 3 }}>
+                  <Card className="rounded-xl shadow-lg bg-orange-50 border border-orange-200">
+                    <CardContent className="p-4 sm:p-5">
                       <Typography
                         variant="h6"
                         sx={{
-                          fontFamily: "Inter, sans-serif",
+                          fontFamily: "Roboto, sans-serif",
                           fontWeight: 600,
-                          fontSize: "1.25rem",
                           color: "#333",
-                          mb: 1.5,
+                          mb: 1,
+                          fontSize: { xs: "1rem", sm: "1.125rem" },
                         }}
                       >
                         {booking.title}
                       </Typography>
                       <Typography
+                        variant="body2"
                         sx={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "0.95rem",
+                          fontFamily: "Roboto, sans-serif",
                           color: "#666",
                           mb: 1,
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
                         }}
                       >
-                        <strong>Student ID:</strong> {booking.details.studentId}
+                        Student ID: {booking.details.studentId}
                       </Typography>
                       <Typography
+                        variant="body2"
                         sx={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "0.95rem",
-                          color: "#666",
+                          fontFamily: "Roboto, sans-serif",
+                          color: "#444",
                           display: "flex",
                           alignItems: "center",
                           mb: 2,
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
                         }}
                       >
-                        <Clock className="w-5 h-5 mr-2 text-gray-700" />
+                        <Clock className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-gray-700" />
                         {moment(booking.start).format("HH:mm")} -{" "}
                         {moment(booking.end).format("HH:mm")}
                       </Typography>
@@ -462,17 +456,17 @@ const SchedulePage = () => {
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          mb: 2,
                         }}
                       >
                         <Typography
+                          component="span"
                           sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.9rem",
+                            fontFamily: "Roboto, sans-serif",
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
                             fontWeight: 500,
                             color: "#fff",
                             backgroundColor: "#4caf50",
-                            px: 1.5,
+                            px: 2,
                             py: 0.5,
                             borderRadius: "12px",
                           }}
@@ -480,9 +474,10 @@ const SchedulePage = () => {
                           {booking.details.meetingType}
                         </Typography>
                         <Typography
+                          component="span"
                           sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.9rem",
+                            fontFamily: "Roboto, sans-serif",
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
                             fontWeight: 500,
                             color:
                               getStatus(booking) === "Cancelled"
@@ -497,49 +492,59 @@ const SchedulePage = () => {
                       </Box>
                       <Box
                         sx={{
+                          mt: 3,
                           display: "flex",
                           justifyContent: "space-between",
                           gap: 1,
                         }}
                       >
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          disabled={booking.details.isCancelled}
-                          sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.9rem",
-                            color: "#1e88e5",
-                            borderColor: "#1e88e5",
-                            "&:hover": {
-                              backgroundColor: "#e3f2fd",
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            sx={{
+                              fontFamily: "Roboto, sans-serif",
+                              color: "#1e88e5",
                               borderColor: "#1e88e5",
-                            },
-                            textTransform: "none",
-                            px: 2,
-                          }}
+                              "&:hover": {
+                                backgroundColor: "#e3f2fd",
+                                borderColor: "#1e88e5",
+                              },
+                              textTransform: "none",
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            }}
+                            disabled={booking.details.isCancelled}
+                            onClick={() => handleJoinChat(booking.id)}
+                          >
+                            Join
+                          </Button>
+                        </motion.div>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
-                          Join
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleSelectEvent(booking)}
-                          sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.9rem",
-                            color: "#f57c00",
-                            borderColor: "#f57c00",
-                            "&:hover": {
-                              backgroundColor: "#fff3e0",
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            sx={{
+                              fontFamily: "Roboto, sans-serif",
+                              color: "#f57c00",
                               borderColor: "#f57c00",
-                            },
-                            textTransform: "none",
-                            px: 2,
-                          }}
-                        >
-                          Details
-                        </Button>
+                              "&:hover": {
+                                backgroundColor: "#fff3e0",
+                                borderColor: "#f57c00",
+                              },
+                              textTransform: "none",
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            }}
+                            onClick={() => handleSelectEvent(booking)}
+                          >
+                            Details
+                          </Button>
+                        </motion.div>
                       </Box>
                     </CardContent>
                   </Card>
@@ -571,7 +576,7 @@ const SchedulePage = () => {
           sx={{
             "& .MuiDialog-paper": {
               borderRadius: "16px",
-              width: { xs: "90%", sm: 550 }, // Tăng chiều rộng từ 450px lên 550px
+              width: { xs: "90%", sm: 550 },
               maxWidth: 550,
               boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
               p: 3,
@@ -661,9 +666,9 @@ const SchedulePage = () => {
                   fontFamily: "Inter, sans-serif",
                   fontSize: "0.95rem",
                   textTransform: "none",
-                  px: 4, // Đồng bộ padding ngang với nút "Close"
-                  py: 1, // Đồng bộ padding dọc với nút "Close"
-                  minWidth: 120, // Đặt chiều rộng tối thiểu để đồng đều
+                  px: 4,
+                  py: 1,
+                  minWidth: 120,
                 }}
               >
                 Cancel Appointment
@@ -679,9 +684,9 @@ const SchedulePage = () => {
                 borderColor: "#555",
                 "&:hover": { backgroundColor: "#f5f5f5", borderColor: "#333" },
                 textTransform: "none",
-                px: 4, // Đồng bộ padding ngang với nút "Cancel"
-                py: 1, // Đồng bộ padding dọc với nút "Cancel"
-                minWidth: 120, // Đặt chiều rộng tối thiểu để đồng đều
+                px: 4,
+                py: 1,
+                minWidth: 120,
               }}
             >
               Close

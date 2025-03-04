@@ -19,10 +19,11 @@ import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import moment from "moment";
 import { Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const PsychologistSchedulePage = () => {
-  const [bookings, setBookings] = useState([]); // Booked appointments
-  const [availableSlots, setAvailableSlots] = useState([]); // Available slots for selected date
+  const [bookings, setBookings] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,6 +36,7 @@ const PsychologistSchedulePage = () => {
 
   const authData = getAuthDataFromLocalStorage();
   const teacherId = authData?.userId;
+  const navigate = useNavigate();
 
   const daysInMonth = () => {
     const days = [];
@@ -73,7 +75,6 @@ const PsychologistSchedulePage = () => {
       try {
         setIsLoading(true);
 
-        // Fetch user profile
         const profileResponse = await axios.get(
           `https://localhost:7192/api/User/profile?userId=${teacherId}`,
           {
@@ -87,7 +88,6 @@ const PsychologistSchedulePage = () => {
           setUserProfile(profileResponse.data.result);
         }
 
-        // Fetch initial data for the default selected date
         await Promise.all([
           fetchAppointments(selectedDate),
           fetchSchedules(selectedDate),
@@ -246,8 +246,17 @@ const PsychologistSchedulePage = () => {
     return times[slotId - 1] || "Unknown";
   };
 
-  const handleSelectEvent = (event) => setSelectedEvent(event);
-  const closeModal = () => setSelectedEvent(null);
+  const handleSelectEvent = (event) => {
+    setSelectedEvent(event);
+  };
+
+  const handleJoinChat = (id) => {
+    navigate(`/chat/${id}`);
+  };
+
+  const closeModal = () => {
+    setSelectedEvent(null);
+  };
 
   const handleCancelAppointment = async () => {
     if (!selectedEvent) return;
@@ -506,44 +515,43 @@ const PsychologistSchedulePage = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <Card
-                    className="rounded-xl shadow-lg bg-orange-50 border border-orange-200 hover:shadow-xl transition-shadow duration-300"
-                    sx={{ minWidth: 280, maxWidth: 350 }}
-                  >
-                    <CardContent sx={{ p: 3 }}>
+                  <Card className="rounded-xl shadow-lg bg-orange-50 border border-orange-200">
+                    <CardContent className="p-4 sm:p-5">
                       <Typography
                         variant="h6"
                         sx={{
-                          fontFamily: "Inter, sans-serif",
+                          fontFamily: "Roboto, sans-serif",
                           fontWeight: 600,
-                          fontSize: "1.25rem",
                           color: "#333",
-                          mb: 1.5,
+                          mb: 1,
+                          fontSize: { xs: "1rem", sm: "1.125rem" },
                         }}
                       >
                         {booking.title}
                       </Typography>
                       <Typography
+                        variant="body2"
                         sx={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "0.95rem",
+                          fontFamily: "Roboto, sans-serif",
                           color: "#666",
                           mb: 1,
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
                         }}
                       >
-                        <strong>Student ID:</strong> {booking.details.studentId}
+                        Student ID: {booking.details.studentId}
                       </Typography>
                       <Typography
+                        variant="body2"
                         sx={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "0.95rem",
-                          color: "#666",
+                          fontFamily: "Roboto, sans-serif",
+                          color: "#444",
                           display: "flex",
                           alignItems: "center",
                           mb: 2,
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
                         }}
                       >
-                        <Clock className="w-5 h-5 mr-2 text-gray-700" />
+                        <Clock className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-gray-700" />
                         {moment(booking.start).format("HH:mm")} -{" "}
                         {moment(booking.end).format("HH:mm")}
                       </Typography>
@@ -552,17 +560,17 @@ const PsychologistSchedulePage = () => {
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          mb: 2,
                         }}
                       >
                         <Typography
+                          component="span"
                           sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.9rem",
+                            fontFamily: "Roboto, sans-serif",
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
                             fontWeight: 500,
                             color: "#fff",
                             backgroundColor: "#4caf50",
-                            px: 1.5,
+                            px: 2,
                             py: 0.5,
                             borderRadius: "12px",
                           }}
@@ -570,9 +578,10 @@ const PsychologistSchedulePage = () => {
                           {booking.details.meetingType}
                         </Typography>
                         <Typography
+                          component="span"
                           sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.9rem",
+                            fontFamily: "Roboto, sans-serif",
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
                             fontWeight: 500,
                             color:
                               getStatus(booking) === "Cancelled"
@@ -587,49 +596,59 @@ const PsychologistSchedulePage = () => {
                       </Box>
                       <Box
                         sx={{
+                          mt: 3,
                           display: "flex",
                           justifyContent: "space-between",
                           gap: 1,
                         }}
                       >
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          disabled={booking.details.isCancelled}
-                          sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.9rem",
-                            color: "#1e88e5",
-                            borderColor: "#1e88e5",
-                            "&:hover": {
-                              backgroundColor: "#e3f2fd",
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            sx={{
+                              fontFamily: "Roboto, sans-serif",
+                              color: "#1e88e5",
                               borderColor: "#1e88e5",
-                            },
-                            textTransform: "none",
-                            px: 2,
-                          }}
+                              "&:hover": {
+                                backgroundColor: "#e3f2fd",
+                                borderColor: "#1e88e5",
+                              },
+                              textTransform: "none",
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            }}
+                            disabled={booking.details.isCancelled}
+                            onClick={() => handleJoinChat(booking.id)}
+                          >
+                            Join
+                          </Button>
+                        </motion.div>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
-                          Join
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleSelectEvent(booking)}
-                          sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.9rem",
-                            color: "#f57c00",
-                            borderColor: "#f57c00",
-                            "&:hover": {
-                              backgroundColor: "#fff3e0",
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            sx={{
+                              fontFamily: "Roboto, sans-serif",
+                              color: "#f57c00",
                               borderColor: "#f57c00",
-                            },
-                            textTransform: "none",
-                            px: 2,
-                          }}
-                        >
-                          Details
-                        </Button>
+                              "&:hover": {
+                                backgroundColor: "#fff3e0",
+                                borderColor: "#f57c00",
+                              },
+                              textTransform: "none",
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            }}
+                            onClick={() => handleSelectEvent(booking)}
+                          >
+                            Details
+                          </Button>
+                        </motion.div>
                       </Box>
                     </CardContent>
                   </Card>
