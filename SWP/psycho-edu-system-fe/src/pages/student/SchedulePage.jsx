@@ -17,6 +17,7 @@ import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import moment from "moment";
 import { Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const SchedulePage = () => {
   const [bookings, setBookings] = useState([]);
@@ -183,6 +184,10 @@ const SchedulePage = () => {
     setSelectedEvent(event);
   };
 
+  const navigate = useNavigate();
+  const handleJoinChat = (id) => {
+    navigate(`/chat/${id}`);
+  };
   const closeModal = () => {
     setSelectedEvent(null);
   };
@@ -515,6 +520,7 @@ const SchedulePage = () => {
                           fontSize: { xs: "0.75rem", sm: "0.875rem" },
                         }}
                         disabled={booking.details.isCancelled}
+                        onClick={() => handleJoinChat(booking.id)}
                       >
                         Join
                       </Button>
