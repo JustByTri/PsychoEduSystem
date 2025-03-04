@@ -1,65 +1,131 @@
 import { useBooking } from "../../../context/BookingContext";
+import { motion } from "framer-motion";
+import { Box, Typography, Card, CardContent } from "@mui/material";
 
 export const ConfirmationStep = () => {
   const { bookingData } = useBooking();
 
   return (
-    <div className="space-y-6">
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-green-800 mb-4">
-          Booking Summary
-        </h3>
-
-        <div className="space-y-4">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Booking Type:</span>
-            <span className="font-medium">
-              {bookingData.userRole === "Parent"
-                ? "Parent Booking"
-                : "Student Booking"}
-            </span>
-          </div>
-
-          {bookingData.userRole === "Parent" && bookingData.childName && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Child:</span>
-              <span className="font-medium">{bookingData.childName}</span>
-            </div>
-          )}
-
-          {bookingData.consultantName && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Consultant:</span>
-              <span className="font-medium">{bookingData.consultantName}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between">
-            <span className="text-gray-600">Date & Time:</span>
-            <span className="font-medium">
-              {bookingData.date} at {bookingData.time}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-gray-600">Meeting Type:</span>
-            <span className="font-medium capitalize">
-              {bookingData.appointmentType || "Not specified"}
-            </span>
-          </div>
-
-          <div className="pt-4 border-t">
-            <h4 className="font-medium mb-2">Contact Information</h4>
-            <div className="space-y-2">
-              <p className="text-gray-600">Name: {bookingData.userName}</p>
-              <p className="text-gray-600">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="py-6"
+    >
+      <Typography
+        variant="h5"
+        sx={{
+          fontFamily: "Inter, sans-serif",
+          fontWeight: 600,
+          color: "#333",
+          mb: 4,
+          textAlign: "center",
+        }}
+      >
+        Booking Summary
+      </Typography>
+      <Card
+        className="rounded-xl shadow-lg bg-green-50 border border-green-200 max-w-2xl mx-auto"
+        sx={{ p: 3 }}
+      >
+        <CardContent>
+          <Box className="space-y-4">
+            <Box className="flex justify-between">
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+              >
+                Booking Type:
+              </Typography>
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+              >
+                {bookingData.userRole === "Parent"
+                  ? "Parent Booking"
+                  : "Student Booking"}
+              </Typography>
+            </Box>
+            {bookingData.userRole === "Parent" && bookingData.childName && (
+              <Box className="flex justify-between">
+                <Typography
+                  sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+                >
+                  Child:
+                </Typography>
+                <Typography
+                  sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+                >
+                  {bookingData.childName}
+                </Typography>
+              </Box>
+            )}
+            {bookingData.consultantName && (
+              <Box className="flex justify-between">
+                <Typography
+                  sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+                >
+                  Consultant:
+                </Typography>
+                <Typography
+                  sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+                >
+                  {bookingData.consultantName}
+                </Typography>
+              </Box>
+            )}
+            <Box className="flex justify-between">
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+              >
+                Date & Time:
+              </Typography>
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+              >
+                {bookingData.date} at {bookingData.time}
+              </Typography>
+            </Box>
+            <Box className="flex justify-between">
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+              >
+                Meeting Type:
+              </Typography>
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+              >
+                {bookingData.appointmentType || "Not specified"}
+              </Typography>
+            </Box>
+            <Box className="pt-4 border-t">
+              <Typography
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 600,
+                  color: "#333",
+                  mb: 2,
+                }}
+              >
+                Contact Information
+              </Typography>
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+              >
+                Name: {bookingData.userName}
+              </Typography>
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+              >
                 Phone: {bookingData.phone || "Not provided"}
-              </p>
-              <p className="text-gray-600">Email: {bookingData.email}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+              </Typography>
+              <Typography
+                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+              >
+                Email: {bookingData.email}
+              </Typography>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
