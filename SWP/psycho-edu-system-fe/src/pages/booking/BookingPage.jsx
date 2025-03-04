@@ -11,6 +11,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import axios from "axios";
+import { motion } from "framer-motion"; // Thêm framer-motion để áp dụng hiệu ứng
+import { Box, Typography, Button } from "@mui/material"; // Thêm MUI components
 
 const BookingPageContent = () => {
   const { isParent, bookingData, updateBookingData, resetBookingData } =
@@ -20,27 +22,23 @@ const BookingPageContent = () => {
   const [studentId, setStudentId] = useState(null);
   const navigate = useNavigate();
 
-  // Lấy authData một lần ngoài useEffect để tránh thay đổi tham chiếu
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
 
-  // Xác định studentId dựa trên role (chỉ chạy khi mount hoặc role thay đổi)
   useEffect(() => {
     let isMounted = true;
 
     const determineStudentId = async () => {
       if (!isMounted) return;
 
-      if (studentId) return; // Tránh chạy lại nếu đã có studentId
+      if (studentId) return;
 
       if (!isParent()) {
-        // Role Student: Lấy studentId từ accessToken (userId)
         if (isMounted) {
           setStudentId(userId);
           updateBookingData({ appointmentFor: userId });
         }
       } else {
-        // Role Parent: Lấy studentId từ bookingData.childId hoặc fetch nếu chưa có
         if (bookingData.childId && isMounted) {
           setStudentId(bookingData.childId);
           updateBookingData({ appointmentFor: bookingData.childId });
@@ -55,7 +53,6 @@ const BookingPageContent = () => {
                 },
               }
             );
-            console.log("API Response for children:", response.data);
             const result = response.data.result || response.data;
             if (Array.isArray(result) && result.length > 0 && isMounted) {
               const firstChildId = result[0].studentId;
@@ -64,8 +61,6 @@ const BookingPageContent = () => {
                 appointmentFor: firstChildId,
                 childId: firstChildId,
               });
-            } else if (isMounted) {
-              console.warn("No children found for this parent.");
             }
           } catch (error) {
             console.error("Error fetching children:", error.message);
@@ -76,14 +71,12 @@ const BookingPageContent = () => {
 
     determineStudentId();
 
-    // Cleanup
     return () => {
       isMounted = false;
     };
-  }, [isParent, userId]); // Loại bỏ authData.accessToken và bookingData.childId khỏi dependency
+  }, [isParent, userId]);
 
   useEffect(() => {
-    // Cập nhật totalSteps dựa trên role
     setTotalSteps(isParent() ? 6 : 5);
   }, [isParent]);
 
@@ -96,14 +89,9 @@ const BookingPageContent = () => {
   };
 
   const handleNextWithValidation = () => {
-    const userInfoStep = isParent() ? 5 : 4; // Bước UserInfoForm
+    const userInfoStep = isParent() ? 5 : 4;
     if (step === userInfoStep) {
       if (!bookingData.userName || !bookingData.phone || !bookingData.email) {
-        console.log("Missing fields:", {
-          userName: bookingData.userName,
-          phone: bookingData.phone,
-          email: bookingData.email,
-        });
         toast.error("Please fill in all required fields!", {
           position: "top-right",
           autoClose: 3000,
@@ -135,15 +123,13 @@ const BookingPageContent = () => {
     try {
       const authData = getAuthDataFromLocalStorage();
       const appointmentData = {
-        bookedBy: userId, // ID của người đặt lịch (Parent hoặc Student)
-        appointmentFor: studentId, // ID của student (từ userId hoặc childId)
-        meetingWith: bookingData.consultantId, // ID của teacher hoặc counselor
+        bookedBy: userId,
+        appointmentFor: studentId,
+        meetingWith: bookingData.consultantId,
         date: bookingData.date,
         slotId: bookingData.slotId,
         isOnline: bookingData.appointmentType === "online",
       };
-
-      console.log("Submitting appointment data:", appointmentData);
 
       const response = await axios.post(
         "https://localhost:7192/api/appointments",
@@ -159,8 +145,6 @@ const BookingPageContent = () => {
       if (!response.data.isSuccess || response.data.statusCode !== 200) {
         throw new Error(response.data.message || "Failed to save appointment");
       }
-
-      console.log("Appointment saved successfully:", response.data);
 
       toast.success("Booking registered successfully!", {
         position: "top-right",
@@ -179,7 +163,6 @@ const BookingPageContent = () => {
         navigate(schedulePath);
       }, 3000);
     } catch (error) {
-      console.error("Error confirming appointment:", error);
       toast.error(
         `Failed to register appointment: ${
           error.response?.data?.message || error.message
@@ -233,44 +216,119 @@ const BookingPageContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-2 bg-blue-500 transition-all duration-300"
-            style={{ width: `${(step / totalSteps) * 100}%` }}
-          />
-        </div>
+    <div className="p-6 bg-white min-h-screen text-gray-900 flex flex-col max-w-7xl mx-auto">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="mb-8 text-center"
+      >
+        <Typography
+          variant="h4"
+          sx={{
+            fontFamily: "Inter, sans-serif",
+            fontWeight: 700,
+            background: "linear-gradient(to right, #1e88e5, #8e24aa)",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+          }}
+        >
+          Book an Appointment
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{
+            fontFamily: "Inter, sans-serif",
+            fontSize: "1rem",
+            color: "#555",
+            mt: 1,
+          }}
+        >
+          Follow the steps below to schedule your consultation
+        </Typography>
+      </motion.div>
 
+      {/* Progress Bar */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+        className="mb-8 bg-gray-200 rounded-full overflow-hidden"
+      >
+        <div
+          className="h-2 bg-blue-500 transition-all duration-300"
+          style={{ width: `${(step / totalSteps) * 100}%` }}
+        />
+      </motion.div>
+
+      {/* Step Content */}
+      <motion.div
+        key={step}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         {renderStepContent()}
+      </motion.div>
 
-        <div className="mt-8 flex justify-between">
-          {step > 1 && (
-            <button
-              onClick={handleBack}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              Back
-            </button>
-          )}
+      {/* Navigation Buttons */}
+      <Box className="mt-8 flex justify-between">
+        {step > 1 && (
+          <Button
+            onClick={handleBack}
+            variant="outlined"
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "0.95rem",
+              color: "#555",
+              borderColor: "#555",
+              "&:hover": { backgroundColor: "#f5f5f5", borderColor: "#333" },
+              textTransform: "none",
+              px: 4,
+              py: 1,
+            }}
+          >
+            Back
+          </Button>
+        )}
+        {step < totalSteps ? (
+          <Button
+            onClick={handleNextWithValidation}
+            variant="contained"
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "0.95rem",
+              backgroundColor: "#1e88e5",
+              "&:hover": { backgroundColor: "#1565c0" },
+              textTransform: "none",
+              px: 4,
+              py: 1,
+              ml: "auto",
+            }}
+          >
+            Next
+          </Button>
+        ) : (
+          <Button
+            onClick={handleConfirm}
+            variant="contained"
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "0.95rem",
+              backgroundColor: "#4caf50",
+              "&:hover": { backgroundColor: "#388e3c" },
+              textTransform: "none",
+              px: 4,
+              py: 1,
+              ml: "auto",
+            }}
+          >
+            Confirm Booking
+          </Button>
+        )}
+      </Box>
 
-          {step < totalSteps ? (
-            <button
-              onClick={handleNextWithValidation}
-              className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              onClick={handleConfirm}
-              className="ml-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Confirm Booking
-            </button>
-          )}
-        </div>
-      </div>
       <ToastContainer />
     </div>
   );

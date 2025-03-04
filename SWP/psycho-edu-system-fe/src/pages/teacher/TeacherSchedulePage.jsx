@@ -15,15 +15,14 @@ import {
   CircularProgress,
 } from "@mui/material";
 import axios from "axios";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import moment from "moment";
 import { Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TeacherSchedulePage = () => {
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState([]); // Booked appointments
+  const [availableSlots, setAvailableSlots] = useState([]); // Available slots for selected date
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,10 +69,11 @@ const TeacherSchedulePage = () => {
       return;
     }
 
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
         setIsLoading(true);
 
+        // Fetch user profile
         const profileResponse = await axios.get(
           `https://localhost:7192/api/User/profile?userId=${teacherId}`,
           {
@@ -87,35 +87,42 @@ const TeacherSchedulePage = () => {
           setUserProfile(profileResponse.data.result);
         }
 
-        const selectedDateStr = moment(selectedDate).format("YYYY-MM-DD");
-        const appointmentResponse = await axios.get(
-          `https://localhost:7192/api/appointments/consultants/${teacherId}/appointments?selectedDate=${selectedDateStr}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authData.accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        // Fetch initial data for the default selected date
+        await Promise.all([
+          fetchAppointments(selectedDate),
+          fetchSchedules(selectedDate),
+        ]);
+      } catch (error) {
+        setBookings([]);
+        setAvailableSlots([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-        let appointments = [];
-        if (
-          appointmentResponse.status === 200 &&
-          appointmentResponse.data.isSuccess
-        ) {
-          appointments = appointmentResponse.data.result || [];
-          if (!Array.isArray(appointments)) {
-            setBookings([]);
-            setIsLoading(false);
-            return;
-          }
-        } else {
-          setBookings([]);
-          setIsLoading(false);
-          return;
+    fetchInitialData();
+  }, [teacherId, authData?.accessToken]);
+
+  const fetchAppointments = async (date) => {
+    try {
+      const selectedDateStr = moment(date).format("YYYY-MM-DD");
+      const appointmentResponse = await axios.get(
+        `https://localhost:7192/api/appointments/consultants/${teacherId}/appointments?selectedDate=${selectedDateStr}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
         }
+      );
 
-        if (appointments.length === 0) {
+      let appointments = [];
+      if (
+        appointmentResponse.status === 200 &&
+        appointmentResponse.data.isSuccess
+      ) {
+        appointments = appointmentResponse.data.result || [];
+        if (!Array.isArray(appointments)) {
           setBookings([]);
         } else {
           const bookedSlots = appointments.map((appointment) => {
@@ -154,16 +161,75 @@ const TeacherSchedulePage = () => {
           });
           setBookings(bookedSlots);
         }
-      } catch (error) {
+      } else {
         setBookings([]);
-        toast.error("Failed to load schedule.", { position: "top-right" });
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      setBookings([]);
+    }
+  };
 
-    fetchData();
-  }, [teacherId, authData?.accessToken, selectedDate]);
+  const fetchSchedules = async (date) => {
+    try {
+      const selectedDateStr = moment(date).format("YYYY-MM-DD");
+      const scheduleResponse = await axios.get(
+        `https://localhost:7192/api/Schedule/user-schedules/${teacherId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (scheduleResponse.status === 200) {
+        const schedules = scheduleResponse.data || [];
+        if (!Array.isArray(schedules)) {
+          setAvailableSlots([]);
+        } else {
+          const available = schedules
+            .filter((schedule) =>
+              moment(schedule.date).isSame(selectedDateStr, "day")
+            )
+            .map((schedule) => ({
+              id: schedule.scheduleId,
+              title: `Available Slot`,
+              start: moment(schedule.date)
+                .set({
+                  hour: parseInt(schedule.slotName.split(":")[0], 10),
+                  minute: 0,
+                })
+                .toDate(),
+              end: moment(schedule.date)
+                .set({
+                  hour: parseInt(schedule.slotName.split(":")[0], 10) + 1,
+                  minute: 0,
+                })
+                .toDate(),
+              details: {
+                slotId: schedule.slotId,
+                date: moment(schedule.date).format("YYYY-MM-DD"),
+                slotName: schedule.slotName,
+                createAt: schedule.createAt,
+              },
+            }));
+          setAvailableSlots(available);
+        }
+      } else {
+        setAvailableSlots([]);
+      }
+    } catch (error) {
+      setAvailableSlots([]);
+    }
+  };
+
+  useEffect(() => {
+    if (!teacherId || !authData?.accessToken) return;
+    Promise.all([
+      fetchAppointments(selectedDate),
+      fetchSchedules(selectedDate),
+    ]);
+  }, [selectedDate, teacherId, authData?.accessToken]);
 
   const getTimeFromSlotId = (slotId) => {
     const times = [
@@ -198,7 +264,7 @@ const TeacherSchedulePage = () => {
         }
       );
 
-      if (response.data.isSuccess && response.data.statusCode === 200) {
+      if (response.status === 200 && response.data.isSuccess) {
         setBookings((prev) =>
           prev.map((booking) =>
             booking.id === selectedEvent.id
@@ -217,12 +283,9 @@ const TeacherSchedulePage = () => {
         setSelectedEventToCancel(null);
         setSelectedEvent(null);
         setIsSuccessModalOpen(true);
-        toast.success("Appointment cancelled successfully!", {
-          position: "top-right",
-        });
       }
     } catch (error) {
-      toast.error("Failed to cancel appointment.", { position: "top-right" });
+      // No toast here
     } finally {
       setIsLoading(false);
     }
@@ -245,13 +308,13 @@ const TeacherSchedulePage = () => {
     setCurrentMonth(moment(currentMonth).add(1, "month"));
   const handlePrevMonth = () =>
     setCurrentMonth(moment(currentMonth).subtract(1, "month"));
-  const handleClearFilters = () => {
-    setSelectedDate(new Date());
-    setCurrentMonth(moment());
-  };
 
   const filteredBookings = bookings.filter((booking) =>
     moment(booking.start).isSame(selectedDate, "day")
+  );
+
+  const filteredAvailableSlots = availableSlots.filter((slot) =>
+    moment(slot.start).isSame(selectedDate, "day")
   );
 
   const getStatus = (event) => {
@@ -320,7 +383,7 @@ const TeacherSchedulePage = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-        className="bg-orange-100 p-6 rounded-2xl shadow-xl"
+        className="bg-orange-100 p-6 rounded-2xl shadow-xl mb-8"
       >
         <Box className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <Button
@@ -412,8 +475,21 @@ const TeacherSchedulePage = () => {
         </motion.div>
       </motion.div>
 
-      {/* Bookings Section */}
+      {/* Schedule Section */}
       <Box className="mt-8">
+        {/* Booked Appointments */}
+        <Typography
+          variant="h5"
+          sx={{
+            fontFamily: "Inter, sans-serif",
+            fontWeight: 600,
+            color: "#333",
+            mb: 4,
+            textAlign: "center",
+          }}
+        >
+          Booked Appointments
+        </Typography>
         {filteredBookings.length > 0 ? (
           <AnimatePresence>
             <motion.div
@@ -421,7 +497,7 @@ const TeacherSchedulePage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
             >
               {filteredBookings.map((booking) => (
                 <motion.div
@@ -569,10 +645,117 @@ const TeacherSchedulePage = () => {
               fontWeight: 500,
               color: "#666",
               textAlign: "center",
+              mb: 8,
+            }}
+          >
+            No booked appointments for this date
+          </Typography>
+        )}
+
+        {/* Available Slots */}
+        <Typography
+          variant="h5"
+          sx={{
+            fontFamily: "Inter, sans-serif",
+            fontWeight: 600,
+            color: "#333",
+            mb: 4,
+            textAlign: "center",
+          }}
+        >
+          Available Slots
+        </Typography>
+        {filteredAvailableSlots.length > 0 ? (
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {filteredAvailableSlots.map((slot) => (
+                <motion.div
+                  key={slot.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <Card
+                    className="rounded-xl shadow-lg bg-blue-50 border border-blue-200 hover:shadow-xl transition-shadow duration-300"
+                    sx={{ minWidth: 280, maxWidth: 350 }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontFamily: "Inter, sans-serif",
+                          fontWeight: 600,
+                          fontSize: "1.25rem",
+                          color: "#333",
+                          mb: 1.5,
+                        }}
+                      >
+                        {slot.title}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: "0.95rem",
+                          color: "#666",
+                          display: "flex",
+                          alignItems: "center",
+                          mb: 2,
+                        }}
+                      >
+                        <Clock className="w-5 h-5 mr-2 text-gray-700" />
+                        {moment(slot.start).format("HH:mm")} -{" "}
+                        {moment(slot.end).format("HH:mm")}
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                        }}
+                      >
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleSelectEvent(slot)}
+                          sx={{
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: "0.9rem",
+                            color: "#f57c00",
+                            borderColor: "#f57c00",
+                            "&:hover": {
+                              backgroundColor: "#fff3e0",
+                              borderColor: "#f57c00",
+                            },
+                            textTransform: "none",
+                            px: 2,
+                          }}
+                        >
+                          Details
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <Typography
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: { xs: "1.5rem", sm: "2rem" },
+              fontWeight: 500,
+              color: "#666",
+              textAlign: "center",
               mt: 4,
             }}
           >
-            No appointments for this date
+            No available slots for this date
           </Typography>
         )}
       </Box>
@@ -606,32 +789,52 @@ const TeacherSchedulePage = () => {
           </DialogTitle>
           <DialogContent sx={{ pt: 3 }}>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {[
-                {
-                  label: "Date",
-                  value: moment(selectedEvent.details.date).format(
-                    "YYYY-MM-DD"
-                  ),
-                },
-                {
-                  label: "Time",
-                  value: getTimeFromSlotId(selectedEvent.details.slotId),
-                },
-                { label: "Student ID", value: selectedEvent.details.studentId },
-                {
-                  label: "Consultant",
-                  value: selectedEvent.details.consultantId,
-                },
-                {
-                  label: "Booked By",
-                  value: selectedEvent.details.bookedBy || "Unknown",
-                },
-                {
-                  label: "Meeting Type",
-                  value: selectedEvent.details.meetingType,
-                },
-                { label: "Status", value: getStatus(selectedEvent) },
-              ].map((item) => (
+              {(selectedEvent.details.studentId
+                ? [
+                    {
+                      label: "Date",
+                      value: moment(selectedEvent.details.date).format(
+                        "YYYY-MM-DD"
+                      ),
+                    },
+                    {
+                      label: "Time",
+                      value: getTimeFromSlotId(selectedEvent.details.slotId),
+                    },
+                    {
+                      label: "Student ID",
+                      value: selectedEvent.details.studentId,
+                    },
+                    {
+                      label: "Consultant",
+                      value: selectedEvent.details.consultantId,
+                    },
+                    {
+                      label: "Booked By",
+                      value: selectedEvent.details.bookedBy || "Unknown",
+                    },
+                    {
+                      label: "Meeting Type",
+                      value: selectedEvent.details.meetingType,
+                    },
+                    { label: "Status", value: getStatus(selectedEvent) },
+                  ]
+                : [
+                    {
+                      label: "Date",
+                      value: moment(selectedEvent.details.date).format(
+                        "YYYY-MM-DD"
+                      ),
+                    },
+                    { label: "Time", value: selectedEvent.details.slotName },
+                    {
+                      label: "Created At",
+                      value: moment(selectedEvent.details.createAt).format(
+                        "YYYY-MM-DD HH:mm:ss"
+                      ),
+                    },
+                  ]
+              ).map((item) => (
                 <Box
                   key={item.label}
                   sx={{
@@ -666,23 +869,24 @@ const TeacherSchedulePage = () => {
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 3, justifyContent: "space-between" }}>
-            {!selectedEvent.details.isCancelled && (
-              <Button
-                onClick={() => openConfirmModal(selectedEvent)}
-                variant="contained"
-                color="error"
-                sx={{
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: "0.95rem",
-                  textTransform: "none",
-                  px: 4,
-                  py: 1,
-                  minWidth: 120,
-                }}
-              >
-                Cancel Appointment
-              </Button>
-            )}
+            {selectedEvent.details.studentId &&
+              !selectedEvent.details.isCancelled && (
+                <Button
+                  onClick={() => openConfirmModal(selectedEvent)}
+                  variant="contained"
+                  color="error"
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: "0.95rem",
+                    textTransform: "none",
+                    px: 4,
+                    py: 1,
+                    minWidth: 120,
+                  }}
+                >
+                  Cancel Appointment
+                </Button>
+              )}
             <Button
               onClick={closeModal}
               variant="outlined"
