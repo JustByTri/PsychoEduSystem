@@ -32,6 +32,7 @@ import TeacherScheduleRegistration from "./pages/teacher/TeacherScheduleRegistra
 import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Chat from "./pages/chat/Chat";
 
 function App() {
   return (
@@ -115,6 +116,7 @@ function App() {
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />
+          <Route path="chat/:id" element={<Chat />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} />
       </Router>
