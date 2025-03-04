@@ -146,7 +146,8 @@ namespace BLL.Hubs
                 var user = await _unitOfWork.User.GetByIdAsync(userId);
                 string userName = user != null ? $"{user.FirstName} {user.LastName}".Trim() : userId.ToString();
                 Console.WriteLine($"User {userId} sent message in appointment {appointmentId}: {message}");
-                await Clients.Group(appointmentId).SendAsync("ReceiveMessage", userName, message);
+                await Clients.OthersInGroup(appointmentId).SendAsync("ReceiveMessage", userName, message);
+                await Clients.Caller.SendAsync("SelfMessage", userName, message);
             }
             catch (Exception ex)
             {
