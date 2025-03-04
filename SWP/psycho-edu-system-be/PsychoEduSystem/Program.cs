@@ -98,9 +98,10 @@ namespace MIndAid
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins("https://localhost:5173")
                           .AllowAnyMethod()
-                          .AllowAnyHeader();
+                          .AllowAnyHeader()
+                          .AllowCredentials();
                 });
             });
             builder.Services.AddAuthorization(options =>
@@ -130,7 +131,7 @@ namespace MIndAid
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
-            app.MapHub<ChatHub>("/chatHub");
+            app.MapHub<ChatHub>("/chatHub").RequireCors("AllowFrontend"); ;
        
             app.Run();
         }
