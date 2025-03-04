@@ -90,7 +90,7 @@ namespace BLL.Hubs
                 );
                  
 
-                if (role == "Psychologist")
+                if (role == "Psychologist" || role == "Teacher")
                 {
                     _groupStartedByPsychologist.TryAdd(appointmentId, true);
                 }
