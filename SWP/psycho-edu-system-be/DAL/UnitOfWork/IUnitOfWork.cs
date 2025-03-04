@@ -31,7 +31,15 @@ namespace DAL.UnitOfWork
         IRelationshipRepository Relationship { get; }
         IClassRepository Class { get; }
         ITargetProgramRepository TargetProgram { get; }
+
+        IUserTargetProgramRepository UserTargetProgram { get; }
+
+
+
+
         IScheduleRepository Schedule { get; }
+
+
         IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel);
         // Dispose method để giải phóng tài nguyên
         void Dispose();

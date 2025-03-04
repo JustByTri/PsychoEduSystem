@@ -105,6 +105,23 @@ namespace PsychoEduSystem.Controller
         }
 
 
+        [HttpPost("assign-user/{surveyTakerId}")]
+        public async Task<IActionResult> AssignUserToProgram(Guid surveyTakerId)
+        {
+            var success = await _targetProgramService.AutoAssignUserToProgramAsync(surveyTakerId);
+
+            if (!success)
+            {
+                return BadRequest("No suitable program found or user already assigned.");
+            }
+
+            return Ok("User successfully assigned to a program.");
+        }
+
+
+
+
+
 
 
     }

@@ -36,6 +36,8 @@ namespace DAL.Data
         public DbSet<SurveyAnswerUser> SurveyAnswerUsers { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
 
+        public DbSet<UserTargetProgram> UserTargetPrograms { get; set; }
+
         #endregion
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
@@ -65,7 +67,7 @@ namespace DAL.Data
                 Address = "Ha Noi",
                 Status = true,
                 CreateAt = DateTime.Now,
-                RoleId =  1,
+                RoleId = 1,
                 IsEmailConfirmed = true
 
 

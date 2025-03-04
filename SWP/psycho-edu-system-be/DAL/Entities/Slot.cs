@@ -12,12 +12,14 @@ namespace DAL.Entities
     {
         [Key]
         public int SlotId { get; set; }
- 
-         public string SlotName { get; set; }
+
+        public string SlotName { get; set; }
+
+        public DateTime StartTime { get; set; }  // 🔹 Thêm thời gian bắt đầu
+        public DateTime EndTime { get; set; }    // 🔹 Thêm thời gian kết thúc
 
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime? CreateAt { get; set; }
-
 
         public virtual ICollection<Appointment> Appointments { get; set; }
     }

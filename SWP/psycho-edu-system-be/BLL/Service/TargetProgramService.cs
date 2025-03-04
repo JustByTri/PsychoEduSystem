@@ -136,5 +136,38 @@ namespace BLL.Service
             }
         }
 
+        public async Task<bool> AutoAssignUserToProgramAsync(Guid surveyTakerId)
+        {
+            var surveyResponse = await _unitOfWork.SurveyResponse
+             .GetLatestSurveyResponseByUserIdAsync(surveyTakerId);
+            if (surveyResponse == null) return false;
+
+            // 2️⃣ Xác định chương trình phù hợp dựa trên điểm sức khỏe tâm lý
+            var suitableProgram = await _unitOfWork.TargetProgram
+                .FindProgramByHealthPointsAsync(surveyResponse.HealthPoints);
+
+            if (suitableProgram == null) return false;
+
+            // 3️⃣ Kiểm tra xem người dùng đã tham gia chương trình chưa
+            var existingUserProgram = await _unitOfWork.UserTargetProgram
+                .FindByUserAndProgramAsync(surveyTakerId, suitableProgram.ProgramId);
+
+            if (existingUserProgram != null) return false; // Đã tham gia trước đó
+
+            // 4️⃣ Thêm mới vào danh sách tham gia chương trình
+            var userProgram = new UserTargetProgram
+            {
+                UserId = surveyTakerId,
+                ProgramId = suitableProgram.ProgramId,
+                JoinDate = DateTime.UtcNow
+            };
+
+            await _unitOfWork.UserTargetProgram.AddAsync(userProgram);
+            //await _unitOfWork.CommitAsync();
+
+            return true;
+
+        }
+
     }
 }

@@ -17,6 +17,7 @@ using Common.Constant;
 using System.Security.Claims;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using Swashbuckle.AspNetCore.Filters;
+using BLL.Hubs;
 
 namespace MIndAid
 {
@@ -64,6 +65,9 @@ namespace MIndAid
 
             builder.Services.AddScoped<ITargetProgramService, TargetProgramService>();
 
+            builder.Services.AddScoped<IMessageService, MessageService>();
+            builder.Services.AddSignalR();
+
 
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
@@ -95,12 +99,13 @@ namespace MIndAid
             );
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll",
+                options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.AllowAnyOrigin()
+                        policy.WithOrigins("http://127.0.0.1:5500") // ⚡ Đổi thành URL FE của bạn
                               .AllowAnyMethod()
-                              .AllowAnyHeader();
+                              .AllowAnyHeader()
+                              .AllowCredentials(); // 👈 Quan trọng!
                     });
             });
             builder.Services.AddAuthorization(options =>
@@ -121,13 +126,14 @@ namespace MIndAid
                 });
                 app.UseSwagger();
             }
-
-            app.UseHttpsRedirection();
+            app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
+            app.MapHub<ChatHub>("/chatHub"); // chức năng chat
             app.UseHttpsRedirection();
+            
             app.MapControllers();
-            app.UseCors("AllowAll");
+            app.UseCors("AllowFrontend");
             app.Run();
         }
     }

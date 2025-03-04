@@ -15,6 +15,9 @@ namespace BLL.Interface
         Task<TargetProgramDTO> AddProgramAsync(TargetProgramDTO dto);
         Task UpdateProgramAsync(TargetProgramDTO dto);
         Task DeleteProgramAsync(Guid? programId);
+        Task<bool> AutoAssignUserToProgramAsync(Guid surveyTakerId);
+
+
     }
 
 

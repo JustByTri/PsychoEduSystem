@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories.IRepositories
 {
-   public interface IAppointmentRepository : IGenericRepository<Appointment>
+    public interface IAppointmentRepository : IGenericRepository<Appointment>
     {
+        Task<Appointment> GetAppointmentByUsers(Guid StudentId, Guid OwnerId);
     }
 }
