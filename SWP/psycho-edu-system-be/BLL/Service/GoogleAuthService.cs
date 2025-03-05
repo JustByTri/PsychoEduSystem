@@ -8,6 +8,7 @@ using Google.Apis.Auth;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
@@ -82,11 +83,18 @@ namespace BLL.Services
     {
         new Claim(JwtClaimTypes.UserId, user.UserId.ToString()),
         new Claim(JwtClaimTypes.Email, user.Email),
-        new Claim(JwtClaimTypes.Username, user.UserName),
-         new Claim(JwtClaimTypes.RoleId, user.RoleId.ToString())
+        new Claim(JwtClaimTypes.Username, user.UserName)
     };
-
-          
+            var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+            if (role == null)
+            {
+                Console.WriteLine($"Role {user.RoleId} not found for user {user.UserId}. Defaulting to 'User'.");
+                claims.Add(new Claim(ClaimTypes.Role, "User"));
+            }
+            else
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role.RoleName));
+            }
             var accessToken = _jwtProvider.GenerateAccessToken(claims);
             var refreshToken = _jwtProvider.GenerateRefreshToken(claims);
 

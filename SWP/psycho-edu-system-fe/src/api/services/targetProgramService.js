@@ -3,13 +3,18 @@ const BASE_URL = "https://localhost:7192/";
 
 export const TargetProgramService = {
   createTargetProgram: async (data) => {
+    console.log("run");
     try {
-      const response = await axios.post(`${BASE_URL}api/TargetProgram/create`, data, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "*/*",
-        },
-      });
+      const response = await axios.post(
+        `${BASE_URL}api/TargetProgram/create`,
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "*/*",
+          },
+        }
+      );
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -22,7 +27,7 @@ export const TargetProgramService = {
       throw error;
     }
   },
-  
+
   getTargetPrograms: async () => {
     try {
       const response = await axios.get(`${BASE_URL}api/TargetProgram/list`, {
@@ -43,15 +48,19 @@ export const TargetProgramService = {
       return []; // Return empty array if there's an error
     }
   },
-  
+
   updateTargetProgram: async (id, data) => {
     try {
-      const response = await axios.put(`${BASE_URL}api/TargetProgram/update/${id}`, data, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "*/*",
-        },
-      });
+      const response = await axios.put(
+        `${BASE_URL}api/TargetProgram/update/${id}`,
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "*/*",
+          },
+        }
+      );
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -66,11 +75,14 @@ export const TargetProgramService = {
   },
   deleteTargetProgram: async (id) => {
     try {
-      const response = await axios.delete(`${BASE_URL}api/TargetProgram/delete/${id}`, {
-        headers: {
-          Accept: "*/*",
-        },
-      });
+      const response = await axios.delete(
+        `${BASE_URL}api/TargetProgram/delete/${id}`,
+        {
+          headers: {
+            Accept: "*/*",
+          },
+        }
+      );
       return response.data;
     } catch (error) {
       if (error.response) {
@@ -82,5 +94,5 @@ export const TargetProgramService = {
       }
       throw error;
     }
-  }
+  },
 };

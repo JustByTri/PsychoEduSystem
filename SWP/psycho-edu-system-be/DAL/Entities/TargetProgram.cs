@@ -20,16 +20,16 @@ namespace DAL.Entities
 
         public int Capacity { get; set; }
 
-        public Guid CreatedBy { get; set; }
+        //public Guid CreatedBy { get; set; }
         public DateTime CreateAt { get; set; }
 
-        [ForeignKey("CreatedBy")]
-        public User CreatedByUser { get; set; }
+        //[ForeignKey("CreatedBy")]
+        //public User CreatedByUser { get; set; }
 
-        // Khóa ngoại đến DimensionHealth
+        // Khóa ngoại liên kết với DimensionHealth
         public int DimensionId { get; set; }
 
-        [ForeignKey("DimensionId")]
+        // Navigation property để lấy thông tin DimensionName
         public DimensionHealth Dimension { get; set; }
     }
 }
