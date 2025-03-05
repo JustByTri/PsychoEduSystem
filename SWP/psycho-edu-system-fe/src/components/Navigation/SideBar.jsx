@@ -115,29 +115,29 @@ const getNavItems = (role) => {
           path: "/student/schedule",
         },
         { icon: faCalendarCheck, label: "Booking", path: "/student/booking" },
-        { icon: faUserCircle, label: "Account", path: "#" },
+        // { icon: faUserCircle, label: "Account", path: "#" },
       ];
     case "Teacher":
       return [
         { icon: faHome, label: "Home", path: "/teacher" },
-        {
-          icon: faChartBar,
-          label: "Student Progress",
-          path: "/teacher/progress",
-        },
-        {
-          icon: faClipboardList,
-          label: "Assignments",
-          path: "/teacher/assignments",
-        },
-        {
-          icon: faBell,
-          label: "Notifications",
-          path: "/teacher/notifications",
-        },
+        // {
+        //   icon: faChartBar,
+        //   label: "Student Progress",
+        //   path: "/teacher/progress",
+        // },
+        // {
+        //   icon: faClipboardList,
+        //   label: "Assignments",
+        //   path: "/teacher/assignments",
+        // },
+        // {
+        //   icon: faBell,
+        //   label: "Notifications",
+        //   path: "/teacher/notifications",
+        // },
         { icon: faCalendarPlus, label: "Book Slots", path: "/teacher/slot" },
         { icon: faCalendarAlt, label: "Schedule", path: "/teacher/schedule" },
-        { icon: faUser, label: "Account", path: "/teacher/account" },
+        // { icon: faUser, label: "Account", path: "/teacher/account" },
       ];
     case "Psychologist":
       return [
@@ -148,16 +148,16 @@ const getNavItems = (role) => {
     case "Parent":
       return [
         { icon: faHome, label: "Home", path: "/parent" },
-        {
-          icon: faChartBar,
-          label: "Student Progress",
-          path: "/parent/progress",
-        },
-        {
-          icon: faClipboardList,
-          label: "Assignments",
-          path: "/parent/assignments",
-        },
+        // {
+        //   icon: faChartBar,
+        //   label: "Student Progress",
+        //   path: "/parent/progress",
+        // // },
+        // {
+        //   icon: faClipboardList,
+        //   label: "Assignments",
+        //   path: "/parent/assignments",
+        // },
         { icon: faBell, label: "Schedule", path: "/parent/schedule" },
         { icon: faFileAlt, label: "Booking", path: "/parent/booking" },
       ];
@@ -166,18 +166,18 @@ const getNavItems = (role) => {
         { icon: faTachometerAlt, label: "Dashboard", path: "/admin" },
         { icon: faBookOpen, label: "Programs", path: "/admin/programs" },
         { icon: faPoll, label: "Surveys", path: "/admin/survey" },
-        { icon: faUsers, label: "Users", path: "/admin/users" },
-        {
-          icon: faCalendarCheck,
-          label: "Appointments",
-          path: "/admin/appointments",
-        },
-        { icon: faChartBar, label: "Reports", path: "/admin/reports" },
         {
           icon: faUserPlus,
           label: "Create Parent",
           path: "/admin/create-parent",
-        }, // Added new item
+        },
+        // { icon: faUsers, label: "Users", path: "/admin/users" },
+        // {
+        //   icon: faCalendarCheck,
+        //   label: "Appointments",
+        //   path: "/admin/appointments",
+        // },
+        // { icon: faChartBar, label: "Reports", path: "/admin/reports" },
       ];
     default:
       return [];

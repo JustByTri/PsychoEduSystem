@@ -26,7 +26,8 @@ export const ChildSelection = () => {
           return;
         }
 
-        const response = await axios.get(
+        // Lấy danh sách relationship
+        const relationshipResponse = await axios.get(
           `https://localhost:7192/api/relationships/parent/${parentId}`,
           {
             headers: {
@@ -36,35 +37,58 @@ export const ChildSelection = () => {
           }
         );
 
-        if (response.status === 200) {
-          const result = response.data.result || response.data;
-          if (!Array.isArray(result)) {
-            setError("Invalid data format: expected an array of relationships");
-            setIsLoading(false);
-            return;
-          }
+        if (relationshipResponse.status !== 200) {
+          throw new Error("Failed to fetch relationships");
+        }
 
-          const uniqueStudents = {};
-          const formattedChildren = result
-            .filter((relationship) => relationship && relationship.studentId)
-            .map((relationship) => {
-              const studentId = relationship.studentId;
-              if (!uniqueStudents[studentId]) {
-                uniqueStudents[studentId] = true;
+        const relationships =
+          relationshipResponse.data.result || relationshipResponse.data;
+        if (!Array.isArray(relationships)) {
+          setError("Invalid data format: expected an array of relationships");
+          setIsLoading(false);
+          return;
+        }
+
+        // Lấy thông tin profile của từng student
+        const uniqueStudents = {};
+        const formattedChildrenPromises = relationships
+          .filter((rel) => rel && rel.studentId)
+          .map(async (relationship) => {
+            const studentId = relationship.studentId;
+            if (!uniqueStudents[studentId]) {
+              uniqueStudents[studentId] = true;
+
+              const profileResponse = await axios.get(
+                `https://localhost:7192/api/User/profile?userId=${studentId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${authData.accessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+
+              if (
+                profileResponse.data.isSuccess &&
+                profileResponse.data.statusCode === 200
+              ) {
+                const profile = profileResponse.data.result;
                 return {
                   id: studentId,
-                  name:
-                    relationship.relationshipName ||
-                    `Student ${studentId.slice(0, 8)}`,
-                  role: "Student",
+                  fullName:
+                    profile.fullName || `Student ${studentId.slice(0, 8)}`, // Lấy fullName từ profile
+                  relationshipName: relationship.relationshipName || "Child", // Lấy relationshipName từ relationship
                 };
               }
               return null;
-            })
-            .filter(Boolean);
+            }
+            return null;
+          });
 
-          setChildren(formattedChildren);
-        }
+        const formattedChildren = (
+          await Promise.all(formattedChildrenPromises)
+        ).filter(Boolean);
+        setChildren(formattedChildren);
       } catch (error) {
         setError(error.message || "Failed to fetch children");
       } finally {
@@ -82,7 +106,8 @@ export const ChildSelection = () => {
   const handleSelectChild = (child) => {
     updateBookingData({
       childId: child.id,
-      childName: child.name || "Unknown Student",
+      childName: child.fullName, // Lưu fullName vào bookingData
+      relationshipName: child.relationshipName, // Lưu relationshipName nếu cần dùng sau này
     });
   };
 
@@ -152,7 +177,7 @@ export const ChildSelection = () => {
                     <Typography
                       sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
                     >
-                      {child.name ? child.name.charAt(0) : "S"}
+                      {child.fullName ? child.fullName.charAt(0) : "S"}
                     </Typography>
                   </Box>
                   <Box>
@@ -164,7 +189,7 @@ export const ChildSelection = () => {
                         color: "#333",
                       }}
                     >
-                      {child.name || "Unknown Student"}
+                      {child.fullName} {/* Hiển thị fullName */}
                     </Typography>
                     <Typography
                       sx={{
@@ -173,7 +198,7 @@ export const ChildSelection = () => {
                         color: "#666",
                       }}
                     >
-                      {child.role || "Student"}
+                      {child.relationshipName} {/* Hiển thị relationshipName */}
                     </Typography>
                   </Box>
                 </Box>

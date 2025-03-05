@@ -346,7 +346,7 @@ export const DateTimeSelection = () => {
             Select Appointment Type
           </Typography>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {["online", "offline"].map((type, index) => (
+            {["Online", "Offline"].map((type, index) => (
               <motion.div
                 key={type}
                 initial={{ opacity: 0, scale: 0.9 }}

@@ -1,9 +1,63 @@
+import { useEffect, useState } from "react";
 import { useBooking } from "../../../context/BookingContext";
 import { motion } from "framer-motion";
-import { Box, Typography, Card, CardContent } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  CircularProgress,
+} from "@mui/material";
+import axios from "axios";
+import { getAuthDataFromLocalStorage } from "../../../utils/auth";
+import { toast } from "react-toastify";
 
 export const ConfirmationStep = () => {
   const { bookingData } = useBooking();
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const authData = getAuthDataFromLocalStorage();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `https://localhost:7192/api/User/profile?userId=${bookingData.userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authData.accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.data.isSuccess && response.data.statusCode === 200) {
+          setUserProfile(response.data.result);
+        } else {
+          throw new Error(
+            response.data.message || "Failed to fetch user profile"
+          );
+        }
+      } catch (err) {
+        setError(err.message);
+        toast.error(`Failed to fetch user profile: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [bookingData.userId, authData.accessToken]);
+
+  if (loading) return <CircularProgress sx={{ mx: "auto", mt: 4 }} />;
+  if (error)
+    return (
+      <Typography color="error" sx={{ textAlign: "center", mt: 4 }}>
+        {error}
+      </Typography>
+    );
 
   return (
     <motion.div
@@ -49,12 +103,12 @@ export const ConfirmationStep = () => {
                 <Typography
                   sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
                 >
-                  Child:
+                  Student:
                 </Typography>
                 <Typography
                   sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
                 >
-                  {bookingData.childName}
+                  {bookingData.childName}{" "}
                 </Typography>
               </Box>
             )}
@@ -96,33 +150,35 @@ export const ConfirmationStep = () => {
                 {bookingData.appointmentType || "Not specified"}
               </Typography>
             </Box>
-            <Box className="pt-4 border-t">
-              <Typography
-                sx={{
-                  fontFamily: "Inter, sans-serif",
-                  fontWeight: 600,
-                  color: "#333",
-                  mb: 2,
-                }}
-              >
-                Contact Information
-              </Typography>
-              <Typography
-                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
-              >
-                Name: {bookingData.userName}
-              </Typography>
-              <Typography
-                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
-              >
-                Phone: {bookingData.phone || "Not provided"}
-              </Typography>
-              <Typography
-                sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
-              >
-                Email: {bookingData.email}
-              </Typography>
-            </Box>
+            {userProfile && (
+              <Box className="pt-4 border-t">
+                <Typography
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 600,
+                    color: "#333",
+                    mb: 2,
+                  }}
+                >
+                  Contact Information
+                </Typography>
+                <Typography
+                  sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+                >
+                  Name: {userProfile.fullName}
+                </Typography>
+                <Typography
+                  sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+                >
+                  Phone: {userProfile.phone || "Not provided"}
+                </Typography>
+                <Typography
+                  sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}
+                >
+                  Email: {userProfile.email}
+                </Typography>
+              </Box>
+            )}
           </Box>
         </CardContent>
       </Card>

@@ -169,7 +169,9 @@ const SchedulePage = () => {
   };
 
   const handleSelectEvent = (event) => setSelectedEvent(event);
-  const handleJoinChat = (id) => navigate(`/chat/${id}`);
+  const handleJoinChat = (id) => {
+    navigate(`/chat/${id}`);
+  };
   const closeModal = () => setSelectedEvent(null);
 
   const handleCancelAppointment = async () => {
@@ -267,7 +269,7 @@ const SchedulePage = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen text-gray-900 flex flex-col max-w-7xl mx-auto">
+    <div className="p-6 bg-white-100 min-h-screen text-gray-900 flex flex-col max-w-7xl mx-auto">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -50 }}
