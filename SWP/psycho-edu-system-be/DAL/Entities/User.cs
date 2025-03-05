@@ -24,7 +24,7 @@ namespace DAL.Entities
         [Required(ErrorMessage = "Phone không được rỗng.")]
         [RegularExpression(@"^(?:\+84|0)[3|5|7|8|9]\d{8}$", ErrorMessage = "Số điện thoại không hợp lệ.")]
         public string Phone { get; set; } = string.Empty;
-        
+
         public string Email { get; set; } = string.Empty;
         [MaxLength(30)]
         public string FullName { get; set; } = string.Empty;
@@ -52,8 +52,8 @@ namespace DAL.Entities
         public virtual ICollection<Appointment> ParentAppointments { get; set; }
         public virtual ICollection<Message> SentMessages { get; set; }
         public virtual ICollection<Message> ReceivedMessages { get; set; }
-        public virtual  ICollection<Schedule > Schedules { get; set; }
-     
+        public virtual ICollection<Schedule> Schedules { get; set; }
+
         public virtual ICollection<RequestAppointments> RequestAppointments { get; set; }
         public virtual ICollection<Survey> Surveys { get; set; }
 

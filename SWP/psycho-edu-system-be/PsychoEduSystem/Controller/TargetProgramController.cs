@@ -38,14 +38,12 @@ namespace PsychoEduSystem.Controller
                 // Chỉ trả về các trường cần thiết
                 return Ok(new
                 {
-                    createdProgram.ProgramId,
+
                     createdProgram.Name,
                     createdProgram.Description,
                     createdProgram.StartDate,
                     createdProgram.MinPoint,
                     createdProgram.Capacity,
-                    createdProgram.CreatedBy,
-                    createdProgram.CreateAt,
                     createdProgram.DimensionId
                 });
             }
@@ -56,7 +54,6 @@ namespace PsychoEduSystem.Controller
                 return StatusCode(500, $"Internal Server Error: {ex.Message}");
             }
         }
-
 
 
         [HttpGet("list")]
@@ -88,7 +85,6 @@ namespace PsychoEduSystem.Controller
             existingProgram.Capacity = programDto.Capacity;
 
             await _targetProgramService.UpdateProgramAsync(existingProgram);
-
             return Ok(new { Message = "Program updated successfully", UpdatedProgram = programDto });
         }
 
@@ -105,6 +101,23 @@ namespace PsychoEduSystem.Controller
             await _targetProgramService.DeleteProgramAsync(id);
             return Ok("Program deleted successfully.");
         }
+
+
+        //[HttpPost("assign-user/{surveyTakerId}")]
+        //public async Task<IActionResult> AssignUserToProgram(Guid surveyTakerId)
+        //{
+        //    var success = await _targetProgramService.AutoAssignUserToProgramAsync(surveyTakerId);
+
+        //    if (!success)
+        //    {
+        //        return BadRequest("No suitable program found or user already assigned.");
+        //    }
+
+        //    return Ok("User successfully assigned to a program.");
+        //}
+
+
+
 
 
 
