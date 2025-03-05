@@ -77,13 +77,12 @@ const ProgramList = () => {
           minimumScore: program.minPoint,
           participantLimit: program.capacity,
           counselorName: "N/A", // API doesn't provide counselor info
-          dimensionName: mockDimensions.find(d => d.id === program.dimensionId)?.name || 'Unknown',
+          dimensionName: program.dimensionName|| 'Unknown',
           description: program.description,
           // Store original data for API calls
           programId: program.programId,
           createdBy: program.createdBy,
-          createAt: program.createAt,
-          dimensionId: program.dimensionId
+          createAt: program.createAt
         }));
         
         setPrograms(formattedPrograms);
