@@ -6,7 +6,11 @@ import {
   CRow,
   CCol,
   CButton,
-  CTooltip,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
 } from "@coreui/react";
 import "@coreui/coreui/dist/css/coreui.min.css";
 import axios from "axios";
@@ -24,95 +28,7 @@ import {
 } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Notification Modal Component
-const NotificationModal = ({ isOpen, onClose, message, type }) => {
-  if (!isOpen) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
-      <motion.div
-        initial={{ scale: 0.7, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.7, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className={`rounded-xl p-6 shadow-2xl max-w-sm w-full ${
-          type === "success" ? "bg-green-50" : "bg-red-50"
-        }`}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                type === "success" ? "bg-green-500" : "bg-red-500"
-              }`}
-            >
-              {type === "success" ? (
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              )}
-            </div>
-            <h3
-              className={`text-lg font-semibold ${
-                type === "success" ? "text-green-800" : "text-red-800"
-              }`}
-            >
-              {type === "success" ? "Success" : "Error"}
-            </h3>
-          </div>
-        </div>
-        <p
-          className={`text-sm mb-6 ${
-            type === "success" ? "text-green-700" : "text-red-700"
-          }`}
-        >
-          {message}
-        </p>
-        <button
-          onClick={onClose}
-          className={`w-full py-2 rounded-lg font-medium transition-colors ${
-            type === "success"
-              ? "bg-green-500 text-white hover:bg-green-600"
-              : "bg-red-500 text-white hover:bg-red-600"
-          }`}
-        >
-          Close
-        </button>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// Update the AppointmentDetailModal component
+// Updated AppointmentDetailModal component with scroll issue fixed
 const AppointmentDetailModal = ({ isOpen, onClose, appointment }) => {
   if (!isOpen || !appointment) return null;
 
@@ -199,8 +115,8 @@ const AppointmentDetailModal = ({ isOpen, onClose, appointment }) => {
           </button>
         </div>
 
-        {/* Modal Body with Scrollable Content */}
-        <div className="space-y-4 sm:space-y-6 overflow-y-scroll scrollbar-hide h-[calc(100%-12rem)]">
+        {/* Modal Body with content - REMOVED scrollbar */}
+        <div className="space-y-4 sm:space-y-6 h-[calc(100%-12rem)] scrollbar-hide">
           {/* Student Information Section */}
           <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
             <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
@@ -381,9 +297,13 @@ const SchedulePage = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
   const [modalState, setModalState] = useState({
-    isOpen: false,
+    visible: false,
     message: "",
     type: "success",
+  });
+  const [confirmModalState, setConfirmModalState] = useState({
+    visible: false,
+    appointmentId: null,
   });
   const [detailModalState, setDetailModalState] = useState({
     isOpen: false,
@@ -424,16 +344,11 @@ const SchedulePage = () => {
         "https://localhost:7192/api/User/username/student1"
       );
       const userId = userResponse.data.userId;
-
       const profileResponse = await axios.get(
         `https://localhost:7192/api/User/profile?userId=${userId}`
       );
-
       if (profileResponse.data.isSuccess) {
-        setUserProfile({
-          ...profileResponse.data.result,
-          userId: userId,
-        });
+        setUserProfile({ ...profileResponse.data.result, userId });
       } else {
         throw new Error(
           profileResponse.data.message || "Failed to get user profile"
@@ -443,7 +358,7 @@ const SchedulePage = () => {
       console.error("Error fetching user profile:", error);
       setErrorMessage("Failed to load user profile. Please try again later.");
       setModalState({
-        isOpen: true,
+        visible: true, // Thay isOpen thành visible
         message: "Failed to load user profile. Please try again later.",
         type: "error",
       });
@@ -506,28 +421,20 @@ const SchedulePage = () => {
       const response = await axios.get(
         `https://localhost:7192/api/appointments/${appointmentId}/cancellation`
       );
-
       if (response.data.isSuccess) {
         setAppointments((prevAppointments) =>
           prevAppointments.map((appointment) =>
             appointment.appointmentId === appointmentId
-              ? {
-                  ...appointment,
-                  isCancelled: true,
-                  status: "Cancelled",
-                }
+              ? { ...appointment, isCancelled: true, status: "Cancelled" }
               : appointment
           )
         );
-
         setModalState({
-          isOpen: true,
+          visible: true, // Thay isOpen thành visible
           message:
             response.data.message || "Appointment cancelled successfully!",
           type: "success",
         });
-
-        return { success: true, message: response.data.message };
       } else {
         throw new Error(
           response.data.message || "Failed to cancel appointment"
@@ -536,11 +443,11 @@ const SchedulePage = () => {
     } catch (error) {
       console.error("Error cancelling appointment:", error);
       setModalState({
-        isOpen: true,
-        message: error.message || "Failed to cancel appointment",
+        visible: true, // Thay isOpen thành visible
+        message:
+          error.message || "Failed to cancel appointment. Please try again.",
         type: "error",
       });
-      return { success: false, message: error.message };
     }
   };
 
@@ -615,10 +522,12 @@ const SchedulePage = () => {
     }
   };
 
-  const handleCancelAppointment = async (appointmentId) => {
-    if (window.confirm("Are you sure you want to cancel this appointment?")) {
-      await cancelAppointment(appointmentId);
-    }
+  const handleCancelAppointment = (appointmentId) => {
+    console.log("Opening confirm modal for:", appointmentId);
+    setConfirmModalState({
+      visible: true,
+      appointmentId: appointmentId,
+    });
   };
 
   const getVisibleDays = (page) => {
@@ -657,9 +566,20 @@ const SchedulePage = () => {
     navigate("/student/booking");
   };
 
+  const handleChat = (id) => {
+    navigate(`/chat/${id}`);
+  };
+
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-blue-200 to-blue-100 dark:from-gray-900 dark:to-gray-800">
-      {" "}
+    <div
+      className="w-full min-h-screen bg-gradient-to-br from-blue-200 to-blue-100 dark:from-gray-900 dark:to-gray-800 scrollbar-hide"
+      style={{
+        transform: "scale(0.5)",
+        transformOrigin: "top left",
+        width: "200%",
+        minHeight: "200%",
+      }}
+    >
       <CContainer fluid className="max-w-7xl mx-auto px-4 py-6">
         {/* Calendar Header with Days */}
         <motion.div
@@ -671,17 +591,35 @@ const SchedulePage = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-4 md:space-y-0">
             <h1 className="text-white text-2xl font-medium">Your Schedule</h1>
             <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-3">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-white text-blue-900 rounded-md px-3 py-2 text-sm border border-blue-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                whileHover={{ scale: 1.05 }} // Hiệu ứng phóng to nhẹ khi hover
+                whileTap={{ scale: 0.95 }} // Hiệu ứng thu nhỏ khi click
               >
-                <option value="All">All Statuses</option>
-                <option value="Scheduled">Scheduled</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-              <span className="text-blue-100 text-sm">
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="bg-gradient-to-r from-white to-blue-50 text-blue-900 rounded-lg pl-4 pr-8 py-2 text-sm border border-blue-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition-all duration-300 hover:shadow-xl hover:border-blue-400 appearance-none cursor-pointer"
+                  style={{
+                    backgroundImage:
+                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333333' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")", // Icon mũi tên tùy chỉnh
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 0.75rem center",
+                    backgroundSize: "1rem",
+                  }}
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Scheduled">Scheduled</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </motion.div>
+              <span
+                className="text-blue-100 text-sm"
+                style={{ minWidth: "190px", textAlign: "center" }}
+              >
                 {format(selectedDate, "EEEE, MM/dd/yyyy")}
               </span>
               <div className="flex items-center space-x-2">
@@ -729,7 +667,7 @@ const SchedulePage = () => {
 
           <div
             ref={calendarContainerRef}
-            className="relative overflow-hidden"
+            className="relative overflow-hidden scrollbar-hide"
             style={{ height: "70px" }}
           >
             <AnimatePresence custom={animationDirection} initial={false}>
@@ -787,7 +725,7 @@ const SchedulePage = () => {
         )}
 
         {/* Appointments Section */}
-        <div className="appointments-container">
+        <div className="appointments-container scrollbar-hide">
           {isLoading ? (
             <div className="flex justify-center items-center min-h-[200px]">
               <CSpinner color="primary" />
@@ -931,35 +869,43 @@ const SchedulePage = () => {
                                 appointment.status !== "Cancelled" && (
                                   <CButton
                                     color="primary"
-                                    className="shadow-sm hover:shadow-md transition-all duration-200 mb-2 sm:mb-0"
+                                    className="shadow-sm hover:shadow-md transition-all duration-200"
                                     style={{
                                       borderRadius: "20px",
                                       backgroundColor: "#3b82f6",
                                       borderColor: "#3b82f6",
                                       fontWeight: "bold",
                                       fontSize: "0.9rem",
-                                      padding: "8px 16px",
+                                      padding: "8px 20px", // Padding cố định
+                                      width: "100px", // Chiều rộng cố định
+                                      height: "40px", // Chiều cao cố định
                                       textDecoration: "none",
-                                      minWidth: "80px",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
                                     }}
-                                    onClick={() => console.log("Join clicked")}
+                                    onClick={() => handleChat(appointment.id)}
                                   >
                                     Join
                                   </CButton>
                                 )}
                               <CButton
                                 color="secondary"
-                                className="shadow-sm hover:shadow-md transition-all duration-200 mb-2 sm:mb-0"
+                                className="shadow-sm hover:shadow-md transition-all duration-200"
                                 style={{
                                   borderRadius: "20px",
                                   backgroundColor: "#8b5cf6",
                                   borderColor: "#8b5cf6",
                                   fontWeight: "bold",
                                   fontSize: "0.9rem",
-                                  padding: "8px 16px",
+                                  padding: "8px 20px", // Padding cố định
+                                  width: "100px", // Chiều rộng cố định
+                                  height: "40px", // Chiều cao cố định
                                   textDecoration: "none",
                                   color: "white",
-                                  minWidth: "80px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
                                 }}
                                 onClick={() => handleViewDetail(appointment)}
                               >
@@ -975,9 +921,13 @@ const SchedulePage = () => {
                                     borderColor: "#ef4444",
                                     fontWeight: "bold",
                                     fontSize: "0.9rem",
-                                    padding: "8px 16px",
+                                    padding: "8px 20px", // Padding cố định
+                                    width: "100px", // Chiều rộng cố định
+                                    height: "40px", // Chiều cao cố định
                                     textDecoration: "none",
-                                    minWidth: "80px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                   }}
                                   onClick={() =>
                                     handleCancelAppointment(
@@ -1013,12 +963,51 @@ const SchedulePage = () => {
         </div>
       </CContainer>
       {/* Notification Modal */}
-      <NotificationModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
-        message={modalState.message}
-        type={modalState.type}
-      />
+      <CModal
+        visible={confirmModalState.visible}
+        onClose={() =>
+          setConfirmModalState({ visible: false, appointmentId: null })
+        }
+        alignment="center"
+        backdrop="static"
+        className="transition-all duration-300 ease-in-out"
+      >
+        <CModalHeader className="bg-blue-600 from-purple-600 to-indigo-700 text-white">
+          <CModalTitle className="flex items-center">
+            <i className="fas fa-exclamation-circle mr-2"></i>
+            Confirm Cancellation
+          </CModalTitle>
+        </CModalHeader>
+        <CModalBody className="py-6 bg-gray-50">
+          <div className="text-center">
+            <i className="fas fa-calendar-times text-indigo-500 mb-4 text-5xl"></i>
+            <p className="mb-0 text-lg text-gray-700">
+              Are you sure you want to cancel this appointment?
+            </p>
+          </div>
+        </CModalBody>
+        <CModalFooter className="border-t-0 flex justify-center space-x-4 bg-gray-50">
+          <CButton
+            className="bg-gradient-to-r from-teal-400 to-emerald-500 hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-teal-200/50 min-w-32 flex items-center justify-center text-white font-medium"
+            onClick={async () => {
+              await cancelAppointment(confirmModalState.appointmentId);
+              setConfirmModalState({ visible: false, appointmentId: null });
+            }}
+          >
+            <i className="fas fa-check mr-2"></i>
+            Yes
+          </CButton>
+          <CButton
+            className="bg-gradient-to-r from-rose-500 to-pink-600 hover:opacity-90 hover:-translate-y-1 transition-all duration-300 shadow-lg shadow-rose-200/50 min-w-32 text-white font-medium flex items-center justify-center"
+            onClick={() =>
+              setConfirmModalState({ visible: false, appointmentId: null })
+            }
+          >
+            <i className="fas fa-times mr-2"></i>
+            No
+          </CButton>
+        </CModalFooter>
+      </CModal>
       {/* Appointment Detail Modal */}
       <AppointmentDetailModal
         isOpen={detailModalState.isOpen}
