@@ -103,7 +103,7 @@ const BookingPageContent = () => {
         meetingWith: bookingData.consultantId,
         date: bookingData.date,
         slotId: bookingData.slotId,
-        isOnline: bookingData.appointmentType === "online",
+        isOnline: bookingData.appointmentType === "Online",
       };
 
       const response = await axios.post(
@@ -172,13 +172,17 @@ const BookingPageContent = () => {
   return (
     <Box
       sx={{
-        p: { xs: 2, sm: 4, md: 6 }, // Responsive padding
+        p: { xs: 2, sm: 3, md: 4 }, // Responsive padding
         bgcolor: "white",
-        minHeight: "100vh",
+        minHeight: "100vh", // Đảm bảo chiều cao tối thiểu
         display: "flex",
         flexDirection: "column",
-        maxWidth: "100%", // Đảm bảo không vượt quá màn hình
-        mx: "auto",
+        maxWidth: "1200px", // Giới hạn chiều rộng tối đa
+        mx: "auto", // Căn giữa
+        width: "100%", // Đảm bảo chiều rộng đầy đủ
+        overflowX: "hidden", // Ngăn tràn ngang
+        position: "relative", // Để cố định nút
+        pb: { xs: 16, sm: 12, md: 10 }, // Để dành không gian cho nút cố định
       }}
     >
       {/* Header */}
@@ -186,7 +190,7 @@ const BookingPageContent = () => {
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        sx={{ mb: { xs: 4, sm: 8 }, textAlign: "center" }}
+        sx={{ mb: { xs: 3, sm: 4, md: 6 }, textAlign: "center" }}
       >
         <Typography
           variant="h4"
@@ -197,6 +201,7 @@ const BookingPageContent = () => {
             WebkitBackgroundClip: "text",
             color: "transparent",
             fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" }, // Responsive font size
+            lineHeight: 1.2,
           }}
         >
           Book an Appointment
@@ -205,9 +210,10 @@ const BookingPageContent = () => {
           variant="body1"
           sx={{
             fontFamily: "Inter, sans-serif",
-            fontSize: { xs: "0.9rem", sm: "1rem" },
+            fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
             color: "#555",
             mt: 1,
+            px: { xs: 1, sm: 0 },
           }}
         >
           Follow the steps below to schedule your consultation
@@ -223,19 +229,29 @@ const BookingPageContent = () => {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        sx={{ flex: 1, mt: { xs: 2, sm: 4 } }}
+        sx={{ flex: 1, mt: { xs: 2, sm: 3, md: 4 }, width: "100%" }}
       >
         {renderStepContent()}
       </motion.div>
 
-      {/* Navigation Buttons */}
+      {/* Fixed Navigation Buttons */}
       <Box
         sx={{
-          mt: { xs: 4, sm: 8 },
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          bgcolor: "white",
+          boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.1)",
+          p: { xs: 2, sm: 3 },
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
           flexDirection: { xs: "column", sm: "row" }, // Column trên mobile, row trên desktop
-          gap: { xs: 2, sm: 0 }, // Khoảng cách trên mobile
+          gap: { xs: 2, sm: 3 }, // Khoảng cách trên mobile
+          zIndex: 1000,
+          maxWidth: "1200px", // Giới hạn chiều rộng tối đa
+          mx: "auto", // Căn giữa
         }}
       >
         {step > 1 && (
@@ -248,6 +264,13 @@ const BookingPageContent = () => {
               py: 1,
               textTransform: "none",
               width: { xs: "100%", sm: "auto" }, // Full width trên mobile
+              fontSize: { xs: "0.85rem", sm: "0.9rem" },
+              borderColor: "#1e88e5",
+              color: "#1e88e5",
+              "&:hover": {
+                borderColor: "#1565c0",
+                color: "#1565c0",
+              },
             }}
             disabled={isSubmitting}
           >
@@ -267,6 +290,7 @@ const BookingPageContent = () => {
               "&:hover": { backgroundColor: "#1565c0" },
               textTransform: "none",
               width: { xs: "100%", sm: "auto" },
+              fontSize: { xs: "0.85rem", sm: "0.9rem" },
             }}
             disabled={isSubmitting}
           >
@@ -285,6 +309,7 @@ const BookingPageContent = () => {
               "&:hover": { backgroundColor: "#388e3c" },
               textTransform: "none",
               width: { xs: "100%", sm: "auto" },
+              fontSize: { xs: "0.85rem", sm: "0.9rem" },
             }}
             disabled={isSubmitting}
           >
