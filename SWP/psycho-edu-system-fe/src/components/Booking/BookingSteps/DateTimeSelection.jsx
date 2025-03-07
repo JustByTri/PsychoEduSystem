@@ -131,6 +131,7 @@ export const DateTimeSelection = () => {
   };
 
   const handleSelectAppointmentType = (type) => {
+    console.log(type);
     setAppointmentType(type);
     updateBookingData({ appointmentType: type });
   };

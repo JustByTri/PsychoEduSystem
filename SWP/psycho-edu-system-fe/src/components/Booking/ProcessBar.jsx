@@ -7,14 +7,14 @@ export const ProgressBar = ({ currentStep, isParent, setStep }) => {
   const steps = isParent
     ? [
         { label: "Child", description: "Select your child" },
-        { label: "Consultant Type", description: "Choose consultant type" },
-        { label: "Consultant", description: "Select your consultant" },
+        { label: "Type", description: "Choose consultant type" },
+        { label: "Consultant", description: "Select consultant" },
         { label: "Date & Time", description: "Choose date and time" },
         { label: "Confirm", description: "Review and confirm" },
       ]
     : [
-        { label: "Consultant Type", description: "Choose consultant type" },
-        { label: "Consultant", description: "Select your consultant" },
+        { label: "Type", description: "Choose consultant type" },
+        { label: "Consultant", description: "Select consultant" },
         { label: "Date & Time", description: "Choose date and time" },
         { label: "Confirm", description: "Review and confirm" },
       ];
@@ -22,9 +22,9 @@ export const ProgressBar = ({ currentStep, isParent, setStep }) => {
   const [hoveredStep, setHoveredStep] = useState(null);
 
   const cardVariants = {
-    inactive: { scale: 1, backgroundColor: "#f5f5f5", y: 0 },
-    active: { scale: 1.05, backgroundColor: "#e3f2fd", y: -5 },
-    completed: { scale: 1, backgroundColor: "#e8f5e9", y: 0 },
+    inactive: { scale: 1, y: 0 },
+    active: { scale: 1.05, y: -5 },
+    completed: { scale: 1, y: 0 },
   };
 
   const handleStepClick = (stepIndex) => {
@@ -34,7 +34,8 @@ export const ProgressBar = ({ currentStep, isParent, setStep }) => {
   return (
     <Box
       sx={{
-        mb: 6,
+        mt: 5,
+        mb: 3,
         px: { xs: 1, sm: 2 },
         position: "relative",
         display: "flex",
@@ -92,22 +93,22 @@ export const ProgressBar = ({ currentStep, isParent, setStep }) => {
               variants={cardVariants}
               initial="inactive"
               animate={variant}
-              whileHover={{ scale: 1.1, transition: { duration: 0.2 } }}
+              whileHover={{ scale: 1.1, transition: { duration: 0.3 } }}
               onClick={() => handleStepClick(index)}
               onMouseEnter={() => setHoveredStep(index)}
               onMouseLeave={() => setHoveredStep(null)}
               sx={{
-                width: { xs: "120px", sm: "150px" }, // Kích thước cố định
-                height: { xs: "90px", sm: "100px" }, // Chiều cao cố định
+                width: { xs: "150px", sm: "150px" },
+                height: { xs: "100px", sm: "100px" },
                 mx: "auto",
               }}
             >
               <Card
                 sx={{
-                  width: "100%", // Full width của motion.div
-                  height: "100%", // Full height của motion.div
-                  padding: { xs: 1, sm: 1.5 },
-                  borderRadius: "12px",
+                  width: "100%",
+                  height: "100%",
+                  padding: { xs: 1, sm: 2 },
+                  borderRadius: "100px",
                   border: "1px solid",
                   borderColor: isActive
                     ? "#1e88e5"
@@ -133,9 +134,9 @@ export const ProgressBar = ({ currentStep, isParent, setStep }) => {
               >
                 <Box
                   sx={{
-                    width: { xs: 36, sm: 40 },
-                    height: { xs: 36, sm: 40 },
-                    borderRadius: "50%",
+                    width: { xs: 40, sm: 40 },
+                    height: { xs: 40, sm: 40 },
+                    borderRadius: "100%",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -145,7 +146,6 @@ export const ProgressBar = ({ currentStep, isParent, setStep }) => {
                       ? "#1e88e5"
                       : "#e0e0e0",
                     color: "#fff",
-                    mb: 1,
                     transition: "background-color 0.3s ease",
                   }}
                 >
@@ -172,9 +172,7 @@ export const ProgressBar = ({ currentStep, isParent, setStep }) => {
                     transition: "color 0.3s ease",
                     wordBreak: "break-word",
                   }}
-                >
-                  {step.label}
-                </Typography>
+                ></Typography>
                 {hoveredStep === index && (
                   <motion.div
                     initial={{ width: 0 }}
