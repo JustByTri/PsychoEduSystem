@@ -1,3 +1,4 @@
+<Route path="program" element={<ProgramList />} />
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/auth/AuthContext";
 import ProtectedRoute from "./context/auth/ProtectedRoute";
@@ -33,7 +34,7 @@ import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Chat from "./pages/chat/Chat";
-
+import ProgramList from "./pages/admin/program/ProgramList";
 function App() {
   return (
     <AuthProvider>
@@ -52,7 +53,7 @@ function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="program" element={<ProgramCoursePage />} />
                 <Route path="booking" element={<BookingPage />} />
-                <Route path="schedule" element={<SchedulePage />} />
+<Route path="schedule" element={<SchedulePage />} />
               </Route>
             </Route>
           </Route>
@@ -79,6 +80,8 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
             <Route path="admin/" element={<PortalLayout />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="program" element={<ProgramList />} />
+
               <Route path="survey" element={<SurveyList />} />
               <Route path="survey/:id" element={<SurveyDetail />} />
               <Route
