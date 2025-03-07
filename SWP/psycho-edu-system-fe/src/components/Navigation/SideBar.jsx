@@ -9,7 +9,6 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
-  Tooltip,
   Badge,
   Divider,
   Box,
@@ -147,24 +146,22 @@ const SideBar = ({ userRole = "Student" }) => {
           minHeight: "36px !important", // Smaller toolbar
         }}
       >
-        <Tooltip title={isCollapsed ? "Expand" : "Collapse"}>
-          <IconButton
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            sx={{
-              transition: "transform 0.3s",
-              "&:hover": { transform: "scale(1.1)" },
-              color: colors.sidebar.icon,
-              padding: 0.6, // Reduced padding
-              fontSize: "0.9rem", // Smaller icon
-            }}
-          >
-            {isCollapsed ? (
-              <MenuIcon fontSize="small" />
-            ) : (
-              <ChevronLeftIcon fontSize="small" />
-            )}
-          </IconButton>
-        </Tooltip>
+        <IconButton
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          sx={{
+            transition: "transform 0.3s",
+            "&:hover": { transform: "scale(1.1)" },
+            color: colors.sidebar.icon,
+            padding: 0.6, // Reduced padding
+            fontSize: "0.9rem", // Smaller icon
+          }}
+        >
+          {isCollapsed ? (
+            <MenuIcon fontSize="small" />
+          ) : (
+            <ChevronLeftIcon fontSize="small" />
+          )}
+        </IconButton>
       </Toolbar>
 
       <Divider sx={{ backgroundColor: colors.sidebar.divider }} />
@@ -272,59 +269,52 @@ const SideBar = ({ userRole = "Student" }) => {
             </Box>
           ) : (
             <ListItem key={index} disablePadding>
-              <Tooltip
-                title={isCollapsed ? item.label : ""}
-                placement="right"
-                arrow
-                disableHoverListener={!isCollapsed}
+              <ListItemButton
+                component={Link}
+                to={item.path}
+                sx={getItemStyle(item.path)}
               >
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  sx={getItemStyle(item.path)}
+                <ListItemIcon
+                  sx={{
+                    color: "inherit",
+                    minWidth: isCollapsed ? "auto" : 32, // Reduced icon area
+                    mr: isCollapsed ? 0 : 1.2,
+                  }}
                 >
-                  <ListItemIcon
-                    sx={{
-                      color: "inherit",
-                      minWidth: isCollapsed ? "auto" : 32, // Reduced icon area
-                      mr: isCollapsed ? 0 : 1.2,
-                    }}
-                  >
-                    <FontAwesomeIcon icon={item.icon} size="xs" />{" "}
-                    {/* Smaller icon */}
-                  </ListItemIcon>
+                  <FontAwesomeIcon icon={item.icon} size="xs" />{" "}
+                  {/* Smaller icon */}
+                </ListItemIcon>
 
-                  {!isCollapsed && (
-                    <>
-                      <ListItemText
-                        primary={item.label}
-                        primaryTypographyProps={{ fontSize: "0.85rem" }} // Smaller font size
-                      />
+                {!isCollapsed && (
+                  <>
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{ fontSize: "0.85rem" }} // Smaller font size
+                    />
 
-                      {item.badge && (
-                        <Badge
-                          badgeContent={item.badge}
-                          color="error"
-                          sx={{
-                            "& .MuiBadge-badge": {
-                              backgroundColor: colors.sidebar.badge,
-                              fontSize: "0.65rem", // Smaller badge text
-                              height: 14,
-                              minWidth: 14,
-                              animation: "pulse 2s infinite",
-                              "@keyframes pulse": {
-                                "0%": { transform: "scale(1)" },
-                                "50%": { transform: "scale(1.1)" },
-                                "100%": { transform: "scale(1)" },
-                              },
+                    {item.badge && (
+                      <Badge
+                        badgeContent={item.badge}
+                        color="error"
+                        sx={{
+                          "& .MuiBadge-badge": {
+                            backgroundColor: colors.sidebar.badge,
+                            fontSize: "0.65rem", // Smaller badge text
+                            height: 14,
+                            minWidth: 14,
+                            animation: "pulse 2s infinite",
+                            "@keyframes pulse": {
+                              "0%": { transform: "scale(1)" },
+                              "50%": { transform: "scale(1.1)" },
+                              "100%": { transform: "scale(1)" },
                             },
-                          }}
-                        />
-                      )}
-                    </>
-                  )}
-                </ListItemButton>
-              </Tooltip>
+                          },
+                        }}
+                      />
+                    )}
+                  </>
+                )}
+              </ListItemButton>
             </ListItem>
           )
         )}
@@ -388,7 +378,7 @@ const getNavItems = (role) => {
       ];
     case "Teacher":
       return [
-        { icon: faHome, label: "Home", path: "/teacher" },
+        { icon: faHome, label: "Dashboard", path: "/teacher" },
         {
           icon: faChartBar,
           label: "Student Management",
@@ -438,7 +428,7 @@ const getNavItems = (role) => {
       ];
     case "Psychologist":
       return [
-        { icon: faHome, label: "Home", path: "/psychologist" },
+        { icon: faHome, label: "Dashboard", path: "/psychologist" },
         {
           icon: faCalendarAlt,
           label: "Appointments",
@@ -477,7 +467,7 @@ const getNavItems = (role) => {
       ];
     case "Parent":
       return [
-        { icon: faHome, label: "Home", path: "/parent" },
+        { icon: faHome, label: "Dashboard", path: "/parent" },
         {
           icon: faUsers,
           label: "My Children",
