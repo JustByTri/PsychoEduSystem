@@ -57,10 +57,34 @@ namespace PsychoEduSystem.Controller
 
 
         [HttpGet("list")]
-        public async Task<IActionResult> GetAllPrograms()
+        public async Task<IActionResult> GetAllPrograms([FromQuery] string? day = null, [FromQuery] int? capacity = null, [FromQuery] string? time = null, [FromQuery] int? minPoint = null, [FromQuery] string? dimensionName = null)
         {
-            var programs = await _targetProgramService.GetAllProgramsAsync();
+            var programs = await _targetProgramService.GetAllProgramsAsync(day, capacity, time, minPoint, dimensionName);
             return Ok(programs);
+        }
+        [HttpGet("get-programs/{userId}")]
+        public async Task<IActionResult> GetAllProgramsByUserIdAsync(Guid userId, [FromQuery] string? day = null, [FromQuery] int? capacity = null, [FromQuery] string? time = null, [FromQuery] int? minPoint = null, [FromQuery] string? dimensionName = null)
+        {
+            try
+            {
+                if (userId == Guid.Empty)
+                {
+                    return BadRequest(new { message = "Invalid userId." });
+                }
+
+                var programs = await _targetProgramService.GetAllProgramsByUserIdAsync(userId, day, capacity, time, minPoint, dimensionName);
+
+                if (programs == null || !programs.Any())
+                {
+                    return NotFound(new { message = "No programs found for the given filters." });
+                }
+
+                return Ok(programs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing your request.", error = ex.Message });
+            }
         }
 
         [HttpPut("update/{id}")]
@@ -114,6 +138,23 @@ namespace PsychoEduSystem.Controller
                 return StatusCode(result.StatusCode, result);
 
             return Ok(result);
+        }
+        [HttpGet("counselors")]
+        public async Task<IActionResult> GetAvailableCounselors([FromQuery] DateTime selectedDateTime)
+        {
+            if (selectedDateTime == default)
+            {
+                return BadRequest(new { message = "Invalid date provided." });
+            }
+
+            var response = await _targetProgramService.GetAvailableCounselorsAsync(selectedDateTime);
+
+            if (!response.IsSuccess)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
         }
     }
 }

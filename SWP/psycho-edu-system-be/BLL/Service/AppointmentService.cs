@@ -113,9 +113,10 @@ namespace BLL.Service
                 var appointmentList = appointments.Select(a => new AppointmentResponseDTO
                 {
                     AppointmentId = a.AppointmentId,
-                    MeetingWith = GetNameByUserId(a.MeetingWith),
-                    AppointmentFor = GetNameByUserId(a.AppointmentFor),
-                    BookedBy = GetNameByUserId(a.BookedBy),
+                    MeetingWith = GetNameByUserId(a.MeetingWith).Item1,
+                    AppointmentFor = GetNameByUserId(a.AppointmentFor).Item1,
+                    GoogleMeetURL = GetNameByUserId(a.MeetingWith).Item2,
+                    BookedBy = GetNameByUserId(a.BookedBy).Item1,
                     Date = a.Date.ToString("d", cultureInfo),
                     SlotId = a.SlotId,
                     IsOnline = a.IsOnline,
@@ -154,9 +155,10 @@ namespace BLL.Service
                 var appointmentList = appointments.Select(a => new AppointmentResponseDTO
                 {
                     AppointmentId = a.AppointmentId,
-                    MeetingWith = GetNameByUserId(a.MeetingWith),
-                    AppointmentFor = GetNameByUserId(a.AppointmentFor),
-                    BookedBy = GetNameByUserId(a.BookedBy),
+                    MeetingWith = GetNameByUserId(a.MeetingWith).Item1,
+                    AppointmentFor = GetNameByUserId(a.AppointmentFor).Item1,
+                    GoogleMeetURL = GetNameByUserId(a.MeetingWith).Item2,
+                    BookedBy = GetNameByUserId(a.BookedBy).Item1,
                     Date = a.Date.ToString("d", cultureInfo),
                     SlotId = a.SlotId,
                     IsOnline = a.IsOnline,
@@ -171,15 +173,15 @@ namespace BLL.Service
                 return new ResponseDTO($"An error occurred: {ex.Message}", 500, false, string.Empty);
             }
         }
-        private string GetNameByUserId(Guid userId)
+        private (string, string) GetNameByUserId(Guid userId)
         {
-            if (userId == Guid.Empty) return string.Empty;
+            if (userId == Guid.Empty) return ("", "");
 
             var selectedUser = _unitOfWork.User.GetByIdAsync(userId);
 
-            if (selectedUser == null) return string.Empty;
+            if (selectedUser == null) return ("", "");
 
-            return selectedUser.Result.FullName;
+            return (selectedUser.Result.FullName, selectedUser.Result.GoogleMeetURL);
 
         }
         public async Task<ResponseDTO> CancelAppointmentAsync(Guid AppointmentId)
