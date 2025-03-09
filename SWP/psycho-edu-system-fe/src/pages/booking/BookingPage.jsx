@@ -5,7 +5,6 @@ import { ConsultantTypeSelection } from "../../components/Booking/BookingSteps/C
 import { ConsultantSelection } from "../../components/Booking/BookingSteps/ConsultantSelection";
 import { DateTimeSelection } from "../../components/Booking/BookingSteps/DateTimeSelection";
 import { ConfirmationStep } from "../../components/Booking/BookingSteps/ConfirmationStep";
-import { UserInfoForm } from "../../components/Booking/BookingSteps/UserInfoForm";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -84,7 +83,7 @@ const BookingPageContent = () => {
 
   useEffect(() => {
     // Cập nhật totalSteps dựa trên role
-    setTotalSteps(isParent() ? 6 : 5);
+    setTotalSteps(isParent() ? 5 : 4);
   }, [isParent]);
 
   const handleNext = () => {
@@ -208,8 +207,6 @@ const BookingPageContent = () => {
         case 4:
           return <DateTimeSelection />;
         case 5:
-          return <UserInfoForm />;
-        case 6:
           return <ConfirmationStep />;
         default:
           return null;
@@ -224,8 +221,6 @@ const BookingPageContent = () => {
       case 3:
         return <DateTimeSelection />;
       case 4:
-        return <UserInfoForm />;
-      case 5:
         return <ConfirmationStep />;
       default:
         return null;

@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import {
   Box,
   Button,
@@ -12,8 +12,9 @@ import { Send, InsertEmoticon } from "@mui/icons-material";
 import Picker from "emoji-picker-react";
 import { motion } from "framer-motion";
 import * as signalR from "@microsoft/signalr";
-
+import AuthContext from "../../context/auth/AuthContext";
 const Chat = () => {
+  const { user } = useContext(AuthContext);
   const { id } = useParams();
   const userData = localStorage.getItem("user");
   const formattedData = JSON.parse(userData);
@@ -147,14 +148,16 @@ const Chat = () => {
         <Typography variant="body2">
           {isConnected ? "🟢 Online" : "🔴 Offline"}
         </Typography>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={endSession}
-          disabled={!isConnected}
-        >
-          End Session
-        </Button>
+        {(user.role == "Psychologist" || user.role == "Teacher") && (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={endSession}
+            disabled={!isConnected}
+          >
+            End Session
+          </Button>
+        )}
       </Box>
 
       <Box className="flex-1 overflow-y-auto p-4 space-y-3">

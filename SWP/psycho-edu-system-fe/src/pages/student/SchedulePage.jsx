@@ -18,7 +18,8 @@ import moment from "moment";
 import { Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { Link } from "react-router-dom";
 const SchedulePage = () => {
   const [bookings, setBookings] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -130,6 +131,7 @@ const SchedulePage = () => {
 
               return {
                 id: appointment.appointmentId,
+                googleMeetURL: appointment.googleMeetURL,
                 title: `${title} - ${
                   appointment.isOnline ? "Online" : "Offline"
                 }`,
@@ -404,7 +406,6 @@ const SchedulePage = () => {
           )}
         </div>
       </motion.div>
-
       {filteredBookings.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
           {filteredBookings.map((booking) => (
@@ -428,6 +429,7 @@ const SchedulePage = () => {
                   >
                     {booking.title}
                   </Typography>
+
                   <Typography
                     variant="body2"
                     sx={{
@@ -475,6 +477,24 @@ const SchedulePage = () => {
                       }}
                     >
                       {booking.details.meetingType}
+                    </Typography>
+                    <Typography component="span">
+                      <Button
+                        sx={{
+                          bgcolor: "#FF7F00",
+                          color: "white",
+                          textTransform: "none",
+                          fontWeight: "bold",
+                          "&:hover": { bgcolor: "#E66A00" },
+                        }}
+                        startIcon={<OpenInNewIcon />}
+                        component={Link}
+                        to={booking.googleMeetURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Join Google Meet
+                      </Button>
                     </Typography>
                     <Typography
                       component="span"

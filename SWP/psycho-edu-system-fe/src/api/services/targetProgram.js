@@ -51,4 +51,67 @@ export const TargetProgramService = {
       throw error;
     }
   },
+  getTargetPrograms: async (filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams(filters).toString();
+      const url = `${BASE_URL}api/TargetProgram/list${
+        queryParams ? `?${queryParams}` : ""
+      }`;
+
+      const response = await axios.get(url);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching target programs:", error);
+      throw error;
+    }
+  },
+  getTargetProgramsByUserId: async (filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams(filters).toString();
+      const token = localStorage.getItem("user");
+      const formattedToken = JSON.parse(token);
+      const accessToken = formattedToken.accessToken;
+      const userData = DecodeJWT(accessToken);
+      const url = `${BASE_URL}api/TargetProgram/get-programs/${
+        userData.userId
+      }/${queryParams ? `?${queryParams}` : ""}`;
+      const response = await axios.get(url);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching target programs:", error);
+      throw error;
+    }
+  },
+  getAvailableCounselors: async (selectedDateTime) => {
+    try {
+      const response = await axios.get(
+        `https://localhost:7192/api/TargetProgram/counselors?selectedDateTime=${selectedDateTime}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching available counselors:", error);
+      return null;
+    }
+  },
+  createProgram: async (data) => {
+    const program = {
+      name: data.name,
+      description: data.description,
+      minPoint: data.minPoint,
+      capacity: data.capacity,
+      dimensionId: parseInt(data.dimensionId, 10),
+      counselorId: data.counselors.length > 0 ? data.counselors[0] : null,
+      startDate: data.day + "T" + data.time,
+    };
+    try {
+      const response = await axios.post(
+        `${BASE_URL}api/TargetProgram/create`,
+        program
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error: ", error);
+      return null;
+    }
+  },
 };
