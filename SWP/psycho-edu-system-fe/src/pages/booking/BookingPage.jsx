@@ -5,84 +5,117 @@ import { ConsultantTypeSelection } from "../../components/Booking/BookingSteps/C
 import { ConsultantSelection } from "../../components/Booking/BookingSteps/ConsultantSelection";
 import { DateTimeSelection } from "../../components/Booking/BookingSteps/DateTimeSelection";
 import { ConfirmationStep } from "../../components/Booking/BookingSteps/ConfirmationStep";
-import { ProgressBar } from "../../components/Booking/ProcessBar";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import axios from "axios";
-import { motion } from "framer-motion";
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
 
 const BookingPageContent = () => {
-  const {
-    isParent,
-    bookingData,
-    updateBookingData,
-    resetBookingData,
-    isLoading,
-  } = useBooking();
+  const { isParent, bookingData, updateBookingData, resetBookingData } =
+    useBooking();
   const [step, setStep] = useState(1);
-  const [totalSteps, setTotalSteps] = useState(4);
+  const [totalSteps, setTotalSteps] = useState(5);
   const [studentId, setStudentId] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  // Lấy authData một lần ngoài useEffect để tránh thay đổi tham chiếu
   const authData = getAuthDataFromLocalStorage();
+  const userId = authData?.userId;
 
+  // Xác định studentId dựa trên role (chỉ chạy khi mount hoặc role thay đổi)
   useEffect(() => {
     let isMounted = true;
 
     const determineStudentId = async () => {
-      if (!isMounted || isLoading) return;
+      if (!isMounted) return;
 
-      if (studentId) return;
+      if (studentId) return; // Tránh chạy lại nếu đã có studentId
 
       if (!isParent()) {
+        // Role Student: Lấy studentId từ accessToken (userId)
         if (isMounted) {
-          setStudentId(bookingData.userId);
-          updateBookingData({ appointmentFor: bookingData.userId });
+          setStudentId(userId);
+          updateBookingData({ appointmentFor: userId });
         }
       } else {
-        try {
-          const response = await axios.get(
-            `https://localhost:7192/api/relationships/parent/${bookingData.userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${authData.accessToken}`,
-                "Content-Type": "application/json",
-              },
+        // Role Parent: Lấy studentId từ bookingData.childId hoặc fetch nếu chưa có
+        if (bookingData.childId && isMounted) {
+          setStudentId(bookingData.childId);
+          updateBookingData({ appointmentFor: bookingData.childId });
+        } else {
+          try {
+            const response = await axios.get(
+              `https://localhost:7192/api/relationships/parent/${userId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${authData.accessToken}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+            console.log("API Response for children:", response.data);
+            const result = response.data.result || response.data;
+            if (Array.isArray(result) && result.length > 0 && isMounted) {
+              const firstChildId = result[0].studentId;
+              setStudentId(firstChildId);
+              updateBookingData({
+                appointmentFor: firstChildId,
+                childId: firstChildId,
+              });
+            } else if (isMounted) {
+              console.warn("No children found for this parent.");
             }
-          );
-          const result = response.data.result || response.data;
-          if (Array.isArray(result) && result.length > 0 && isMounted) {
-            const firstChildId = result[0].studentId;
-            setStudentId(firstChildId);
-            updateBookingData({
-              appointmentFor: firstChildId,
-              childId: firstChildId,
-              children: result,
-            });
+          } catch (error) {
+            console.error("Error fetching children:", error.message);
           }
-        } catch (error) {
-          toast.error("Failed to fetch children: " + error.message);
         }
       }
     };
 
     determineStudentId();
 
+    // Cleanup
     return () => {
       isMounted = false;
     };
-  }, [isParent, bookingData.userId, isLoading, updateBookingData]);
+  }, [isParent, userId]); // Loại bỏ authData.accessToken và bookingData.childId khỏi dependency
 
   useEffect(() => {
+    // Cập nhật totalSteps dựa trên role
     setTotalSteps(isParent() ? 5 : 4);
   }, [isParent]);
 
-  const handleNext = () => setStep((prev) => prev + 1);
-  const handleBack = () => setStep((prev) => prev - 1);
+  const handleNext = () => {
+    setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    setStep(step - 1);
+  };
+
+  const handleNextWithValidation = () => {
+    const userInfoStep = isParent() ? 5 : 4; // Bước UserInfoForm
+    if (step === userInfoStep) {
+      if (!bookingData.userName || !bookingData.phone || !bookingData.email) {
+        console.log("Missing fields:", {
+          userName: bookingData.userName,
+          phone: bookingData.phone,
+          email: bookingData.email,
+        });
+        toast.error("Please fill in all required fields!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        return;
+      }
+    }
+    handleNext();
+  };
 
   const handleConfirm = async () => {
     if (
@@ -91,20 +124,25 @@ const BookingPageContent = () => {
       !bookingData.date ||
       !bookingData.slotId
     ) {
-      toast.error("Please complete all steps before confirming.");
+      toast.error("Please complete all steps before confirming.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return;
     }
 
-    setIsSubmitting(true);
     try {
+      const authData = getAuthDataFromLocalStorage();
       const appointmentData = {
-        bookedBy: bookingData.userId,
-        appointmentFor: studentId,
-        meetingWith: bookingData.consultantId,
+        bookedBy: userId, // ID của người đặt lịch (Parent hoặc Student)
+        appointmentFor: studentId, // ID của student (từ userId hoặc childId)
+        meetingWith: bookingData.consultantId, // ID của teacher hoặc counselor
         date: bookingData.date,
         slotId: bookingData.slotId,
         isOnline: bookingData.appointmentType === "online",
       };
+
+      console.log("Submitting appointment data:", appointmentData);
 
       const response = await axios.post(
         "https://localhost:7192/api/appointments",
@@ -121,24 +159,43 @@ const BookingPageContent = () => {
         throw new Error(response.data.message || "Failed to save appointment");
       }
 
-      toast.success("Booking registered successfully!");
+      console.log("Appointment saved successfully:", response.data);
+
+      toast.success("Booking registered successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
       const schedulePath = isParent()
         ? "/parent/schedule"
         : "/student/schedule";
       setTimeout(() => {
         resetBookingData();
         navigate(schedulePath);
-      }, 2000);
+      }, 3000);
     } catch (error) {
-      toast.error(`Failed to register appointment: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error confirming appointment:", error);
+      toast.error(
+        `Failed to register appointment: ${
+          error.response?.data?.message || error.message
+        }`,
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
     }
   };
 
   const renderStepContent = () => {
-    if (isLoading) return <CircularProgress sx={{ mx: "auto", mt: 4 }} />;
-
     if (isParent()) {
       switch (step) {
         case 1:
@@ -155,6 +212,7 @@ const BookingPageContent = () => {
           return null;
       }
     }
+
     switch (step) {
       case 1:
         return <ConsultantTypeSelection />;
@@ -170,142 +228,55 @@ const BookingPageContent = () => {
   };
 
   return (
-    <Box
-      sx={{
-        p: { xs: 2, sm: 4, md: 6 }, // Responsive padding
-        bgcolor: "white",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        maxWidth: "100%", // Đảm bảo không vượt quá màn hình
-        mx: "auto",
-      }}
-    >
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        sx={{ mb: { xs: 4, sm: 8 }, textAlign: "center" }}
-      >
-        <Typography
-          variant="h4"
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontWeight: 700,
-            background: "linear-gradient(to right, #1e88e5, #8e24aa)",
-            WebkitBackgroundClip: "text",
-            color: "transparent",
-            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" }, // Responsive font size
-          }}
-        >
-          Book an Appointment
-        </Typography>
-        <Typography
-          variant="body1"
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: { xs: "0.9rem", sm: "1rem" },
-            color: "#555",
-            mt: 1,
-          }}
-        >
-          Follow the steps below to schedule your consultation
-        </Typography>
-      </motion.div>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-8 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-2 bg-blue-500 transition-all duration-300"
+            style={{ width: `${(step / totalSteps) * 100}%` }}
+          />
+        </div>
 
-      {/* Progress Bar */}
-      <ProgressBar currentStep={step} isParent={isParent()} setStep={setStep} />
-
-      {/* Step Content */}
-      <motion.div
-        key={step}
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-        sx={{ flex: 1, mt: { xs: 2, sm: 4 } }}
-      >
         {renderStepContent()}
-      </motion.div>
 
-      {/* Navigation Buttons */}
-      <Box
-        sx={{
-          mt: { xs: 4, sm: 8 },
-          display: "flex",
-          justifyContent: "space-between",
-          flexDirection: { xs: "column", sm: "row" }, // Column trên mobile, row trên desktop
-          gap: { xs: 2, sm: 0 }, // Khoảng cách trên mobile
-        }}
-      >
-        {step > 1 && (
-          <Button
-            onClick={handleBack}
-            variant="outlined"
-            sx={{
-              fontFamily: "Inter, sans-serif",
-              px: { xs: 3, sm: 4 },
-              py: 1,
-              textTransform: "none",
-              width: { xs: "100%", sm: "auto" }, // Full width trên mobile
-            }}
-            disabled={isSubmitting}
-          >
-            Back
-          </Button>
-        )}
-        {step < totalSteps ? (
-          <Button
-            onClick={handleNext}
-            variant="contained"
-            sx={{
-              fontFamily: "Inter, sans-serif",
-              px: { xs: 3, sm: 4 },
-              py: 1,
-              ml: { xs: 0, sm: "auto" },
-              backgroundColor: "#1e88e5",
-              "&:hover": { backgroundColor: "#1565c0" },
-              textTransform: "none",
-              width: { xs: "100%", sm: "auto" },
-            }}
-            disabled={isSubmitting}
-          >
-            Next
-          </Button>
-        ) : (
-          <Button
-            onClick={handleConfirm}
-            variant="contained"
-            sx={{
-              fontFamily: "Inter, sans-serif",
-              px: { xs: 3, sm: 4 },
-              py: 1,
-              ml: { xs: 0, sm: "auto" },
-              backgroundColor: "#4caf50",
-              "&:hover": { backgroundColor: "#388e3c" },
-              textTransform: "none",
-              width: { xs: "100%", sm: "auto" },
-            }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Confirm Booking"
-            )}
-          </Button>
-        )}
-      </Box>
+        <div className="mt-8 flex justify-between">
+          {step > 1 && (
+            <button
+              onClick={handleBack}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Back
+            </button>
+          )}
 
-      <ToastContainer position="top-right" autoClose={3000} />
-    </Box>
+          {step < totalSteps ? (
+            <button
+              onClick={handleNextWithValidation}
+              className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              onClick={handleConfirm}
+              className="ml-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Confirm Booking
+            </button>
+          )}
+        </div>
+      </div>
+      <ToastContainer />
+    </div>
   );
 };
 
-const BookingPage = () => (
-  <BookingProvider>
-    <BookingPageContent />
-  </BookingProvider>
-);
+const BookingPage = () => {
+  return (
+    <BookingProvider>
+      <BookingPageContent />
+    </BookingProvider>
+  );
+};
 
 export default BookingPage;

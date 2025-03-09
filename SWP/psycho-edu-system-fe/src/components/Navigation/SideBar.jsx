@@ -108,7 +108,7 @@ const getNavItems = (role) => {
     case "Student":
       return [
         { icon: faHome, label: "Home", path: "/student" },
-        { icon: faBookOpen, label: "Program", path: "/student/program" },
+        { icon: faBookOpen, label: "Program", path: "/student/programs" },
         {
           icon: faCalendarAlt,
           label: "Schedules",
@@ -142,6 +142,7 @@ const getNavItems = (role) => {
     case "Psychologist":
       return [
         { icon: faHome, label: "Dashboard", path: "/psychologist" },
+        { icon: faBookOpen, label: "Program", path: "/psychologist/programs" },
         { icon: faBell, label: "Schedule", path: "/psychologist/schedule" },
         { icon: faFileAlt, label: "Book Slots", path: "/psychologist/slot" },
       ];

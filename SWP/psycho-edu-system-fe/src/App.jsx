@@ -5,7 +5,6 @@ import "./App.css";
 import HomePage from "./pages/main/HomePage";
 import MainLayout from "./components/Layouts/MainLayout";
 import NotFoundPage from "./pages/error/NotFoundPage";
-import ProgramCoursePage from "./pages/student/ProgramPage";
 import PortalLayout from "./components/Layouts/PortalLayout";
 import Dashboard from "./pages/student/Dashboard";
 import StartUpPage from "./pages/student/StartUpPage";
@@ -33,6 +32,7 @@ import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Chat from "./pages/chat/Chat";
+import TargetPrograms from "./pages/admin/TargetPrograms";
 
 function App() {
   return (
@@ -50,7 +50,7 @@ function App() {
             <Route element={<RequireSurvey />}>
               <Route path="student/" element={<PortalLayout />}>
                 <Route index element={<Dashboard />} />
-                <Route path="program" element={<ProgramCoursePage />} />
+                <Route path="programs" element={<TargetPrograms />} />
                 <Route path="booking" element={<BookingPage />} />
                 <Route path="schedule" element={<SchedulePage />} />
               </Route>
@@ -81,6 +81,7 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="survey" element={<SurveyList />} />
               <Route path="survey/:id" element={<SurveyDetail />} />
+              <Route path="programs" element={<TargetPrograms />} />
               <Route
                 path="create-parent"
                 element={<CreateParentAccount />}
@@ -98,6 +99,7 @@ function App() {
             <Route path="/psychologist/" element={<PortalLayout />}>
               <Route index element={<PsychologistDashboard />} />
               <Route path="schedule" element={<PsychologistSchedulePage />} />
+              <Route path="programs" element={<TargetPrograms />} />
               <Route
                 path="slot"
                 element={<PsychologistScheduleRegistration />}
