@@ -84,7 +84,7 @@ namespace BLL.Service
                 }
                 TimeSpan startTime = dto.StartDate.TimeOfDay;
                 int slotNumber = GetSlotNumber(startTime);
-                var availableSlot = await _unitOfWork.Schedule.GetByConditionAsync(s => s.SlotId == slotNumber && DateOnly.FromDateTime(s.Date) == DateOnly.FromDateTime(dto.StartDate));
+                var availableSlot = await _unitOfWork.Schedule.GetByConditionAsync(s => s.SlotId == slotNumber && DateOnly.FromDateTime(s.Date) == DateOnly.FromDateTime(dto.StartDate) && s.UserId == counselor.UserId);
                 if (availableSlot == null)
                 {
                     throw new InvalidOperationException("Counselor has no available slots at this time.");
