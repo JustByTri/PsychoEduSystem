@@ -1,5 +1,5 @@
-import { useParams } from "react-router-dom";
-import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -24,6 +24,7 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef(null);
+  const navigate = useNavigate();
   useEffect(() => {
     if (!token || !id) {
       console.error("🚨 Missing token or appointmentId");
@@ -41,13 +42,28 @@ const Chat = () => {
     newConnection
       .start()
       .then(() => {
-        console.log("✅ Connected to ChatHub");
+        console.log("Connected to ChatHub");
         setIsConnected(true);
       })
-      .catch((err) => console.error("🚨 Error connecting to SignalR:", err));
+      .catch((err) => console.error("Error connecting to SignalR:", err));
 
     newConnection.on("ReceiveMessage", (sender, message) => {
       setMessages((prevMessages) => [...prevMessages, { sender, message }]);
+    });
+    newConnection.on("SessionEnded", async (sender, message) => {
+      console.log(`${sender}: ${message}`);
+      alert("Session has ended.");
+
+      if (connection.current) {
+        try {
+          await connection.current.stop();
+          console.log("SignalR connection closed due to session end.");
+          setIsConnected(false);
+          navigate(-1);
+        } catch (err) {
+          console.error("Error disconnecting SignalR:", err);
+        }
+      }
     });
 
     connection.current = newConnection;
@@ -56,10 +72,10 @@ const Chat = () => {
       if (connection.current) {
         connection.current
           .stop()
-          .then(() => console.log("🔴 Disconnected from ChatHub"));
+          .then(() => console.log("Disconnected from ChatHub"));
       }
     };
-  }, [id, token]);
+  }, [id, token, navigate]);
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -72,14 +88,13 @@ const Chat = () => {
       !connection.current ||
       connection.current.state !== signalR.HubConnectionState.Connected
     ) {
-      console.warn("⚠️ SignalR not connected. Cannot send message.");
+      console.warn("SignalR not connected. Cannot send message.");
       return;
     }
 
     try {
       await connection.current.invoke("SendMessage", message);
 
-      // Display sender's own message instantly
       setMessages((prevMessages) => [
         ...prevMessages,
         { sender: formattedData.role, message },
@@ -94,6 +109,22 @@ const Chat = () => {
   const handleEmojiClick = (emojiObject) => {
     setMessage((prev) => prev + emojiObject.emoji);
     setShowEmojiPicker(false);
+  };
+  const endSession = async () => {
+    if (
+      !connection.current ||
+      connection.current.state !== signalR.HubConnectionState.Connected
+    ) {
+      console.warn("SignalR not connected. Cannot end session.");
+      return;
+    }
+
+    try {
+      await connection.current.invoke("EndSession", id);
+      console.log("Session ended.");
+    } catch (err) {
+      console.error("🚨 Error ending session:", err);
+    }
   };
 
   return (
@@ -116,6 +147,14 @@ const Chat = () => {
         <Typography variant="body2">
           {isConnected ? "🟢 Online" : "🔴 Offline"}
         </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={endSession}
+          disabled={!isConnected}
+        >
+          End Session
+        </Button>
       </Box>
 
       <Box className="flex-1 overflow-y-auto p-4 space-y-3">
