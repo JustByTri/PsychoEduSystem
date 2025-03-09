@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Authorization;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Security.Claims;
+using BLL.Service;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace BLL.Hubs
 {
@@ -13,279 +16,212 @@ namespace BLL.Hubs
     public class ChatHub : Hub
     {
         private readonly IUnitOfWork _unitOfWork;
-        private static readonly ConcurrentDictionary<string, (System.Timers.Timer Timer, DateTime SessionEndTime, bool NotificationSent)> _appointments = new();
-        private static readonly ConcurrentDictionary<string, HashSet<(string ConnectionId, string Role)>> _groupConnections = new();
+        private static readonly ConcurrentDictionary<string, HashSet<string>> _groupConnections = new();
         private static readonly ConcurrentDictionary<string, bool> _groupStartedByPsychologist = new();
+        private readonly AppointmentTimerService _appointmentTimerService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatHub(IUnitOfWork unitOfWork)
+        public ChatHub(IUnitOfWork unitOfWork, AppointmentTimerService appointmentTimerService, IHubContext<ChatHub> hubContext)
         {
             _unitOfWork = unitOfWork;
+            _appointmentTimerService = appointmentTimerService;
+            _hubContext = hubContext;
         }
 
         public override async Task OnConnectedAsync()
         {
             try
             {
-                Console.WriteLine("OnConnectedAsync started.");
-                var userId = Guid.Parse(Context.UserIdentifier);
-                var role = Context.User.FindFirst(ClaimTypes.Role)?.Value;
-                var appointmentId = Context.GetHttpContext().Request.Query["appointmentId"].ToString();
+                var userId = Context.UserIdentifier;
+                var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
+                var appointmentId = Context.GetHttpContext()?.Request.Query["appointmentId"].ToString();
 
-                Console.WriteLine($"User {userId} (Role: {role}) attempting to connect with appointmentId: {appointmentId}");
-
-                if (string.IsNullOrEmpty(appointmentId))
+                if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(role) || string.IsNullOrEmpty(appointmentId))
                 {
-                    Console.WriteLine("Appointment ID is empty.");
-                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "Appointment ID is required.");
+                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "Invalid connection parameters.");
                     Context.Abort();
                     return;
                 }
 
-                var appointment = await _unitOfWork.Appointment.GetByIdAsync(Guid.Parse(appointmentId));
-                if (appointment == null)
+                if (!Guid.TryParse(appointmentId, out var parsedAppointmentId))
                 {
-                    Console.WriteLine($"Appointment {appointmentId} not found.");
-                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "Appointment not found.");
+                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "Invalid appointment ID format.");
                     Context.Abort();
                     return;
                 }
 
-                if (appointment.MeetingWith != userId && appointment.AppointmentFor != userId)
+                var appointment = await _unitOfWork.Appointment.GetByIdAsync(parsedAppointmentId);
+
+                var slot = await _unitOfWork.Slot.GetByIdInt(appointment.SlotId);
+
+                if (appointment == null || (appointment.MeetingWith.ToString() != userId && appointment.AppointmentFor.ToString() != userId))
                 {
-                    Console.WriteLine($"User {userId} is not authorized for appointment {appointmentId}.");
                     await Clients.Caller.SendAsync("ReceiveMessage", "System", "You are not authorized for this chat.");
                     Context.Abort();
                     return;
                 }
 
-        
-                if (role == "Student")
+                if (appointment.IsCompleted) 
                 {
-                    var today = DateOnly.FromDateTime(DateTime.UtcNow); 
-                    if (appointment.Date != today)
-                    {
-                        Console.WriteLine($"Student {userId} does not have an appointment on {today}.");
-                        await Clients.Caller.SendAsync("ReceiveMessage", "System", "You do not have an appointment today.");
-                        Context.Abort();
-                        return;
-                    }
+                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "This appointment has been completed.");
+                    Context.Abort();
+                    return;
+                }
 
-         
-                    if (!_groupStartedByPsychologist.TryGetValue(appointmentId, out var started) || !started)
-                    {
-                        Console.WriteLine($"Student {userId} cannot join because the psychologist has not started the chat.");
-                        await Clients.Caller.SendAsync("ReceiveMessage", "System", "The chat has not been started by the psychologist yet.");
-                        Context.Abort();
-                        return;
-                    }
+                if (slot == null)
+                {
+                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "This appointment hasn't been assigned a slot.");
+                    Context.Abort();
+                    return;
+                }
+
+
+
+                var sessionEndTime = DateTime.Parse($"{appointment.Date:yyyy-MM-dd} {slot.SlotName}");
+
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var currentVietnamTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
+
+                if (currentVietnamTime < sessionEndTime)
+                {
+                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "This appointment hasn't happened yet.");
+                    Context.Abort();
+                    return;
+                }
+
+                if (currentVietnamTime > sessionEndTime.AddMinutes(45))
+                {
+                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "This appointment has already been completed.");
+                    Context.Abort();
+                    return;
+                }
+
+                var connectionSet = _groupConnections.GetOrAdd(appointmentId, _ => new HashSet<string>());
+
+                if (connectionSet.Count >= 2 && !connectionSet.Contains(Context.ConnectionId))
+                {
+                    await Clients.Caller.SendAsync("ReceiveMessage", "System", "This appointment is already full.");
+                    Context.Abort();
+                    return;
                 }
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, appointmentId);
+                connectionSet.Add(Context.ConnectionId);
 
-          
-                _groupConnections.AddOrUpdate(
-                    appointmentId,
-                    new HashSet<(string, string)> { (Context.ConnectionId, role) },
-                    (key, oldValue) => { oldValue.Add((Context.ConnectionId, role)); return oldValue; }
-                );
-                 
-
-                if (role == "Psychologist")
+                if (role == "Psychologist" || role == "Teacher")
                 {
-                    _groupStartedByPsychologist.TryAdd(appointmentId, true);
-                }
-
-                _appointments.TryAdd(appointmentId, (null, default, false));
-
-                if (_appointments[appointmentId].SessionEndTime == default)
-                {
-                    var slot = await _unitOfWork.Slot.GetByIdInt(appointment.SlotId);
-                    if (slot == null)
+                    if (!_groupStartedByPsychologist.ContainsKey(appointmentId))
                     {
-                        Console.WriteLine($"Slot {appointment.SlotId} not found for appointment {appointmentId}.");
-                        await Clients.Caller.SendAsync("ReceiveMessage", "System", "Invalid slot for this appointment.");
-                        Context.Abort();
-                        return;
+                        _groupStartedByPsychologist[appointmentId] = true;
+                        _appointmentTimerService.StartTimer(appointmentId, sessionEndTime.AddMinutes(45), EndSession);
                     }
-
-                    var startTime = DateTime.Parse($"{appointment.Date} {slot.SlotName}");
-                    var sessionEndTime = startTime.AddHours(1);
-
-                    var timer = new System.Timers.Timer
-                    {
-                        Interval = 1000,
-                        AutoReset = true
-                    };
-                    timer.Elapsed += async (sender, e) => await CheckTimeRemaining(appointmentId);
-
-                    _appointments[appointmentId] = (timer, sessionEndTime, false);
-                    timer.Start();
-
-                    Console.WriteLine($"Timer started for appointment {appointmentId}. Session ends at: {sessionEndTime}");
                 }
-                var user = await _unitOfWork.User.GetByIdAsync(userId);
-                string userName = user.FullName;
 
-                await Clients.Group(appointmentId).SendAsync("ReceiveMessage", userName, $"{userName} has joined the chat.");
+                await Clients.Group(appointmentId).SendAsync("ReceiveMessage", "System", $"{role} has joined the chat.");
                 await base.OnConnectedAsync();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in OnConnectedAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
-                await Clients.Caller.SendAsync("ReceiveMessage", "System", "An error occurred while connecting.");
+                await Clients.Caller.SendAsync("ReceiveMessage", "System", $"Error: {ex.Message}");
                 Context.Abort();
             }
         }
 
-        public async Task SendMessage(string message)
+        public async Task EndSession(string appointmentId)
         {
             try
             {
-                var appointmentId = Context.GetHttpContext().Request.Query["appointmentId"].ToString();
-                var userId = Guid.Parse(Context.UserIdentifier);
-                var user = await _unitOfWork.User.GetByIdAsync(userId);
-                string userName = user != null ? $"{user.FirstName} {user.LastName}".Trim() : userId.ToString();
-                Console.WriteLine($"User {userId} sent message in appointment {appointmentId}: {message}");
-                await Clients.OthersInGroup(appointmentId).SendAsync("ReceiveMessage", userName, message);
-                await Clients.Caller.SendAsync("SelfMessage", userName, message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in SendMessage: {ex.Message}\nStackTrace: {ex.StackTrace}");
-                await Clients.Caller.SendAsync("ReceiveMessage", "System", "An error occurred while sending the message.");
-            }
-        }
 
-        private async Task CheckTimeRemaining(string appointmentId)
-        {
-            try
-            {
-                if (!_appointments.TryGetValue(appointmentId, out var appointmentState))
+                await _appointmentTimerService.StopTimer(appointmentId, null);
+
+                if (_groupConnections.TryRemove(appointmentId, out var connectionSet))
                 {
-                    Console.WriteLine($"Appointment {appointmentId} not found in active sessions.");
-                    return;
-                }
-
-                var timeRemaining = appointmentState.SessionEndTime - DateTime.Now;
-                Console.WriteLine($"Time remaining for appointment {appointmentId}: {timeRemaining.TotalMinutes} minutes");
-
-                if (timeRemaining.TotalMinutes <= 15 && !appointmentState.NotificationSent)
-                {
-                    await Clients.Group(appointmentId).SendAsync("ReceiveMessage", "System", "15 minutes remaining in this chat session.");
-                    _appointments[appointmentId] = (appointmentState.Timer, appointmentState.SessionEndTime, true);
-                    Console.WriteLine($"Sent 15-minute notification for appointment {appointmentId}");
-                }
-
-                if (timeRemaining.TotalSeconds <= 0)
-                {
-                    await EndSession(appointmentId);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in CheckTimeRemaining for appointment {appointmentId}: {ex.Message}\nStackTrace: {ex.StackTrace}");
-            }
-        }
-
-        private async Task EndSession(string appointmentId)
-        {
-            try
-            {
-                Console.WriteLine($"Ending session for appointment {appointmentId}");
-                await Clients.Group(appointmentId).SendAsync("ReceiveMessage", "System", "Chat session has ended.");
-
-                if (_appointments.TryGetValue(appointmentId, out var appointmentState))
-                {
-                    appointmentState.Timer?.Stop();
-                    appointmentState.Timer?.Dispose();
-                    _appointments.TryRemove(appointmentId, out _);
-                }
-
-                var appointment = await _unitOfWork.Appointment.GetByIdAsync(Guid.Parse(appointmentId));
-                if (appointment != null)
-                {
-                    appointment.IsCompleted = true;
-                    await _unitOfWork.SaveChangeAsync();
-                    Console.WriteLine($"Marked appointment {appointmentId} as completed.");
-                }
-
-                // Ngắt kết nối tất cả client trong nhóm
-                if (_groupConnections.TryGetValue(appointmentId, out var connectionSet))
-                {
-                    foreach (var (connectionId, _) in connectionSet)
+                    foreach (var connectionId in connectionSet)
                     {
-                        await Clients.Client(connectionId).SendAsync("ReceiveMessage", "System", "Chat session has ended. You will be disconnected.");
-                        await Clients.Client(connectionId).SendAsync("Disconnect");
+                        Console.WriteLine($"[Debug] Removing connection: {connectionId}");
+                        await Task.Delay(100);
+                        await _hubContext.Clients.Client(connectionId).SendAsync("SessionEnded", "System", "Session has ended.");
                     }
                     _groupConnections.TryRemove(appointmentId, out _);
-                    _groupStartedByPsychologist.TryRemove(appointmentId, out _);
                 }
+                else
+                {
+                    Console.WriteLine($"[Error] No connections found for appointment {appointmentId}.");
+                }
+
+                _groupStartedByPsychologist.TryRemove(appointmentId, out _);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in EndSession for appointment {appointmentId}: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                Console.WriteLine($"Error in EndSession: {ex.Message}");
             }
         }
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            try
+            var appointmentId = Context.GetHttpContext()?.Request.Query["appointmentId"].ToString();
+            if (string.IsNullOrEmpty(appointmentId))
             {
-                var appointmentId = Context.GetHttpContext().Request.Query["appointmentId"].ToString();
-                var userId = Guid.Parse(Context.UserIdentifier);
-                var role = Context.User.FindFirst(ClaimTypes.Role)?.Value;
+                await base.OnDisconnectedAsync(exception);
+                return;
+            }
 
-                var user = await _unitOfWork.User.GetByIdAsync(userId);
-                string userName = user != null ? $"{user.FirstName} {user.LastName}".Trim() : userId.ToString();
-                Console.WriteLine($"User {userId} (Role: {role}) disconnected from appointment {appointmentId}: {exception?.Message}");
-                await Clients.Group(appointmentId).SendAsync("ReceiveMessage", userName, $"{userName} has left the chat.");
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, appointmentId);
 
-                if (_groupConnections.TryGetValue(appointmentId, out var connectionSet))
+            if (_groupConnections.TryGetValue(appointmentId, out var connectionSet))
+            {
+                connectionSet.Remove(Context.ConnectionId);
+
+                if (connectionSet.Count == 0)
                 {
-                    connectionSet.RemoveWhere(c => c.ConnectionId == Context.ConnectionId);
-
-               
-                    if (role == "Psychologist")
-                    {
-                        foreach (var (connectionId, connRole) in connectionSet)
-                        {
-                            if (connRole == "Student")
-                            {
-                                await Clients.Client(connectionId).SendAsync("ReceiveMessage", "System", "The psychologist has left the chat. You will be disconnected.");
-                                await Clients.Client(connectionId).SendAsync("Disconnect");
-                            }
-                        }
-                        _groupConnections.TryRemove(appointmentId, out _);
-                        _groupStartedByPsychologist.TryRemove(appointmentId, out _);
-
-                        if (_appointments.TryGetValue(appointmentId, out var appointmentState))
-                        {
-                            appointmentState.Timer?.Stop();
-                            appointmentState.Timer?.Dispose();
-                            _appointments.TryRemove(appointmentId, out _);
-                            Console.WriteLine($"No more clients in appointment {appointmentId}. Timer stopped and session removed.");
-                        }
-                    }
-                 
-                    else if (connectionSet.Count == 0)
-                    {
-                        _groupConnections.TryRemove(appointmentId, out _);
-                        _groupStartedByPsychologist.TryRemove(appointmentId, out _);
-                        if (_appointments.TryGetValue(appointmentId, out var appointmentState))
-                        {
-                            appointmentState.Timer?.Stop();
-                            appointmentState.Timer?.Dispose();
-                            _appointments.TryRemove(appointmentId, out _);
-                            Console.WriteLine($"No more clients in appointment {appointmentId}. Timer stopped and session removed.");
-                        }
-                    }
+                    _groupConnections.TryRemove(appointmentId, out _);
+                    _groupStartedByPsychologist.TryRemove(appointmentId, out _);
+                    await _appointmentTimerService.StopTimer(appointmentId, null);
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in OnDisconnectedAsync: {ex.Message}\nStackTrace: {ex.StackTrace}");
-            }
+
             await base.OnDisconnectedAsync(exception);
         }
+        public async Task SendMessage(string message)
+        {
+            var appointmentId = Context.GetHttpContext()?.Request.Query["appointmentId"].ToString();
+
+            if (string.IsNullOrEmpty(appointmentId))
+            {
+                await Clients.Caller.SendAsync("ReceiveMessage", "System", "Invalid appointment ID.");
+                return;
+            }
+
+            var userId = Context.UserIdentifier;
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedUserId))
+            {
+                await Clients.Caller.SendAsync("ReceiveMessage", "System", "Invalid user ID.");
+                return;
+            }
+
+            var user = await _unitOfWork.User.GetByIdAsync(parsedUserId);
+            if (user == null)
+            {
+                await Clients.Caller.SendAsync("ReceiveMessage", "System", "User not found.");
+                return;
+            }
+
+            string userName = !string.IsNullOrEmpty(user.FullName) ? user.FullName : parsedUserId.ToString();
+
+            if (!_groupStartedByPsychologist.TryGetValue(appointmentId, out bool sessionStarted) || !sessionStarted)
+            {
+                await Clients.Caller.SendAsync("ReceiveMessage", "System", "You cannot chat until the Psychologist is in.");
+                return;
+            }
+
+            if (!_groupConnections.TryGetValue(appointmentId, out var connectionSet) || !connectionSet.Contains(Context.ConnectionId))
+            {
+                await Clients.Caller.SendAsync("ReceiveMessage", "System", "You are not in the chat room.");
+                return;
+            }
+
+            await Clients.OthersInGroup(appointmentId).SendAsync("ReceiveMessage", userName, message);
+        }
+
     }
 }

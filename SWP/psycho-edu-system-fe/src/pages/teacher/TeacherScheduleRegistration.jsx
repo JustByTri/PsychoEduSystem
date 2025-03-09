@@ -1,135 +1,125 @@
+/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  Box,
+  Button,
+  Typography,
+  Modal,
+  Fade,
+  CircularProgress,
+  Card,
+  CardContent,
+} from "@mui/material";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
+import { motion, AnimatePresence } from "framer-motion";
+import { Clock, Trash2 } from "lucide-react";
+import moment from "moment";
 
 const TeacherScheduleRegistration = () => {
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
   const token = authData?.accessToken;
 
-  if (!userId || !token) {
-    toast.error("User authentication required. Please log in.", {
-      position: "top-right",
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
-    return (
-      <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-        <h1 className="text-3xl font-bold text-[#002B36] mb-8 text-center">
-          Register Your Available Slots
-        </h1>
-        <p className="text-red-600 text-center">
-          User authentication required. Please log in.
-        </p>
-      </div>
-    );
-  }
-
   const timeSlots = [
-    { id: 1, time: "8:00 AM" },
-    { id: 2, time: "9:00 AM" },
-    { id: 3, time: "10:00 AM" },
-    { id: 4, time: "11:00 AM" },
-    { id: 5, time: "1:00 PM" },
-    { id: 6, time: "2:00 PM" },
-    { id: 7, time: "3:00 PM" },
-    { id: 8, time: "4:00 PM" },
+    { id: 1, time: "08:00" },
+    { id: 2, time: "09:00" },
+    { id: 3, time: "10:00" },
+    { id: 4, time: "11:00" },
+    { id: 5, time: "13:00" },
+    { id: 6, time: "14:00" },
+    { id: 7, time: "15:00" },
+    { id: 8, time: "16:00" },
   ];
 
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentSelectedSlots, setCurrentSelectedSlots] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState(moment());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState({});
   const [bookedSlots, setBookedSlots] = useState([]);
-  const [submissionStatus, setSubmissionStatus] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
-  const [errorDetails, setErrorDetails] = useState("");
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); // State cho modal thành công
-  const [successMessage, setSuccessMessage] = useState(""); // Thông điệp thành công
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [userProfile, setUserProfile] = useState(null);
 
-  useEffect(() => {
-    const dateKey = currentDate
-      .toLocaleDateString("en-GB", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-      .split("/")
-      .reverse()
-      .join("-"); // Định dạng YYYY-MM-DD
-    setCurrentSelectedSlots(selectedDates[dateKey] || []);
-    setErrorMessage(null);
-  }, [currentDate, selectedDates]);
+  const daysInMonth = () => {
+    const days = [];
+    const startOfMonth = moment(currentMonth).startOf("month");
+    const endOfMonth = moment(currentMonth).endOf("month");
+    const totalDays = endOfMonth.date();
+    const firstDayOfWeek = startOfMonth.day();
+    const totalSlots = 42;
 
-  const handleSlotToggle = (slotId) => {
-    setCurrentSelectedSlots((prev) =>
-      prev.includes(slotId)
-        ? prev.filter((id) => id !== slotId)
-        : [...prev, slotId]
-    );
+    for (let i = 0; i < firstDayOfWeek; i++) days.push(null);
+    for (let i = 0; i < totalDays; i++) {
+      const date = startOfMonth.clone().add(i, "days").toDate();
+      days.push({
+        day: moment(date).date(),
+        weekday: ["S", "M", "T", "W", "T", "F", "S"][moment(date).day()],
+        fullDate: date,
+      });
+    }
+    const remainingSlots = totalSlots - days.length;
+    for (let i = 0; i < remainingSlots; i++) days.push(null);
+
+    return days;
   };
 
-  const handleAddDate = () => {
-    if (currentSelectedSlots.length === 0) {
-      setErrorMessage("Please select at least one time slot.");
-      toast.error("Please select at least one time slot.", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      return;
-    }
+  const days = daysInMonth();
+  const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
 
-    const dateKey = currentDate
-      .toLocaleDateString("en-GB", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-      .split("/")
-      .reverse()
-      .join("-"); // YYYY-MM-DD
-    const duplicateSlots = currentSelectedSlots.filter((slotId) =>
-      bookedSlots.some(
-        (booked) => booked.slotId === slotId && booked.date === dateKey
-      )
-    );
+  useEffect(() => {
+    if (!userId || !token) return;
 
-    if (duplicateSlots.length > 0) {
-      const duplicateTimes = duplicateSlots
-        .map((slotId) => timeSlots.find((slot) => slot.id === slotId)?.time)
-        .join(", ");
-      const errorMsg = `You have already booked slot ${duplicateTimes} on ${new Date(
-        dateKey
-      ).toLocaleDateString("en-GB")}.`;
-      setErrorMessage(errorMsg);
-      toast.error(errorMsg, {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      return;
-    }
+    const fetchProfileAndBookedSlots = async () => {
+      try {
+        setIsLoading(true);
 
-    setSelectedDates((prev) => ({
-      ...prev,
-      [dateKey]: [...currentSelectedSlots],
-    }));
-    setErrorMessage(null);
+        const profileResponse = await axios.get(
+          `https://localhost:7192/api/User/profile?userId=${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (profileResponse.status === 200 && profileResponse.data.isSuccess) {
+          setUserProfile(profileResponse.data.result);
+        }
+      } catch (error) {
+        toast.error("Failed to load profile data.", { position: "top-right" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileAndBookedSlots();
+  }, [userId, token]);
+
+  const handleDayClick = (fullDate) => {
+    if (moment(fullDate).isBefore(moment(), "day")) return;
+    setSelectedDate(fullDate);
+  };
+
+  const handleNextMonth = () =>
+    setCurrentMonth(moment(currentMonth).add(1, "month"));
+  const handlePrevMonth = () =>
+    setCurrentMonth(moment(currentMonth).subtract(1, "month"));
+
+  const handleSlotToggle = (dateKey, slotId) => {
+    setSelectedDates((prev) => {
+      const currentSlots = prev[dateKey] || [];
+      return {
+        ...prev,
+        [dateKey]: currentSlots.includes(slotId)
+          ? currentSlots.filter((id) => id !== slotId)
+          : [...currentSlots, slotId],
+      };
+    });
   };
 
   const handleRemoveDate = (dateKey) => {
@@ -150,14 +140,8 @@ const TeacherScheduleRegistration = () => {
     );
 
     if (bookingDetails.length === 0) {
-      toast.error("Please add at least one date with slots.", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      setErrorMessage("Please select at least one date and slot.");
+      setIsErrorModalOpen(true);
       return;
     }
 
@@ -172,26 +156,20 @@ const TeacherScheduleRegistration = () => {
       const duplicateMsg = duplicateBookings
         .map(
           (booking) =>
-            `You have already booked slot ${
+            `Slot ${
               timeSlots.find((slot) => slot.id === booking.slotId)?.time
             } on ${new Date(booking.date).toLocaleDateString("en-GB")}`
         )
         .join(", ");
-      toast.error(duplicateMsg, {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      setSubmissionStatus(duplicateMsg);
+      setErrorMessage(`Duplicates found: ${duplicateMsg}`);
+      setIsErrorModalOpen(true);
       return;
     }
 
     const payload = { userId, bookingDetails };
 
     try {
+      setIsLoading(true);
       const response = await axios.post(
         "https://localhost:7192/api/Schedule/book-slots",
         payload,
@@ -203,9 +181,6 @@ const TeacherScheduleRegistration = () => {
         }
       );
 
-      console.log("API Response:", response.data); // Thêm log để kiểm tra dữ liệu
-
-      // Kiểm tra và mở modal thành công
       if (response.status === 200 && response.data) {
         const booked = response.data.bookings
           ? response.data.bookings.map((booking) => ({
@@ -216,214 +191,260 @@ const TeacherScheduleRegistration = () => {
             }))
           : [];
         setBookedSlots((prev) => [...prev, ...booked]);
-
-        const successMsg =
-          response.data.message || "Slots booked successfully!";
-        setSuccessMessage(successMsg);
+        setSuccessMessage(
+          response.data.message || "Slots booked successfully!"
+        );
         setIsSuccessModalOpen(true);
-
-        setSubmissionStatus(successMsg);
         setSelectedDates({});
-        setErrorMessage(null);
       } else {
         throw new Error("Unexpected response format");
       }
     } catch (error) {
-      let errorMsg = "An error occurred while booking.";
-      if (error.response) {
-        if (error.response.status === 400) {
-          const errorDetail =
-            error.response.data?.message ||
-            JSON.stringify(error.response.data) ||
-            "Bad request: Invalid booking data.";
-          setErrorDetails(errorDetail);
-          setIsErrorModalOpen(true);
-        } else {
-          errorMsg =
-            error.response.data?.message ||
-            `API error: Status ${error.response.status}`;
-          toast.error(errorMsg, {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-        }
-      } else {
-        toast.error(errorMsg, {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }
-      setSubmissionStatus(errorMsg);
+      setErrorMessage(error.response.data);
+      setIsErrorModalOpen(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Đóng modal thành công
-  const closeSuccessModal = () => {
-    setIsSuccessModalOpen(false);
-    setSuccessMessage("");
-  };
+  const closeSuccessModal = () => setIsSuccessModalOpen(false);
+  const closeErrorModal = () => setIsErrorModalOpen(false);
 
-  // Đóng modal lỗi
-  const closeErrorModal = () => {
-    setIsErrorModalOpen(false);
-    setErrorDetails("");
-  };
+  const formatDateKey = (date) => moment(date).format("YYYY-MM-DD");
+
+  if (!userId || !token) {
+    return (
+      <div className="p-6 bg-white min-h-screen flex items-center justify-center">
+        <Typography variant="h6" className="text-red-600 text-center">
+          User authentication required. Please log in.
+        </Typography>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-white">
+        <CircularProgress size={40} sx={{ color: "#3b82f6" }} />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
+    <div className="p-4 sm:p-6 bg-white min-h-screen text-gray-900 flex flex-col max-w-7xl mx-auto">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-3xl font-bold text-[#002B36] mb-8 text-center"
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="mb-8"
       >
-        Register Your Available Slots - Teacher
-      </motion.h1>
-
-      {/* Container chính căn giữa */}
-      <div className="max-w-5xl mx-auto flex flex-col items-center gap-6">
-        {/* Card chọn ngày và slot */}
-        <div className="flex flex-col lg:flex-row justify-center items-stretch gap-6 w-full max-w-5xl">
-          {/* Lịch nhỏ gọn */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
+        <Typography
+          variant="h4"
+          sx={{
+            fontFamily: "Inter, sans-serif",
+            fontWeight: 700,
+            textAlign: "center",
+            background: "linear-gradient(to right, #1e88e5, #8e24aa)",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+          }}
+        >
+          Register Your Available Slots
+        </Typography>
+        {userProfile && (
+          <Typography
+            variant="body1"
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "1rem",
+              color: "#555",
+              textAlign: "center",
+              mt: 1,
+            }}
           >
-            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
-              Pick a Date
-            </h2>
-            <Calendar
-              onChange={setCurrentDate}
-              value={currentDate}
-              minDate={new Date()}
-              navigationLabel={({ date }) =>
-                `${date.toLocaleString("default", {
-                  month: "long",
-                })} ${date.getFullYear()}`
-              }
-              className="border-none rounded-lg shadow-sm w-full text-[#002B36] text-sm mx-auto"
-              tileClassName={({ date }) => {
-                const dateKey = date
-                  .toLocaleDateString("en-GB", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                  })
-                  .split("/")
-                  .reverse()
-                  .join("-");
-                const dayBookings = bookedSlots.filter(
-                  (b) => b.date === dateKey && b.slotId
-                ).length;
-                return dayBookings > 0
-                  ? "bg-blue-100 rounded-full hover:bg-blue-200"
-                  : "hover:bg-teal-100 transition-all duration-200 rounded-full";
-              }}
-              showNeighboringMonth={false}
-              prevLabel={
-                <span className="text-[#002B36] font-bold text-lg">{"<"}</span>
-              }
-              nextLabel={
-                <span className="text-[#002B36] font-bold text-lg">{">"}</span>
-              }
-              tileContent={({ date }) => {
-                const dateKey = date
-                  .toLocaleDateString("en-GB", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                  })
-                  .split("/")
-                  .reverse()
-                  .join("-");
-                const dayBookings = bookedSlots.filter(
-                  (b) => b.date === dateKey
-                ).length;
-                return (
-                  <div className="text-[10px] text-center mt-[2px]">
-                    {dayBookings > 0 && (
-                      <span className="text-blue-600">{dayBookings} B</span>
-                    )}
-                  </div>
-                );
-              }}
-            />
-            <p className="mt-2 text-sm text-gray-600 text-center">
-              Selected: {currentDate.toLocaleDateString("en-GB")}
-            </p>
-          </motion.div>
+            Welcome, {userProfile.fullName || "Teacher"}
+          </Typography>
+        )}
+      </motion.div>
 
-          {/* Chọn khung giờ */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md"
-          >
-            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
-              Select Slots for{" "}
-              <span className="text-[#65CCB8]">
-                {currentDate.toLocaleDateString("en-GB")}
-              </span>
-            </h2>
-            <div className="grid grid-cols-2 gap-3 max-h-72 overflow-y-auto">
-              {timeSlots.map((slot) => (
-                <label
-                  key={slot.id}
-                  className="flex items-center p-3 bg-gray-100 rounded-lg hover:bg-[#65CCB8]/20 transition-all duration-300 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={currentSelectedSlots.includes(slot.id)}
-                    onChange={() => handleSlotToggle(slot.id)}
-                    className="mr-3 w-5 h-5 accent-[#65CCB8]"
-                  />
-                  <span className="text-[#002B36] font-medium">
-                    {slot.time}
-                  </span>
-                </label>
-              ))}
-            </div>
-            {errorMessage && (
-              <p className="text-red-500 text-sm mt-2 text-center">
-                {errorMessage}
-              </p>
-            )}
-            <button
-              onClick={handleAddDate}
-              className="mt-4 w-full bg-gradient-to-r from-[#65CCB8] to-[#57B8A5] text-white py-2 rounded-lg hover:scale-105 transition-all duration-300"
-              title="Add this date and slots to your list"
-            >
-              Add to List
-            </button>
-          </motion.div>
-        </div>
-
-        {/* Danh sách slot đã chọn */}
+      {/* Main Content */}
+      <Box className="flex flex-col lg:flex-row gap-6">
+        {/* Calendar and Slots */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-white p-6 rounded-xl shadow-lg w-full max-w-5xl"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl flex-1 flex flex-col"
         >
-          <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
-            Your Selected Slots
-          </h2>
+          <Box className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 gap-4">
+            <Button
+              onClick={handlePrevMonth}
+              variant="contained"
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              sx={{ textTransform: "none", fontFamily: "Inter, sans-serif" }}
+            >
+              Back
+            </Button>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+                color: "#333",
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              {moment(currentMonth).format("MMMM YYYY")}
+            </Typography>
+            <Button
+              onClick={handleNextMonth}
+              variant="contained"
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              sx={{ textTransform: "none", fontFamily: "Inter, sans-serif" }}
+            >
+              Next
+            </Button>
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "1rem",
+              color: "#555",
+              textAlign: "center",
+              mb: 4,
+            }}
+          >
+            Selected: {moment(selectedDate).format("dddd, DD/MM/YYYY")}
+          </Typography>
+          <div className="grid grid-cols-7 gap-2 mb-4">
+            {weekdays.map((weekday, index) => (
+              <Typography
+                key={`weekday-${index}`}
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 600,
+                  color: "#666",
+                  textAlign: "center",
+                }}
+              >
+                {weekday}
+              </Typography>
+            ))}
+          </div>
+          <motion.div
+            className="grid grid-cols-7 gap-2 mb-6"
+            key={currentMonth.format("YYYY-MM")}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {days.map((d, index) =>
+              d ? (
+                <motion.button
+                  key={`${currentMonth.format("YYYY-MM")}-${index}`}
+                  className={`w-full h-10 sm:h-12 flex items-center justify-center rounded-xl font-medium transition-all duration-300 shadow-md ${
+                    moment(d.fullDate).isSame(selectedDate, "day")
+                      ? "bg-green-500 text-white"
+                      : moment(d.fullDate).isBefore(moment(), "day")
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : selectedDates[formatDateKey(d.fullDate)]?.length > 0
+                      ? "bg-blue-300 text-white hover:bg-blue-400"
+                      : "bg-blue-200 hover:bg-blue-300"
+                  }`}
+                  onClick={() => handleDayClick(d.fullDate)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={moment(d.fullDate).isBefore(moment(), "day")}
+                >
+                  <Typography
+                    sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+                  >
+                    {d.day}
+                    {selectedDates[formatDateKey(d.fullDate)]?.length > 0 && (
+                      <span className="ml-1 text-xs">
+                        ({selectedDates[formatDateKey(d.fullDate)].length})
+                      </span>
+                    )}
+                  </Typography>
+                </motion.button>
+              ) : (
+                <div
+                  key={`${currentMonth.format("YYYY-MM")}-${index}`}
+                  className="w-full h-10 sm:h-12 bg-gray-100 rounded-xl"
+                />
+              )
+            )}
+          </motion.div>
+
+          {/* Time Slots */}
+          <Typography
+            variant="h6"
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontWeight: 600,
+              color: "#333",
+              mb: 2,
+              textAlign: "center",
+            }}
+          >
+            Available Slots
+          </Typography>
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            {timeSlots.map((slot) => {
+              const dateKey = formatDateKey(selectedDate);
+              const isSelected = selectedDates[dateKey]?.includes(slot.id);
+              const isBooked = bookedSlots.some(
+                (b) => b.date === dateKey && b.slotId === slot.id
+              );
+              return (
+                <motion.button
+                  key={slot.id}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`p-2 rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                    isBooked
+                      ? "bg-green-100 text-gray-500 cursor-not-allowed"
+                      : isSelected
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 hover:bg-blue-100"
+                  }`}
+                  onClick={() =>
+                    !isBooked && handleSlotToggle(dateKey, slot.id)
+                  }
+                  disabled={isBooked}
+                >
+                  {slot.time}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Selected Slots */}
+          <Typography
+            variant="h5"
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontWeight: 600,
+              color: "#333",
+              mb: 3,
+              textAlign: "center",
+            }}
+          >
+            Selected Slots
+          </Typography>
           <AnimatePresence>
-            {Object.entries(selectedDates).length === 0 ? (
-              <p className="text-gray-500 italic text-center">
-                No slots selected yet. Add some above!
-              </p>
+            {Object.keys(selectedDates).length === 0 ? (
+              <Typography
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: "1rem",
+                  color: "#666",
+                  textAlign: "center",
+                  fontStyle: "italic",
+                }}
+              >
+                No slots selected yet.
+              </Typography>
             ) : (
               Object.entries(selectedDates).map(([date, slots]) => (
                 <motion.div
@@ -432,144 +453,260 @@ const TeacherScheduleRegistration = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.3 }}
-                  className="flex justify-between items-center p-4 bg-gray-50 rounded-lg mb-3 shadow-sm hover:shadow-md transition-all duration-200"
+                  className="mb-3 p-3 bg-blue-50 rounded-lg flex justify-between items-center"
                 >
-                  <div>
-                    <span className="font-semibold text-[#002B36]">
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 500,
+                        color: "#333",
+                      }}
+                    >
                       {new Date(date).toLocaleDateString("en-GB")}
-                    </span>
-                    <div className="text-sm text-gray-700 mt-1">
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: "0.9rem",
+                        color: "#666",
+                      }}
+                    >
                       {slots
                         .map(
                           (slotId) =>
                             timeSlots.find((s) => s.id === slotId)?.time
                         )
                         .join(", ")}
-                    </div>
-                  </div>
-                  <button
+                    </Typography>
+                  </Box>
+                  <Button
                     onClick={() => handleRemoveDate(date)}
-                    className="text-red-500 hover:text-red-700 font-medium transition-all duration-200"
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    sx={{ textTransform: "none" }}
                   >
-                    Remove
-                  </button>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </motion.div>
               ))
             )}
           </AnimatePresence>
         </motion.div>
 
-        {/* Danh sách slot đã book */}
+        {/* Booked Slots */}
         {bookedSlots.length > 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-5xl"
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex-1"
           >
-            <h2 className="text-xl font-semibold text-[#002B36] mb-4 text-center">
-              Booked Slots
-            </h2>
-            <div className="space-y-3">
-              {bookedSlots.map((slot) => (
-                <div
-                  key={slot.bookingId}
-                  className="p-4 bg-green-50 rounded-lg shadow-sm"
+            <Card className="rounded-2xl shadow-xl bg-white">
+              <CardContent sx={{ p: 4 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 600,
+                    color: "#333",
+                    mb: 3,
+                    textAlign: "center",
+                  }}
                 >
-                  <span className="font-semibold text-[#002B36]">
-                    {new Date(slot.date).toLocaleDateString("en-GB")} -{" "}
-                    {slot.time}
-                  </span>
-                  <div className="text-sm text-gray-700 mt-1">
-                    Booking ID:{" "}
-                    <span className="font-mono">{slot.bookingId}</span>
-                  </div>
+                  Booked Slots
+                </Typography>
+                <div className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto">
+                  {bookedSlots.map((slot) => (
+                    <div
+                      key={slot.bookingId}
+                      className="p-3 bg-green-50 rounded-lg flex items-center justify-between"
+                    >
+                      <Box>
+                        <Typography
+                          sx={{
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 500,
+                            color: "#333",
+                          }}
+                        >
+                          {new Date(slot.date).toLocaleDateString("en-GB")}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: "0.9rem",
+                            color: "#666",
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Clock className="w-4 h-4 mr-2" />
+                          {slot.time}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        sx={{
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: "0.9rem",
+                          color: "#666",
+                        }}
+                      >
+                        ID: {slot.bookingId}
+                      </Typography>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
+      </Box>
 
-        {/* Nút gửi */}
-        <div className="flex justify-center w-full max-w-5xl">
-          <button
-            onClick={handleSubmit}
-            className="bg-gradient-to-r from-[#002B36] to-[#001F28] text-white py-3 px-8 rounded-lg hover:scale-105 transition-all duration-300 shadow-lg"
-          >
-            Submit Schedule
-          </button>
-        </div>
-      </div>
+      {/* Submit Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.6 }}
+        className="mt-8 flex justify-center"
+      >
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={isLoading || Object.keys(selectedDates).length === 0}
+          sx={{
+            fontFamily: "Inter, sans-serif",
+            fontSize: "1rem",
+            backgroundColor: "#1e88e5",
+            "&:hover": { backgroundColor: "#1565c0" },
+            textTransform: "none",
+            px: 6,
+            py: 2,
+            borderRadius: "12px",
+          }}
+        >
+          {isLoading ? "Submitting..." : "Submit Schedule"}
+        </Button>
+      </motion.div>
 
-      {/* Modal thành công */}
-      <AnimatePresence>
-        {isSuccessModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      {/* Success Modal */}
+      <Modal
+        open={isSuccessModalOpen}
+        onClose={closeSuccessModal}
+        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <Fade in={isSuccessModalOpen}>
+          <Box
+            sx={{
+              backgroundColor: "#fff",
+              borderRadius: "16px",
+              p: 4,
+              width: { xs: "90%", sm: 400 },
+              maxWidth: 400,
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
+              textAlign: "center",
+            }}
           >
-            <motion.div
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 700,
+                fontSize: "1.5rem",
+                color: "#4caf50",
+                mb: 2,
+              }}
             >
-              <h2 className="text-2xl font-bold text-green-600 mb-4 text-center">
-                Success
-              </h2>
-              <p className="text-gray-700 text-center mb-4">{successMessage}</p>
-              <div className="flex justify-center">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={closeSuccessModal}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Close
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal lỗi khi gặp 400 Bad Request */}
-      <AnimatePresence>
-        {isErrorModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+              Success!
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: "Inter, sans-serif",
+                fontSize: "1rem",
+                color: "#333",
+                mb: 3,
+              }}
             >
-              <h2 className="text-2xl font-bold text-red-600 mb-4 text-center">
-                Notification
-              </h2>
-              <p className="text-gray-700 text-center mb-4">{errorDetails}</p>
-              <div className="flex justify-center">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={closeErrorModal}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Close
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {successMessage}
+            </Typography>
+            <Button
+              onClick={closeSuccessModal}
+              variant="contained"
+              sx={{
+                fontFamily: "Inter, sans-serif",
+                fontSize: "0.95rem",
+                backgroundColor: "#4caf50",
+                "&:hover": { backgroundColor: "#388e3c" },
+                textTransform: "none",
+                px: 4,
+                py: 1,
+              }}
+            >
+              Close
+            </Button>
+          </Box>
+        </Fade>
+      </Modal>
+
+      {/* Error Modal */}
+      <Modal
+        open={isErrorModalOpen}
+        onClose={closeErrorModal}
+        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <Fade in={isErrorModalOpen}>
+          <Box
+            sx={{
+              backgroundColor: "#fff",
+              borderRadius: "16px",
+              p: 4,
+              width: { xs: "90%", sm: 400 },
+              maxWidth: 400,
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
+              textAlign: "center",
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 700,
+                fontSize: "1.5rem",
+                color: "#ef5350",
+                mb: 2,
+              }}
+            >
+              Error
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: "Inter, sans-serif",
+                fontSize: "1rem",
+                color: "#333",
+                mb: 3,
+              }}
+            >
+              {errorMessage}
+            </Typography>
+            <Button
+              onClick={closeErrorModal}
+              variant="contained"
+              sx={{
+                fontFamily: "Inter, sans-serif",
+                fontSize: "0.95rem",
+                backgroundColor: "#ef5350",
+                "&:hover": { backgroundColor: "#d32f2f" },
+                textTransform: "none",
+                px: 4,
+                py: 1,
+              }}
+            >
+              Close
+            </Button>
+          </Box>
+        </Fade>
+      </Modal>
     </div>
   );
 };

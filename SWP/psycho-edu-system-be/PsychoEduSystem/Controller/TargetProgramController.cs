@@ -38,14 +38,12 @@ namespace PsychoEduSystem.Controller
                 // Chỉ trả về các trường cần thiết
                 return Ok(new
                 {
-                    createdProgram.ProgramId,
+
                     createdProgram.Name,
                     createdProgram.Description,
                     createdProgram.StartDate,
                     createdProgram.MinPoint,
                     createdProgram.Capacity,
-                    createdProgram.CreatedBy,
-                    createdProgram.CreateAt,
                     createdProgram.DimensionId
                 });
             }
@@ -58,12 +56,35 @@ namespace PsychoEduSystem.Controller
         }
 
 
-
         [HttpGet("list")]
-        public async Task<IActionResult> GetAllPrograms()
+        public async Task<IActionResult> GetAllPrograms([FromQuery] string? day = null, [FromQuery] int? capacity = null, [FromQuery] string? time = null, [FromQuery] int? minPoint = null, [FromQuery] string? dimensionName = null)
         {
-            var programs = await _targetProgramService.GetAllProgramsAsync();
+            var programs = await _targetProgramService.GetAllProgramsAsync(day, capacity, time, minPoint, dimensionName);
             return Ok(programs);
+        }
+        [HttpGet("get-programs/{userId}")]
+        public async Task<IActionResult> GetAllProgramsByUserIdAsync(Guid userId, [FromQuery] string? day = null, [FromQuery] int? capacity = null, [FromQuery] string? time = null, [FromQuery] int? minPoint = null, [FromQuery] string? dimensionName = null)
+        {
+            try
+            {
+                if (userId == Guid.Empty)
+                {
+                    return BadRequest(new { message = "Invalid userId." });
+                }
+
+                var programs = await _targetProgramService.GetAllProgramsByUserIdAsync(userId, day, capacity, time, minPoint, dimensionName);
+
+                if (programs == null || !programs.Any())
+                {
+                    return NotFound(new { message = "No programs found for the given filters." });
+                }
+
+                return Ok(programs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing your request.", error = ex.Message });
+            }
         }
 
         [HttpPut("update/{id}")]
@@ -88,7 +109,6 @@ namespace PsychoEduSystem.Controller
             existingProgram.Capacity = programDto.Capacity;
 
             await _targetProgramService.UpdateProgramAsync(existingProgram);
-
             return Ok(new { Message = "Program updated successfully", UpdatedProgram = programDto });
         }
 
@@ -106,8 +126,35 @@ namespace PsychoEduSystem.Controller
             return Ok("Program deleted successfully.");
         }
 
+        [HttpPost("assign")]
+        public async Task<IActionResult> AssignStudentToTargetProgramAsync([FromBody] StudentDimensionDTO request)
+        {
+            if (request == null)
+                return BadRequest(new ResponseDTO("Invalid request", 400, false, string.Empty));
 
+            var result = await _targetProgramService.AssignStudentToTargetProgramAsync(request);
 
+            if (!result.IsSuccess)
+                return StatusCode(result.StatusCode, result);
 
+            return Ok(result);
+        }
+        [HttpGet("counselors")]
+        public async Task<IActionResult> GetAvailableCounselors([FromQuery] DateTime selectedDateTime)
+        {
+            if (selectedDateTime == default)
+            {
+                return BadRequest(new { message = "Invalid date provided." });
+            }
+
+            var response = await _targetProgramService.GetAvailableCounselorsAsync(selectedDateTime);
+
+            if (!response.IsSuccess)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using BLL.Interface;
 using Common.DTO;
@@ -20,25 +22,73 @@ namespace BLL.Service
         {
             _unitOfWork = unitOfWork;
         }
-
-        public async Task<List<TargetProgramDTO>> GetAllProgramsAsync()
+        public async Task<List<object>> GetAllProgramsAsync(string? day = null, int? capacity = null, string? time = null, int? minPoint = null, string? dimensionName = null)
         {
-            var programs = await _unitOfWork.TargetProgram.GetAllAsync();
+            var query = _unitOfWork.TargetProgram.GetAll()
+                            .Include(p => p.Dimension)
+                            .Include(p => p.Counselor)
+                            .AsQueryable();
 
-            return programs.Select(p => new TargetProgramDTO
+            if (!string.IsNullOrEmpty(day))
             {
-                ProgramId = p.ProgramId,
-                Name = p.Name,
-                Description = p.Description,
-                StartDate = p.StartDate,
-                MinPoint = p.MinPoint,
-                Capacity = p.Capacity,
-                CreatedBy = p.CreatedBy,
-                CreateAt = p.CreateAt,
-                DimensionId = p.DimensionId
-            }).ToList();
-        }
+                if (DateTime.TryParseExact(day, "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDay))
+                {
+                    query = query.Where(p => p.StartDate.Date == parsedDay.Date);
+                }
+                else
+                {
+                    throw new FormatException("Invalid date format. Expected format: yyyy-MM-dd.");
+                }
+            }
 
+            if (capacity.HasValue)
+            {
+                query = query.Where(p => p.Capacity >= capacity.Value);
+            }
+
+            if (!string.IsNullOrEmpty(time))
+            {
+                TimeSpan filterTime = TimeSpan.Parse(time);
+                query = query.Where(t => t.StartDate.TimeOfDay == filterTime);
+            }
+
+            if (minPoint.HasValue)
+            {
+                query = query.Where(p => p.MinPoint >= minPoint.Value);
+            }
+
+            if (!string.IsNullOrEmpty(dimensionName))
+            {
+                query = query.Where(p => p.Dimension != null && p.Dimension.DimensionName == dimensionName);
+            }
+
+            var programs = await query.ToListAsync();
+
+            return programs.Select(p => new
+            {
+                p.ProgramId,
+                p.Name,
+                p.Description,
+                Day = p.StartDate.ToString("dd/MM/yyyy"),
+                Time = p.StartDate.ToString("HH:mm"),
+                p.StartDate,
+                p.MinPoint,
+                p.Capacity,
+                Counselor = p.Counselor != null ? new
+                {
+                    p.Counselor.FullName,
+                    p.Counselor.UserId,
+                    p.Counselor.Phone,
+                    p.Counselor.Email,
+                    Birthday = p.Counselor.BirthDay.ToString("dd/MM/yyyy"),
+                    p.Counselor.GoogleMeetURL,
+                    p.Counselor.Gender,
+                    p.Counselor.Address
+                } : null,
+                DimensionName = p.Dimension?.DimensionName
+            }).ToList<object>();
+        }
         public async Task<TargetProgramDTO?> GetProgramByIdAsync(Guid programId)
         {
             var program = await _unitOfWork.TargetProgram.GetByIdAsync(programId);
@@ -52,69 +102,89 @@ namespace BLL.Service
                 StartDate = program.StartDate,
                 MinPoint = program.MinPoint,
                 Capacity = program.Capacity,
-                CreatedBy = program.CreatedBy,
-                CreateAt = program.CreateAt,
                 DimensionId = program.DimensionId
             };
         }
-
         public async Task<TargetProgramDTO> AddProgramAsync(TargetProgramDTO dto)
         {
-            // Kiểm tra CreatedBy có hợp lệ không
-            if (dto.CreatedBy == Guid.Empty)
+            try
             {
-                throw new ArgumentException("Invalid CreatedBy. A valid UserId is required.");
+                var counselor = await _unitOfWork.User.GetByIdAsync(dto.CounselorId);
+                if (counselor == null)
+                {
+                    throw new InvalidOperationException("Counselor not found.");
+                }
+
+                if (counselor.RoleId != 2)
+                {
+                    throw new UnauthorizedAccessException("Invalid role.");
+                }
+                TimeSpan startTime = dto.StartDate.TimeOfDay;
+                int slotNumber = GetSlotNumber(startTime);
+                var availableSlot = await _unitOfWork.Schedule.GetByConditionAsync(s => s.SlotId == slotNumber && DateOnly.FromDateTime(s.Date) == DateOnly.FromDateTime(dto.StartDate) && s.UserId == counselor.UserId);
+                if (availableSlot == null)
+                {
+                    throw new InvalidOperationException("Counselor has no available slots at this time.");
+                }
+                var appointment = await _unitOfWork.Appointment.GetByConditionAsync(a => a.SlotId == slotNumber && a.Date == DateOnly.FromDateTime(dto.StartDate) && counselor.UserId == a.MeetingWith);
+                if (appointment != null)
+                {
+                    throw new InvalidOperationException("Counselor already has an appointment at this time.");
+                }
+                var existingPrograms = await _unitOfWork.TargetProgram.GetAllByListAsync(p => p.CounselorId == dto.CounselorId && p.StartDate == dto.StartDate);
+                if (existingPrograms.Count() >= 1)
+                {
+                    throw new InvalidOperationException("This counselor already has a program at this time.");
+                }
+
+                var newProgram = new TargetProgram
+                {
+                    ProgramId = Guid.NewGuid(),
+                    Name = dto.Name,
+                    Description = dto.Description,
+                    CounselorId = counselor.UserId,
+                    StartDate = dto.StartDate,
+                    MinPoint = dto.MinPoint,
+                    Capacity = dto.Capacity,
+                    CreateAt = DateTime.UtcNow,
+                    DimensionId = dto.DimensionId
+                };
+
+                var addedProgram = await _unitOfWork.TargetProgram.AddAsync(newProgram);
+                await _unitOfWork.SaveChangeAsync();
+
+                return new TargetProgramDTO
+                {
+                    Name = addedProgram.Name,
+                    Description = addedProgram.Description,
+                    StartDate = addedProgram.StartDate,
+                    MinPoint = addedProgram.MinPoint,
+                    Capacity = addedProgram.Capacity,
+                    DimensionId = addedProgram.DimensionId
+                };
             }
-
-            // Kiểm tra xem CreatedBy có tồn tại trong Users không
-            var userExists = await _unitOfWork.User.AnyAsync(u => u.UserId == dto.CreatedBy);
-            if (!userExists)
+            catch (Exception ex)
             {
-                throw new ArgumentException("User with CreatedBy ID does not exist.");
+                var errorMessage = $"Error while saving data: {ex.InnerException?.Message ?? ex.Message}";
+                Console.WriteLine(errorMessage);
+                throw new Exception(errorMessage);
             }
-
-            // Set the CreateAt field to the current UTC time if not provided
-            DateTime createAt = DateTime.UtcNow;
-
-            // Ensure DimensionId has a valid value, defaulting to 1 if necessary
-            int dimensionId = dto.DimensionId > 0 ? dto.DimensionId : 1;
-
-            var newProgram = new TargetProgram
-            {
-                ProgramId = Guid.NewGuid(),
-                Name = dto.Name,
-                Description = dto.Description,
-                StartDate = dto.StartDate,
-                MinPoint = dto.MinPoint,
-                Capacity = dto.Capacity,
-                CreatedBy = dto.CreatedBy, // Ensure CreatedBy is set correctly
-                CreateAt = createAt, // Set the current UTC time
-                DimensionId = dimensionId // Ensure DimensionId is valid
-            };
-
-            var addedProgram = await _unitOfWork.TargetProgram.AddAsync(newProgram);
-            await _unitOfWork.SaveChangeAsync();
-
-            return new TargetProgramDTO
-            {
-                ProgramId = addedProgram.ProgramId,
-                Name = addedProgram.Name,
-                Description = addedProgram.Description,
-                StartDate = addedProgram.StartDate,
-                MinPoint = addedProgram.MinPoint,
-                Capacity = addedProgram.Capacity,
-                CreatedBy = addedProgram.CreatedBy,
-                CreateAt = addedProgram.CreateAt,
-                DimensionId = addedProgram.DimensionId
-            };
         }
-
-
-
-
+        public int GetSlotNumber(TimeSpan inputTime)
+        {
+            Dictionary<int, int> timeSlots = new Dictionary<int, int>
+            {
+                    { 8, 1 }, { 9, 2 }, { 10, 3 }, { 11, 4 },
+                    { 13, 5 }, { 14, 6 }, { 15, 7 }, { 16, 8 }
+            };
+            int hour = inputTime.Hours;
+            return timeSlots.TryGetValue(hour, out int slot) ? slot : -1;
+        }
         public async Task UpdateProgramAsync(TargetProgramDTO dto)
         {
-            var existingProgram = await _unitOfWork.TargetProgram.GetByIdAsync(dto.ProgramId);
+            if (dto.ProgramId == null) throw new Exception("ProgramId is required");
+
+            var existingProgram = await _unitOfWork.TargetProgram.GetByIdAsync(dto.ProgramId.Value);
             if (existingProgram == null) throw new Exception("Program not found");
 
             existingProgram.Name = dto.Name;
@@ -124,18 +194,230 @@ namespace BLL.Service
             existingProgram.Capacity = dto.Capacity;
             existingProgram.DimensionId = dto.DimensionId;
 
-            _unitOfWork.TargetProgram.UpdateAsync(existingProgram);
+            await _unitOfWork.TargetProgram.UpdateAsync(existingProgram);
             await _unitOfWork.SaveChangeAsync();
         }
-
-        public async Task DeleteProgramAsync(Guid programId)
+        public async Task DeleteProgramAsync(Guid? programId)
         {
-            var program = await _unitOfWork.TargetProgram.GetByIdAsync(programId);
+            if (programId == null) throw new Exception("ProgramId is required");
+
+            var program = await _unitOfWork.TargetProgram.GetByIdAsync(programId.Value);
             if (program != null)
             {
                 _unitOfWork.TargetProgram.Delete(program);
                 await _unitOfWork.SaveChangeAsync();
             }
         }
+        public async Task<ResponseDTO> AssignStudentToTargetProgramAsync(StudentDimensionDTO request)
+        {
+            try
+            {
+                var user = await _unitOfWork.User.GetByIdAsync(request.StudentId);
+
+                if (user == null) return new ResponseDTO("User not found", 400, false, string.Empty);
+
+                if (string.IsNullOrEmpty(request.Stress.ToString()) || string.IsNullOrEmpty(request.Anxiety.ToString()) || string.IsNullOrEmpty(request.Depression.ToString()))
+                {
+                    return new ResponseDTO("All fields are required", 400, false, string.Empty);
+                }
+                var targetPrograms = await _unitOfWork.TargetProgram.GetAllByListAsync(p =>
+                                    ((p.DimensionId == 1 && request.Anxiety >= p.MinPoint) ||
+                                    (p.DimensionId == 2 && request.Depression >= p.MinPoint) ||
+                                    (p.DimensionId == 3 && request.Stress >= p.MinPoint)) &&
+                                    p.Capacity > 0);
+                if (!targetPrograms.Any())
+                    return new ResponseDTO("No matching programs found", 404, false, string.Empty);
+
+                var assignedPrograms = new List<string>();
+
+                foreach (var program in targetPrograms)
+                {
+                    var existingEnrollment = await _unitOfWork.ProgramEnrollment.GetAllByListAsync(e =>
+                        e.StudentId == request.StudentId && e.ProgramId == program.ProgramId);
+
+                    if (!existingEnrollment.Any())
+                    {
+                        var enrollment = new ProgramEnrollment
+                        {
+                            StudentId = request.StudentId,
+                            ProgramId = program.ProgramId,
+                            EnrolledAt = DateTime.UtcNow,
+                            CreateAt = DateTime.UtcNow
+                        };
+
+                        await _unitOfWork.ProgramEnrollment.AddAsync(enrollment);
+                        assignedPrograms.Add(program.Name);
+
+                        program.Capacity -= 1;
+                        await _unitOfWork.TargetProgram.UpdateAsync(program);
+                    }
+                }
+
+                await _unitOfWork.SaveChangeAsync();
+
+                if (!assignedPrograms.Any())
+                    return new ResponseDTO("Student is already enrolled in all matching programs", 200, true, string.Empty);
+
+                return new ResponseDTO($"Student assigned to: {string.Join(", ", assignedPrograms)}", 200, true, string.Empty);
+
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<List<object>> GetAllProgramsByUserIdAsync(Guid userId, string? day = null, int? capacity = null, string? time = null, int? minPoint = null, string? dimensionName = null)
+        {
+            var user = await _unitOfWork.User.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found.");
+            }
+
+            var query = _unitOfWork.TargetProgram.GetAll()
+                            .Include(p => p.Dimension)
+                            .Include(p => p.Counselor)
+                            .AsQueryable();
+            if (user.RoleId == 3)
+            {
+                var enrolledProgram = await _unitOfWork.ProgramEnrollment.GetAll().Where(p => p.StudentId == userId).Select(p => p.ProgramId).ToListAsync();
+
+                query = query.Where(p =>  enrolledProgram.Contains(p.ProgramId));
+            }
+
+            else if (user.RoleId == 2)
+            {
+                query = query.Where(p => p.Counselor != null && p.Counselor.UserId == userId);
+            }
+
+            if (!string.IsNullOrEmpty(day))
+            {
+                if (DateTime.TryParseExact(day, "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDay))
+                {
+                    query = query.Where(p => p.StartDate.Date == parsedDay.Date);
+                }
+                else
+                {
+                    throw new FormatException("Invalid date format. Expected format: yyyy-MM-dd.");
+                }
+            }
+
+            if (capacity.HasValue)
+            {
+                query = query.Where(p => p.Capacity >= capacity.Value);
+            }
+
+            if (!string.IsNullOrEmpty(time))
+            {
+                TimeSpan filterTime = TimeSpan.Parse(time);
+                query = query.Where(t => t.StartDate.TimeOfDay == filterTime);
+            }
+
+            if (minPoint.HasValue)
+            {
+                query = query.Where(p => p.MinPoint >= minPoint.Value);
+            }
+
+            if (!string.IsNullOrEmpty(dimensionName))
+            {
+                query = query.Where(p => p.Dimension != null && p.Dimension.DimensionName == dimensionName);
+            }
+
+            var programs = await query.ToListAsync();
+
+            return programs.Select(p => new
+            {
+                p.ProgramId,
+                p.Name,
+                p.Description,
+                Day = p.StartDate.ToString("dd/MM/yyyy"),
+                Time = p.StartDate.ToString("HH:mm"),
+                p.StartDate,
+                p.MinPoint,
+                p.Capacity,
+                Counselor = p.Counselor != null ? new
+                {
+                    p.Counselor.FullName,
+                    p.Counselor.UserId,
+                    p.Counselor.Phone,
+                    p.Counselor.Email,
+                    Birthday = p.Counselor.BirthDay.ToString("dd/MM/yyyy"),
+                    p.Counselor.GoogleMeetURL,
+                    p.Counselor.Gender,
+                    p.Counselor.Address
+                } : null,
+                DimensionName = p.Dimension?.DimensionName
+            }).ToList<object>();
+        }
+
+        public async Task<ResponseDTO> GetAvailableCounselorsAsync(DateTime selectedDateTime)
+        {
+            try
+            {
+                TimeSpan startTime = selectedDateTime.TimeOfDay;
+                int slotNumber = GetSlotNumber(startTime);
+
+                // Get all counselors (RoleId = 2)
+                var counselors = await _unitOfWork.User.GetAllByListAsync(u => u.RoleId == 2);
+
+                List<CounselorsDTO> availableCounselors = new List<CounselorsDTO>();
+
+                foreach (var counselor in counselors)
+                {
+                    // Check if counselor has available slots in schedule
+                    var availableSlot = await _unitOfWork.Schedule.GetByConditionAsync(s =>
+                        s.SlotId == slotNumber &&
+                        DateOnly.FromDateTime(s.Date) == DateOnly.FromDateTime(selectedDateTime) &&
+                        s.UserId == counselor.UserId);
+
+                    if (availableSlot == null)
+                    {
+                        continue; // Skip if no available slot
+                    }
+
+                    // Check if counselor has an appointment at this time
+                    var appointment = await _unitOfWork.Appointment.GetByConditionAsync(a =>
+                        a.SlotId == slotNumber &&
+                        a.Date == DateOnly.FromDateTime(selectedDateTime) &&
+                        counselor.UserId == a.MeetingWith);
+
+                    if (appointment != null)
+                    {
+                        continue; // Skip if counselor has an appointment
+                    }
+
+                    // Check if counselor already has a program at this time
+                    var existingPrograms = await _unitOfWork.TargetProgram.GetAllByListAsync(p =>
+                        p.CounselorId == counselor.UserId &&
+                        p.StartDate == selectedDateTime);
+
+                    if (existingPrograms.Count() >= 1)
+                    {
+                        continue; // Skip if counselor is assigned to another program
+                    }
+                    var availableCounselor = new CounselorsDTO
+                    {
+                        UserId = counselor.UserId,
+                        FullName = counselor.FullName,
+                        Email = counselor.Email,
+                        Address = counselor.Address,
+                        BirthDay = counselor.BirthDay,
+                        Gender = counselor.Gender,
+                        GoogleMeetURL = counselor.GoogleMeetURL,
+                        Phone = counselor.Phone,
+                    };
+                    // If the counselor meets all conditions, add to the list
+                    availableCounselors.Add(availableCounselor);
+                }
+                return new ResponseDTO ("Available counselors retrieved successfully.", 200, true, availableCounselors);
+            }
+            catch (Exception ex)
+            {
+               return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
     }
 }
