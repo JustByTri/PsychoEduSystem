@@ -4,6 +4,7 @@ import ProgressBar from "../../components/Survey/ProgressBar";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import { SurveyService } from "../../api/services/surveyService";
+import { TargetProgramService } from "../../api/services/targetProgram";
 
 const SurveyPage = () => {
   const [questionsData, setQuestionsData] = useState(null);
@@ -102,9 +103,41 @@ const SurveyPage = () => {
 
         const surveyResult = { surveyId, responses };
         localStorage.setItem("surveyResponses", JSON.stringify(surveyResult));
-
         try {
           await SurveyService.submitSurvey(surveyResult);
+
+          try {
+            await TargetProgramService.assignStudentToTargetProgram(scores);
+          } catch (error) {
+            if (error.response) {
+              if (
+                error.response.status === 404 &&
+                error.response.data.message === "No matching programs found"
+              ) {
+                console.warn("No matching programs found. Proceeding anyway.");
+                Swal.fire(
+                  "Survey submitted!",
+                  "Your responses have been saved, but no matching programs were found.",
+                  "info"
+                );
+              } else if (
+                error.response.status === 400 &&
+                error.response.data.includes("is full")
+              ) {
+                console.warn("Some programs are full. Proceeding anyway.");
+                Swal.fire(
+                  "Survey submitted!",
+                  "Some programs are full, but your responses have been saved.",
+                  "warning"
+                );
+              } else {
+                throw error; // Only throw if it's an unexpected error
+              }
+            } else {
+              throw error; // Handle network issues or unexpected errors
+            }
+          }
+
           Swal.fire(
             "Survey submitted!",
             "Your responses have been saved.",
