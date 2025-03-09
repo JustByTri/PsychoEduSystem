@@ -190,15 +190,22 @@ namespace BLL.Service
 
                 if (selectedAppointment == null) return new ResponseDTO("Appointment not found", 400, false, string.Empty);
 
+                if (selectedAppointment.IsCompleted == true)
+                {
+                    return new ResponseDTO("Appointment has been completed", 400, false, string.Empty);
+                }
+
                 if (selectedAppointment.IsCanceled == false)
                 {
                     selectedAppointment.IsCanceled = true;
-                } else
+                    _ = await _unitOfWork.SaveChangeAsync();
+                } 
+                else
                 {
-                    return new ResponseDTO("Appointment has already been cancelled", 200, true, string.Empty);
+                    return new ResponseDTO("Appointment has already been cancelled", 400, false, string.Empty);
                 }
 
-                _ = await _unitOfWork.SaveChangeAsync();
+                
 
                 return new ResponseDTO("Appointment cancelled successfully", 200, true, string.Empty);
             }
