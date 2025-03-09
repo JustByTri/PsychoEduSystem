@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -21,13 +22,48 @@ namespace BLL.Service
         {
             _unitOfWork = unitOfWork;
         }
-
-        public async Task<List<object>> GetAllProgramsAsync()
+        public async Task<List<object>> GetAllProgramsAsync(string? day = null, int? capacity = null, string? time = null, int? minPoint = null, string? dimensionName = null)
         {
-            var programs = await _unitOfWork.TargetProgram.GetAll()
-                                .Include(p => p.Dimension)
-                                .Include(p => p.Counselor)
-                                .ToListAsync();
+            var query = _unitOfWork.TargetProgram.GetAll()
+                            .Include(p => p.Dimension)
+                            .Include(p => p.Counselor)
+                            .AsQueryable();
+
+            if (!string.IsNullOrEmpty(day))
+            {
+                if (DateTime.TryParseExact(day, "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDay))
+                {
+                    query = query.Where(p => p.StartDate.Date == parsedDay.Date);
+                }
+                else
+                {
+                    throw new FormatException("Invalid date format. Expected format: yyyy-MM-dd.");
+                }
+            }
+
+            if (capacity.HasValue)
+            {
+                query = query.Where(p => p.Capacity >= capacity.Value);
+            }
+
+            if (!string.IsNullOrEmpty(time))
+            {
+                TimeSpan filterTime = TimeSpan.Parse(time);
+                query = query.Where(t => t.StartDate.TimeOfDay == filterTime);
+            }
+
+            if (minPoint.HasValue)
+            {
+                query = query.Where(p => p.MinPoint >= minPoint.Value);
+            }
+
+            if (!string.IsNullOrEmpty(dimensionName))
+            {
+                query = query.Where(p => p.Dimension != null && p.Dimension.DimensionName == dimensionName);
+            }
+
+            var programs = await query.ToListAsync();
 
             return programs.Select(p => new
             {
@@ -46,6 +82,7 @@ namespace BLL.Service
                     p.Counselor.Phone,
                     p.Counselor.Email,
                     Birthday = p.Counselor.BirthDay.ToString("dd/MM/yyyy"),
+                    p.Counselor.GoogleMeetURL,
                     p.Counselor.Gender,
                     p.Counselor.Address
                 } : null,
@@ -229,5 +266,158 @@ namespace BLL.Service
                 return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
+
+        public async Task<List<object>> GetAllProgramsByUserIdAsync(Guid userId, string? day = null, int? capacity = null, string? time = null, int? minPoint = null, string? dimensionName = null)
+        {
+            var user = await _unitOfWork.User.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found.");
+            }
+
+            var query = _unitOfWork.TargetProgram.GetAll()
+                            .Include(p => p.Dimension)
+                            .Include(p => p.Counselor)
+                            .AsQueryable();
+            if (user.RoleId == 3)
+            {
+                var enrolledProgram = await _unitOfWork.ProgramEnrollment.GetAll().Where(p => p.StudentId == userId).Select(p => p.ProgramId).ToListAsync();
+
+                query = query.Where(p =>  enrolledProgram.Contains(p.ProgramId));
+            }
+
+            else if (user.RoleId == 2)
+            {
+                query = query.Where(p => p.Counselor != null && p.Counselor.UserId == userId);
+            }
+
+            if (!string.IsNullOrEmpty(day))
+            {
+                if (DateTime.TryParseExact(day, "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDay))
+                {
+                    query = query.Where(p => p.StartDate.Date == parsedDay.Date);
+                }
+                else
+                {
+                    throw new FormatException("Invalid date format. Expected format: yyyy-MM-dd.");
+                }
+            }
+
+            if (capacity.HasValue)
+            {
+                query = query.Where(p => p.Capacity >= capacity.Value);
+            }
+
+            if (!string.IsNullOrEmpty(time))
+            {
+                TimeSpan filterTime = TimeSpan.Parse(time);
+                query = query.Where(t => t.StartDate.TimeOfDay == filterTime);
+            }
+
+            if (minPoint.HasValue)
+            {
+                query = query.Where(p => p.MinPoint >= minPoint.Value);
+            }
+
+            if (!string.IsNullOrEmpty(dimensionName))
+            {
+                query = query.Where(p => p.Dimension != null && p.Dimension.DimensionName == dimensionName);
+            }
+
+            var programs = await query.ToListAsync();
+
+            return programs.Select(p => new
+            {
+                p.ProgramId,
+                p.Name,
+                p.Description,
+                Day = p.StartDate.ToString("dd/MM/yyyy"),
+                Time = p.StartDate.ToString("HH:mm"),
+                p.StartDate,
+                p.MinPoint,
+                p.Capacity,
+                Counselor = p.Counselor != null ? new
+                {
+                    p.Counselor.FullName,
+                    p.Counselor.UserId,
+                    p.Counselor.Phone,
+                    p.Counselor.Email,
+                    Birthday = p.Counselor.BirthDay.ToString("dd/MM/yyyy"),
+                    p.Counselor.GoogleMeetURL,
+                    p.Counselor.Gender,
+                    p.Counselor.Address
+                } : null,
+                DimensionName = p.Dimension?.DimensionName
+            }).ToList<object>();
+        }
+
+        public async Task<ResponseDTO> GetAvailableCounselorsAsync(DateTime selectedDateTime)
+        {
+            try
+            {
+                TimeSpan startTime = selectedDateTime.TimeOfDay;
+                int slotNumber = GetSlotNumber(startTime);
+
+                // Get all counselors (RoleId = 2)
+                var counselors = await _unitOfWork.User.GetAllByListAsync(u => u.RoleId == 2);
+
+                List<CounselorsDTO> availableCounselors = new List<CounselorsDTO>();
+
+                foreach (var counselor in counselors)
+                {
+                    // Check if counselor has available slots in schedule
+                    var availableSlot = await _unitOfWork.Schedule.GetByConditionAsync(s =>
+                        s.SlotId == slotNumber &&
+                        DateOnly.FromDateTime(s.Date) == DateOnly.FromDateTime(selectedDateTime) &&
+                        s.UserId == counselor.UserId);
+
+                    if (availableSlot == null)
+                    {
+                        continue; // Skip if no available slot
+                    }
+
+                    // Check if counselor has an appointment at this time
+                    var appointment = await _unitOfWork.Appointment.GetByConditionAsync(a =>
+                        a.SlotId == slotNumber &&
+                        a.Date == DateOnly.FromDateTime(selectedDateTime) &&
+                        counselor.UserId == a.MeetingWith);
+
+                    if (appointment != null)
+                    {
+                        continue; // Skip if counselor has an appointment
+                    }
+
+                    // Check if counselor already has a program at this time
+                    var existingPrograms = await _unitOfWork.TargetProgram.GetAllByListAsync(p =>
+                        p.CounselorId == counselor.UserId &&
+                        p.StartDate == selectedDateTime);
+
+                    if (existingPrograms.Count() >= 1)
+                    {
+                        continue; // Skip if counselor is assigned to another program
+                    }
+                    var availableCounselor = new CounselorsDTO
+                    {
+                        UserId = counselor.UserId,
+                        FullName = counselor.FullName,
+                        Email = counselor.Email,
+                        Address = counselor.Address,
+                        BirthDay = counselor.BirthDay,
+                        Gender = counselor.Gender,
+                        GoogleMeetURL = counselor.GoogleMeetURL,
+                        Phone = counselor.Phone,
+                    };
+                    // If the counselor meets all conditions, add to the list
+                    availableCounselors.Add(availableCounselor);
+                }
+                return new ResponseDTO ("Available counselors retrieved successfully.", 200, true, availableCounselors);
+            }
+            catch (Exception ex)
+            {
+               return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
     }
 }
