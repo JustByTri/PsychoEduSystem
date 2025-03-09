@@ -190,7 +190,11 @@ namespace DAL.Data
                 .WithMany(c => c.Students)
                 .HasForeignKey(u => u.ClassId)
                 .OnDelete(DeleteBehavior.NoAction);
-
+            modelBuilder.Entity<TargetProgram>()
+            .HasOne(tp => tp.Counselor)
+            .WithMany()
+            .HasForeignKey(tp => tp.CounselorId)
+            .OnDelete(DeleteBehavior.Restrict);
             var teacherPassword = "teacher123";
             byte[] passwordHash, passwordSalt;
             CreatePasswordHash(teacherPassword, out passwordHash, out passwordSalt);

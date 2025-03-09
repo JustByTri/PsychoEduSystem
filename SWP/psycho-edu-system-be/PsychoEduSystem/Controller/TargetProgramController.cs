@@ -102,25 +102,18 @@ namespace PsychoEduSystem.Controller
             return Ok("Program deleted successfully.");
         }
 
+        [HttpPost("assign")]
+        public async Task<IActionResult> AssignStudentToTargetProgramAsync([FromBody] StudentDimensionDTO request)
+        {
+            if (request == null)
+                return BadRequest(new ResponseDTO("Invalid request", 400, false, string.Empty));
 
-        //[HttpPost("assign-user/{surveyTakerId}")]
-        //public async Task<IActionResult> AssignUserToProgram(Guid surveyTakerId)
-        //{
-        //    var success = await _targetProgramService.AutoAssignUserToProgramAsync(surveyTakerId);
+            var result = await _targetProgramService.AssignStudentToTargetProgramAsync(request);
 
-        //    if (!success)
-        //    {
-        //        return BadRequest("No suitable program found or user already assigned.");
-        //    }
+            if (!result.IsSuccess)
+                return StatusCode(result.StatusCode, result);
 
-        //    return Ok("User successfully assigned to a program.");
-        //}
-
-
-
-
-
-
-
+            return Ok(result);
+        }
     }
 }
