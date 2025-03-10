@@ -16,7 +16,7 @@ namespace DAL.Entities
         [Required]
         [MaxLength(30)]
         public string UserName { get; set; } = string.Empty;
-
+        public string GoogleMeetURL { get; set; } = string.Empty;
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public byte[] PasswordHash { get; set; } = new byte[32];

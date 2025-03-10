@@ -21,14 +21,14 @@ import ConfirmModal from "../../components/Modal/ConfirmModal";
 import AppointmentsList from "../../components/StudentSchedule/AppointmentsList";
 
 const SchedulePage = () => {
-  const [currentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [appointments, setAppointments] = useState([]);
+  const [bookings, setBookings] = useState([]); // Đổi tên từ appointments thành bookings để đồng nhất với khai báo ban đầu
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [animationDirection, setAnimationDirection] = useState("next");
-  const calendarContainerRef = useRef(null);
-  const [visibleDaysCount, setVisibleDaysCount] = useState(15);
+  const [error, setError] = useState(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [selectedEventToCancel, setSelectedEventToCancel] = useState(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [userProfile, setUserProfile] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
@@ -40,6 +40,11 @@ const SchedulePage = () => {
     isOpen: false,
     selectedAppointment: null,
   });
+  const [currentDate] = useState(new Date()); // Thêm currentDate vì được sử dụng trong generateMonthDays
+  const [currentPage, setCurrentPage] = useState(0); // Thêm currentPage vì được sử dụng trong CalendarHeader
+  const [animationDirection, setAnimationDirection] = useState(""); // Thêm animationDirection vì được sử dụng trong CalendarHeader
+  const [visibleDaysCount, setVisibleDaysCount] = useState(7); // Thêm visibleDaysCount vì được sử dụng trong CalendarHeader
+  const calendarContainerRef = useRef(null); // Thêm ref vì được sử dụng trong useEffect
 
   const generateMonthDays = () => {
     const monthStart = startOfMonth(currentDate);
@@ -51,18 +56,14 @@ const SchedulePage = () => {
       const dayOfWeek = format(currentDay, "E")[0];
       days.push({
         day: dayNumber,
-        dayOfWeek,
+        weekday: dayOfWeek,
         fullDate: currentDay,
-        isToday: isSameDay(currentDay, currentDate),
-        isPast:
-          isBefore(currentDay, currentDate) &&
-          !isSameDay(currentDay, currentDate),
       });
     }
     return days;
   };
 
-  const allDays = generateMonthDays();
+  const allDays = generateMonthDays(); // Thêm allDays vì được sử dụng trong CalendarHeader
 
   const loadUserProfile = async () => {
     try {
@@ -82,7 +83,7 @@ const SchedulePage = () => {
         date
       );
       console.log("Raw appointments from API:", appointmentsData);
-      setAppointments(appointmentsData);
+      setBookings(appointmentsData); // Đổi setAppointments thành setBookings
     } catch (error) {
       console.error("Failed to load appointments:", error);
     } finally {
@@ -93,7 +94,7 @@ const SchedulePage = () => {
   const handleCancelAppointmentApi = async (appointmentId) => {
     try {
       await cancelAppointment(appointmentId);
-      setAppointments((prevAppointments) =>
+      setBookings((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment.appointmentId === appointmentId
             ? { ...appointment, isCancelled: true, status: "Cancelled" }
@@ -125,6 +126,7 @@ const SchedulePage = () => {
   };
 
   const handlePrev = () => {
+    // Thêm handlePrev vì được sử dụng trong CalendarHeader
     const prevDay = addDays(selectedDate, -1);
     if (prevDay.getMonth() === currentDate.getMonth()) {
       setSelectedDate(prevDay);
@@ -139,6 +141,12 @@ const SchedulePage = () => {
     }
   };
 
+  const getVisibleDays = () => {
+    // Thêm getVisibleDays vì được sử dụng trong CalendarHeader
+    const startIndex = currentPage * visibleDaysCount;
+    return allDays.slice(startIndex, startIndex + visibleDaysCount);
+  };
+
   const handleSelectDate = (date) => {
     if (!isBefore(date, currentDate) || isSameDay(date, currentDate)) {
       setSelectedDate(date);
@@ -150,14 +158,9 @@ const SchedulePage = () => {
     setConfirmModalState({ visible: true, appointmentId });
   };
 
-  const getVisibleDays = (page) => {
-    const startIdx = page * visibleDaysCount;
-    return allDays.slice(startIdx, startIdx + visibleDaysCount);
-  };
-
-  console.log("Appointments before filter:", appointments);
+  console.log("Appointments before filter:", bookings); // Đổi appointments thành bookings
   console.log("Selected date:", format(selectedDate, "yyyy-MM-dd"));
-  const filteredAppointments = appointments
+  const filteredAppointments = bookings
     .filter((appointment) => {
       const appointmentDate = format(appointment.date, "yyyy-MM-dd");
       const selectedDateStr = format(selectedDate, "yyyy-MM-dd");

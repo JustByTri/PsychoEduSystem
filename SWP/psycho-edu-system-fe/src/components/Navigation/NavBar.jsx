@@ -22,7 +22,7 @@ const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-50 shadow-md">
-      <nav className="bg-[#A8E0D6] px-4 lg:px-6">
+      <nav className="bg-[#A8E0D6] px-4 lg:px-6 py-2.5">
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-screen-xl">
           <a href="/" className="flex items-center">
             <span className="self-center text-2xl text-[#34258a] font-Verdana font-semibold">
@@ -33,7 +33,7 @@ const Navbar = () => {
             <button
               onClick={toggleMenu}
               type="button"
-              className="inline-flex items-center ml-1 text-sm text-black border-none rounded-none lg:hidden focus:ring-0 focus:outline-none"
+              className="inline-flex items-center p-2 ml-1 text-sm text-black border-none rounded-none lg:hidden focus:ring-0 focus:outline-none"
               aria-controls="mobile-menu-2"
               aria-expanded={isMenuOpen}
             >
@@ -75,7 +75,7 @@ const Navbar = () => {
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="block pr-4 pl-3 text-sm text-[#002B36] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
+                    className="block py-2 pr-4 pl-3 text-sm text-[#002B36] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
                   >
                     {link.icon} <span>{link.title}</span>
                   </a>

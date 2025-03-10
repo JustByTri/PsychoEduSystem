@@ -17,7 +17,9 @@ using Common.Constant;
 using System.Security.Claims;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using Swashbuckle.AspNetCore.Filters;
+using Microsoft.AspNetCore.SignalR;
 using BLL.Hubs;
+using BLL;
 
 namespace MIndAid
 {
@@ -64,10 +66,13 @@ namespace MIndAid
             builder.Services.AddScoped<IRelationshipService, RelationshipService>();
 
             builder.Services.AddScoped<ITargetProgramService, TargetProgramService>();
+            builder.Services.AddScoped<AppointmentTimerService>();
+            builder.Services.AddScoped<ChatHub>();
 
 
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {

@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AppBar,
@@ -23,15 +23,16 @@ import Swal from "sweetalert2";
 import AuthContext from "../../context/auth/AuthContext";
 import LogoHeader from "../../assets/logo-header.png";
 import AvatarImg from "../../assets/avatar.png";
+import DecodeJWT from "../../utils/decodeJwt";
 
 const Header = () => {
   const { logout } = useContext(AuthContext) || {};
-  const [anchorEl, setAnchorEl] = useState(null);
-  const navigate = useNavigate();
 
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const navigate = useNavigate();
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
-
   const handleLogout = () => {
     Swal.fire({
       title: "Are you sure?",
@@ -59,7 +60,35 @@ const Header = () => {
     });
     handleMenuClose();
   };
+  useEffect(() => {
+    const token = localStorage.getItem("user");
 
+    if (token) {
+      try {
+        const formattedToken = JSON.parse(token);
+
+        const accessToken = formattedToken?.accessToken;
+        if (accessToken && typeof accessToken === "string") {
+          console.log("Decoding token...");
+          const userData = DecodeJWT(accessToken);
+          if (userData) {
+            setProfile(userData);
+          } else {
+            console.error("Failed to decode JWT");
+          }
+        } else {
+          console.error("Invalid access token format");
+        }
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    } else {
+      console.log("No token found in localStorage");
+    }
+  }, []);
+  if (!profile) {
+    return <div>Loading...</div>;
+  }
   return (
     <AppBar
       position="sticky"
@@ -97,7 +126,9 @@ const Header = () => {
             <Typography
               sx={{ ml: 1, fontWeight: 500, fontSize: "1rem", color: "#333" }}
             >
-              Peter Parker
+              {profile && profile.fullName
+                ? profile.fullName
+                : profile?.Username || "Loading..."}
             </Typography>
             <ArrowDropDownIcon sx={{ color: "#555" }} />
           </IconButton>
@@ -128,12 +159,10 @@ const Header = () => {
               sx={{ width: 50, height: 50, boxShadow: 2, mr: 1 }}
             />
             <Box>
-              <Typography variant="subtitle1" fontWeight={600}>
-                Peter Parker
-              </Typography>
+              <Typography variant="subtitle1" fontWeight={600}></Typography>
               <Typography variant="body2" color="text.secondary">
                 <MailIcon fontSize="small" sx={{ mr: 0.5, color: "#1976D2" }} />
-                peterparker@example.com
+                {profile.Email}
               </Typography>
             </Box>
           </Box>
