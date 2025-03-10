@@ -26,7 +26,8 @@ import AvatarImg from "../../assets/avatar.png";
 import DecodeJWT from "../../utils/decodeJwt";
 
 const Header = () => {
-  const { user, logout } = useContext(AuthContext) || {};
+  const { logout } = useContext(AuthContext) || {};
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
@@ -60,9 +61,23 @@ const Header = () => {
     handleMenuClose();
   };
   useEffect(() => {
-    const userData = DecodeJWT(user.accessToken);
-    setProfile(userData);
-  }, [user.accessToken]);
+    const token = localStorage.getItem("user");
+
+    if (token) {
+      try {
+        const formattedToken = JSON.parse(token);
+        const accessToken = formattedToken.accessToken;
+
+        if (accessToken) {
+          const userData = DecodeJWT(accessToken);
+          setProfile(userData);
+          console.log(userData);
+        }
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    }
+  }, []);
   return (
     <AppBar
       position="sticky"
@@ -102,7 +117,6 @@ const Header = () => {
             >
               {profile.fullName === "" ? profile.Username : profile.fullName}
             </Typography>
-
             <ArrowDropDownIcon sx={{ color: "#555" }} />
           </IconButton>
         </Box>
