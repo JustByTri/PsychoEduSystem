@@ -19,5 +19,6 @@ namespace BLL.Interface
         //Task<bool> AutoAssignUserToProgramAsync(Guid surveyTakerId);
         Task<ResponseDTO> AssignStudentToTargetProgramAsync(StudentDimensionDTO request);
         Task<ResponseDTO> GetAvailableCounselorsAsync(DateTime selectedDate);
+        Task<ResponseDTO> RegisterTargetProgramAsync(Guid programId, Guid userId);
     }
 }
