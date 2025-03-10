@@ -66,18 +66,29 @@ const Header = () => {
     if (token) {
       try {
         const formattedToken = JSON.parse(token);
-        const accessToken = formattedToken.accessToken;
 
-        if (accessToken) {
+        const accessToken = formattedToken?.accessToken;
+        if (accessToken && typeof accessToken === "string") {
+          console.log("Decoding token...");
           const userData = DecodeJWT(accessToken);
-          setProfile(userData);
-          console.log(userData);
+          if (userData) {
+            setProfile(userData);
+          } else {
+            console.error("Failed to decode JWT");
+          }
+        } else {
+          console.error("Invalid access token format");
         }
       } catch (error) {
         console.error("Error decoding token:", error);
       }
+    } else {
+      console.log("No token found in localStorage");
     }
   }, []);
+  if (!profile) {
+    return <div>Loading...</div>;
+  }
   return (
     <AppBar
       position="sticky"
@@ -115,7 +126,9 @@ const Header = () => {
             <Typography
               sx={{ ml: 1, fontWeight: 500, fontSize: "1rem", color: "#333" }}
             >
-              {profile.fullName === "" ? profile.Username : profile.fullName}
+              {profile && profile.fullName
+                ? profile.fullName
+                : profile?.Username || "Loading..."}
             </Typography>
             <ArrowDropDownIcon sx={{ color: "#555" }} />
           </IconButton>
