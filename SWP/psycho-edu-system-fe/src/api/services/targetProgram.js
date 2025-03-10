@@ -114,4 +114,23 @@ export const TargetProgramService = {
       return null;
     }
   },
+  registerTargetProgram: async (programId) => {
+    try {
+      const token = localStorage.getItem("user");
+      const formattedToken = JSON.parse(token);
+      const accessToken = formattedToken.accessToken;
+      const userData = DecodeJWT(accessToken);
+      const registeredForm = {
+        userId: userData.userId,
+        programId: programId,
+      };
+      const response = await axios.post(
+        `${BASE_URL}api/TargetProgram/register`,
+        registeredForm
+      );
+      return response.data;
+    } catch (error) {
+      console.error(error);
+    }
+  },
 };
