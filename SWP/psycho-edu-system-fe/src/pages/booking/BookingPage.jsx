@@ -35,7 +35,6 @@ const BookingPageContent = () => {
 
     const determineStudentId = async () => {
       if (!isMounted || isLoading) return;
-
       if (studentId) return;
 
       if (!isParent()) {
@@ -172,17 +171,16 @@ const BookingPageContent = () => {
   return (
     <Box
       sx={{
-        p: { xs: 2, sm: 3, md: 4 }, // Responsive padding
+        width: "960px", // Kích thước cố định chuẩn
+        mx: "auto", // Căn giữa
+        p: { xs: 1, sm: 2, md: 3 }, // Padding responsive
         bgcolor: "white",
-        minHeight: "100vh", // Đảm bảo chiều cao tối thiểu
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        maxWidth: "1200px", // Giới hạn chiều rộng tối đa
-        mx: "auto", // Căn giữa
-        width: "100%", // Đảm bảo chiều rộng đầy đủ
-        overflowX: "hidden", // Ngăn tràn ngang
-        position: "relative", // Để cố định nút
-        pb: { xs: 16, sm: 12, md: 10 }, // Để dành không gian cho nút cố định
+        overflowX: "hidden",
+        position: "relative",
+        pb: { xs: 14, sm: 10, md: 8 }, // Không gian cho nút cố định
       }}
     >
       {/* Header */}
@@ -190,7 +188,7 @@ const BookingPageContent = () => {
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        sx={{ mb: { xs: 3, sm: 4, md: 6 }, textAlign: "center" }}
+        sx={{ mb: { xs: 2, sm: 3, md: 4 }, textAlign: "center" }}
       >
         <Typography
           variant="h4"
@@ -200,7 +198,7 @@ const BookingPageContent = () => {
             background: "linear-gradient(to right, #1e88e5, #8e24aa)",
             WebkitBackgroundClip: "text",
             color: "transparent",
-            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" }, // Responsive font size
+            fontSize: { xs: "1.25rem", sm: "1.75rem", md: "2rem" }, // Điều chỉnh font-size
             lineHeight: 1.2,
           }}
         >
@@ -210,7 +208,7 @@ const BookingPageContent = () => {
           variant="body1"
           sx={{
             fontFamily: "Inter, sans-serif",
-            fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
+            fontSize: { xs: "0.75rem", sm: "0.85rem", md: "0.9rem" },
             color: "#555",
             mt: 1,
             px: { xs: 1, sm: 0 },
@@ -243,14 +241,14 @@ const BookingPageContent = () => {
           right: 0,
           bgcolor: "white",
           boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.1)",
-          p: { xs: 2, sm: 3 },
+          p: { xs: 1, sm: 2, md: 2 },
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          flexDirection: { xs: "column", sm: "row" }, // Column trên mobile, row trên desktop
-          gap: { xs: 2, sm: 3 }, // Khoảng cách trên mobile
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 1.5, sm: 2 },
           zIndex: 1000,
-          maxWidth: "1200px", // Giới hạn chiều rộng tối đa
+          width: "960px", // Cố định width giống container chính
           mx: "auto", // Căn giữa
         }}
       >
@@ -260,11 +258,11 @@ const BookingPageContent = () => {
             variant="outlined"
             sx={{
               fontFamily: "Inter, sans-serif",
-              px: { xs: 3, sm: 4 },
-              py: 1,
+              px: { xs: 2, sm: 3 },
+              py: 0.75,
               textTransform: "none",
-              width: { xs: "100%", sm: "auto" }, // Full width trên mobile
-              fontSize: { xs: "0.85rem", sm: "0.9rem" },
+              width: { xs: "100%", sm: "auto" },
+              fontSize: { xs: "0.75rem", sm: "0.85rem" },
               borderColor: "#1e88e5",
               color: "#1e88e5",
               "&:hover": {
@@ -283,14 +281,14 @@ const BookingPageContent = () => {
             variant="contained"
             sx={{
               fontFamily: "Inter, sans-serif",
-              px: { xs: 3, sm: 4 },
-              py: 1,
+              px: { xs: 2, sm: 3 },
+              py: 0.75,
               ml: { xs: 0, sm: "auto" },
               backgroundColor: "#1e88e5",
               "&:hover": { backgroundColor: "#1565c0" },
               textTransform: "none",
               width: { xs: "100%", sm: "auto" },
-              fontSize: { xs: "0.85rem", sm: "0.9rem" },
+              fontSize: { xs: "0.75rem", sm: "0.85rem" },
             }}
             disabled={isSubmitting}
           >
@@ -302,19 +300,19 @@ const BookingPageContent = () => {
             variant="contained"
             sx={{
               fontFamily: "Inter, sans-serif",
-              px: { xs: 3, sm: 4 },
-              py: 1,
+              px: { xs: 2, sm: 3 },
+              py: 0.75,
               ml: { xs: 0, sm: "auto" },
               backgroundColor: "#4caf50",
               "&:hover": { backgroundColor: "#388e3c" },
               textTransform: "none",
               width: { xs: "100%", sm: "auto" },
-              fontSize: { xs: "0.85rem", sm: "0.9rem" },
+              fontSize: { xs: "0.75rem", sm: "0.85rem" },
             }}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              <CircularProgress size={24} color="inherit" />
+              <CircularProgress size={20} color="inherit" />
             ) : (
               "Confirm Booking"
             )}

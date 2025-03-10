@@ -9,14 +9,14 @@ const PortalLayout = () => {
       <Header />
 
       {/* Main layout with Sidebar and Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         {/* Sidebar (Fixed height, no scrolling) */}
         <div className="flex-shrink-0 h-full">
           <SideBar />
         </div>
 
         {/* Outlet (Scrollable Content) */}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1">
           <Breadcrumbs />
           <Outlet />
         </div>
