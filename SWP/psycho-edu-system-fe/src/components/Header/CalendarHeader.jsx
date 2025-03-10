@@ -43,37 +43,12 @@ const CalendarHeader = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-4 md:space-y-0">
         <h1 className="text-white text-2xl font-medium">Your Schedule</h1>
         <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-3">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-gradient-to-r from-white to-blue-50 text-blue-900 rounded-lg pl-4 pr-8 py-2 text-sm border border-blue-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition-all duration-300 hover:shadow-xl hover:border-blue-400 appearance-none cursor-pointer"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333333' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 0.75rem center",
-                backgroundSize: "1rem",
-              }}
-            >
-              <option value="All">All Statuses</option>
-              <option value="Scheduled">Scheduled</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </motion.div>
           <span className="text-blue-100 text-sm min-w-[190px] text-center">
             {format(selectedDate, "EEEE, MM/dd/yyyy")}
           </span>
           <div className="flex items-center space-x-2">
             <button
-              className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-md"
+              className="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-md"
               onClick={handlePrev}
               disabled={isSameDay(selectedDate, currentDate)}
             >
@@ -91,7 +66,7 @@ const CalendarHeader = ({
               </svg>
             </button>
             <button
-              className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-md"
+              className="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-md"
               onClick={handleNext}
               disabled={
                 selectedDate.getDate() === allDays[allDays.length - 1].day
