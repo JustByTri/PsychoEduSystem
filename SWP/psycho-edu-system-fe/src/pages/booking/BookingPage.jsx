@@ -135,7 +135,7 @@ const BookingPageContent = () => {
         meetingWith: bookingData.consultantId,
         date: bookingData.date,
         slotId: bookingData.slotId,
-        isOnline: bookingData.appointmentType === "online",
+        isOnline: bookingData.appointmentType === "Online",
       };
 
       console.log("Submitting appointment data:", appointmentData);
