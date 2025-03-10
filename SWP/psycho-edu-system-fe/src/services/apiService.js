@@ -30,11 +30,11 @@ export const fetchUserProfile = async () => {
 export const fetchAppointments = async (userId, date) => {
   try {
     const formattedDate = date.toISOString().split("T")[0]; // Format yyyy-MM-dd
-    console.log("Fetching appointments for date:", formattedDate); // Log ngày gửi đi
+    console.log("Fetching appointments for date:", formattedDate);
     const response = await axios.get(
       `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${formattedDate}`
     );
-    console.log("API response:", response.data); // Log phản hồi từ API
+    console.log("API response:", response.data);
     if (response.data.isSuccess) {
       return response.data.result.map((appointment) => ({
         id: appointment.appointmentId,
@@ -57,6 +57,7 @@ export const fetchAppointments = async (userId, date) => {
         evaluated: appointment.isEvaluated || appointment.isCompleted,
         appointmentId: appointment.appointmentId,
         isCancelled: appointment.isCancelled || false,
+        googleMeetURL: appointment.googleMeetURL || null, // Thêm googleMeetURL
       }));
     } else {
       throw new Error(response.data.message || "Failed to fetch appointments");

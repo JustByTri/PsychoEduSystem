@@ -3,6 +3,8 @@ import { CCard, CCardBody, CRow, CCol, CButton, CSpinner } from "@coreui/react";
 import { FaClock } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { Link } from "react-router-dom";
 
 const AppointmentsList = ({
   isLoading,
@@ -164,6 +166,33 @@ const AppointmentsList = ({
                                 onClick={() => handleChat(appointment.id)}
                               >
                                 Join
+                              </CButton>
+                            )}
+                          {appointment.platform === "Online" &&
+                            appointment.googleMeetURL && (
+                              <CButton
+                                color="info"
+                                href={appointment.googleMeetURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shadow-sm hover:shadow-md transition-all duration-200"
+                                style={{
+                                  borderRadius: "20px",
+                                  backgroundColor: "#10b981",
+                                  borderColor: "#10b981",
+                                  fontWeight: "bold",
+                                  fontSize: "0.9rem",
+                                  padding: "8px 20px",
+                                  width: "130px",
+                                  height: "40px",
+                                  textDecoration: "none",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "white",
+                                }}
+                              >
+                                Join Google Meet
                               </CButton>
                             )}
                           <CButton

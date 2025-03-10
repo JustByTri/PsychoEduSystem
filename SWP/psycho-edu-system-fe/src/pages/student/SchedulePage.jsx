@@ -21,7 +21,7 @@ import ConfirmModal from "../../components/Modal/ConfirmModal";
 import AppointmentsList from "../../components/StudentSchedule/AppointmentsList";
 
 const SchedulePage = () => {
-  const [bookings, setBookings] = useState([]); // Đổi tên từ appointments thành bookings để đồng nhất với khai báo ban đầu
+  const [bookings, setBookings] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,11 +40,11 @@ const SchedulePage = () => {
     isOpen: false,
     selectedAppointment: null,
   });
-  const [currentDate] = useState(new Date()); // Thêm currentDate vì được sử dụng trong generateMonthDays
-  const [currentPage, setCurrentPage] = useState(0); // Thêm currentPage vì được sử dụng trong CalendarHeader
-  const [animationDirection, setAnimationDirection] = useState(""); // Thêm animationDirection vì được sử dụng trong CalendarHeader
-  const [visibleDaysCount, setVisibleDaysCount] = useState(7); // Thêm visibleDaysCount vì được sử dụng trong CalendarHeader
-  const calendarContainerRef = useRef(null); // Thêm ref vì được sử dụng trong useEffect
+  const [currentDate] = useState(new Date());
+  const [currentPage, setCurrentPage] = useState(0);
+  const [animationDirection, setAnimationDirection] = useState("");
+  const [visibleDaysCount, setVisibleDaysCount] = useState(7);
+  const calendarContainerRef = useRef(null);
 
   const generateMonthDays = () => {
     const monthStart = startOfMonth(currentDate);
@@ -63,7 +63,7 @@ const SchedulePage = () => {
     return days;
   };
 
-  const allDays = generateMonthDays(); // Thêm allDays vì được sử dụng trong CalendarHeader
+  const allDays = generateMonthDays();
 
   const loadUserProfile = async () => {
     try {
@@ -83,7 +83,7 @@ const SchedulePage = () => {
         date
       );
       console.log("Raw appointments from API:", appointmentsData);
-      setBookings(appointmentsData); // Đổi setAppointments thành setBookings
+      setBookings(appointmentsData);
     } catch (error) {
       console.error("Failed to load appointments:", error);
     } finally {
@@ -126,7 +126,6 @@ const SchedulePage = () => {
   };
 
   const handlePrev = () => {
-    // Thêm handlePrev vì được sử dụng trong CalendarHeader
     const prevDay = addDays(selectedDate, -1);
     if (prevDay.getMonth() === currentDate.getMonth()) {
       setSelectedDate(prevDay);
@@ -142,7 +141,6 @@ const SchedulePage = () => {
   };
 
   const getVisibleDays = () => {
-    // Thêm getVisibleDays vì được sử dụng trong CalendarHeader
     const startIndex = currentPage * visibleDaysCount;
     return allDays.slice(startIndex, startIndex + visibleDaysCount);
   };
@@ -150,28 +148,13 @@ const SchedulePage = () => {
   const handleSelectDate = (date) => {
     if (!isBefore(date, currentDate) || isSameDay(date, currentDate)) {
       setSelectedDate(date);
-      loadAppointments(date); // Gọi lại API để tải dữ liệu
+      loadAppointments(date); // Vẫn giữ để tải lại dữ liệu khi chọn ngày
     }
   };
 
   const handleCancelAppointment = (appointmentId) => {
     setConfirmModalState({ visible: true, appointmentId });
   };
-
-  console.log("Appointments before filter:", bookings); // Đổi appointments thành bookings
-  console.log("Selected date:", format(selectedDate, "yyyy-MM-dd"));
-  const filteredAppointments = bookings
-    .filter((appointment) => {
-      const appointmentDate = format(appointment.date, "yyyy-MM-dd");
-      const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
-      console.log("Comparing:", appointmentDate, "with", selectedDateStr);
-      return appointmentDate === selectedDateStr;
-    })
-    .filter(
-      (appointment) =>
-        filterStatus === "All" || appointment.status === filterStatus
-    );
-  console.log("Filtered appointments:", filteredAppointments);
 
   const navigate = useNavigate();
   const handleNavigate = () => navigate("/student/booking");
@@ -203,6 +186,8 @@ const SchedulePage = () => {
       loadAppointments(selectedDate);
     }
   }, [selectedDate, userProfile]);
+
+  console.log("Appointments before render:", bookings);
 
   return (
     <div
@@ -239,7 +224,7 @@ const SchedulePage = () => {
         )}
         <AppointmentsList
           isLoading={isLoading}
-          filteredAppointments={filteredAppointments}
+          filteredAppointments={bookings}
           handleViewDetail={handleViewDetail}
           handleCancelAppointment={handleCancelAppointment}
           handleChat={handleChat}
