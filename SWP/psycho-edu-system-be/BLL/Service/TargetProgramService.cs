@@ -419,5 +419,55 @@ namespace BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> RegisterTargetProgramAsync(Guid programId, Guid userId)
+        {
+            try
+            {
+                var user = await _unitOfWork.User.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    return new ResponseDTO("User not found.", 400, false, string.Empty);
+                }
+                if (user.RoleId != 3)
+                {
+                    return new ResponseDTO("Invalid role.", 400, false, string.Empty);
+                }
+                var program = await _unitOfWork.TargetProgram.GetByIdAsync(programId);
+                if (program == null)
+                {
+                    return new ResponseDTO("Target program not found.", 400, false, string.Empty);
+                }
+
+                if (program.StartDate < DateTime.Now)
+                {
+                    return new ResponseDTO("Target program has been happened", 200, false, string.Empty);
+                }
+                if (program.Capacity == 0)
+                {
+                    return new ResponseDTO("Target program is full.", 200, false, string.Empty);
+                }
+                var enrolledProgram = await _unitOfWork.ProgramEnrollment.GetByConditionAsync(p => p.StudentId == userId && p.ProgramId == programId);
+                if (enrolledProgram != null)
+                {
+                    return new ResponseDTO("You have enrolled this program", 200, false, string.Empty);
+                }
+                var newEnrollment = new ProgramEnrollment
+                {
+                    ProgramId = programId,
+                    StudentId = userId,
+                    EnrolledAt = DateTime.Now,
+                    CreateAt = DateTime.Now,
+                };
+                await _unitOfWork.ProgramEnrollment.AddAsync(newEnrollment);
+                program.Capacity -= 1;
+                await _unitOfWork.TargetProgram.UpdateAsync(program);
+                await _unitOfWork.SaveChangeAsync();
+                return new ResponseDTO("Enrolled success", 200, true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
     }
 }

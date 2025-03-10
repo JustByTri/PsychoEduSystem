@@ -156,5 +156,29 @@ namespace PsychoEduSystem.Controller
 
             return Ok(response);
         }
+        [HttpPost("register")]
+        public async Task<IActionResult> RegisterTargetProgram([FromBody] RegisterProgramRequest request)
+        {
+            if (request == null || request.ProgramId == Guid.Empty || request.UserId == Guid.Empty)
+            {
+                return BadRequest("ProgramId and UserId are required.");
+            }
+
+            try
+            {
+                var response = await _targetProgramService.RegisterTargetProgramAsync(request.ProgramId, request.UserId);
+
+                if (!response.IsSuccess)
+                {
+                    return BadRequest(response.Message);
+                }
+
+                return Ok(response.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
+        }
     }
 }
