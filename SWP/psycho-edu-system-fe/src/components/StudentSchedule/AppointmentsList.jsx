@@ -13,6 +13,22 @@ const AppointmentsList = ({
   handleNavigate,
   selectedDate,
 }) => {
+  // Get time from slot ID - same function as in AppointmentDetailModal
+  const getTimeFromSlotId = (slotId) => {
+    const times = [
+      "08:00",
+      "09:00",
+      "10:00",
+      "11:00",
+      "12:00",
+      "13:00",
+      "14:00",
+      "15:00",
+      "16:00",
+    ];
+    return times[slotId - 1] || "Unknown";
+  };
+
   return (
     <div className="appointments-container scrollbar-hide">
       {isLoading ? (
@@ -73,7 +89,10 @@ const AppointmentsList = ({
                             }}
                           >
                             {format(appointment.date, "EEE, do MMM")}{" "}
-                            {appointment.time}
+                            {/* Use getTimeFromSlotId instead of appointment.time */}
+                            {appointment.slot
+                              ? getTimeFromSlotId(appointment.slot)
+                              : appointment.time || "Unknown time"}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
