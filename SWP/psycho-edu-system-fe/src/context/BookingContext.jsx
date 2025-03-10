@@ -8,7 +8,7 @@ export const BookingProvider = ({ children }) => {
     userId: "",
     userRole: "",
     childId: "",
-    children: [], // Danh sách con (tùy chọn)
+    children: [],
     consultantType: "",
     consultantId: "",
     consultantName: "",

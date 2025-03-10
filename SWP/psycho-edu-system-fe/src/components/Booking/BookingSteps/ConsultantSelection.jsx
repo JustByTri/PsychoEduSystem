@@ -8,7 +8,6 @@ import { Card, CardContent } from "@mui/material";
 export const ConsultantSelection = () => {
   const { updateBookingData, bookingData, isParent } = useBooking();
   const [consultants, setConsultants] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // Only used for initial/homeroom
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -22,7 +21,6 @@ export const ConsultantSelection = () => {
 
         let consultantList = [];
         if (bookingData.consultantType === "homeroom") {
-          setIsLoading(true); // Only set for homeroom
           let studentId = !isParent()
             ? bookingData.userId || authData.userId
             : bookingData.childId;
@@ -99,7 +97,6 @@ export const ConsultantSelection = () => {
             }
           }
         } else if (bookingData.consultantType === "counselor") {
-          // No isLoading for counselors
           const response = await axios.get(
             `https://localhost:7192/api/psychologists`,
             {
@@ -140,10 +137,6 @@ export const ConsultantSelection = () => {
         else setConsultants(consultantList);
       } catch (error) {
         setError(error.message || "Failed to fetch consultants");
-      } finally {
-        if (bookingData.consultantType === "homeroom") {
-          setIsLoading(false); // Only reset for homeroom
-        }
       }
     };
 
@@ -177,10 +170,6 @@ export const ConsultantSelection = () => {
     [updateBookingData]
   );
 
-  if (isLoading && bookingData.consultantType === "homeroom")
-    return (
-      <div className="text-center text-gray-600">Loading consultant...</div>
-    );
   if (error)
     return <div className="text-center text-red-600">Error: {error}</div>;
 
@@ -193,7 +182,7 @@ export const ConsultantSelection = () => {
             Your {consultant.role}
           </h5>
           <Card
-            className="rounded-xl bg-gray-50 border-2 border-gray-700 w-full hover:shadow-lg transition-shadow duration-300"
+            className="rounded-xl bg-gray-50 border border-gray-300 w-full hover:shadow-lg transition-shadow duration-300"
             style={{ minWidth: "180px" }}
           >
             <CardContent className="p-3 sm:p-4 flex flex-col items-center">
@@ -214,24 +203,24 @@ export const ConsultantSelection = () => {
               </div>
               <div className="mt-3 sm:mt-4 w-full flex justify-center">
                 <div className="text-left w-full max-w-[240px] sm:max-w-xs space-y-1">
-                  <p className="font-inter text-sm sm:text-base text-gray-600 hover:bg-gray-100 p-1 rounded transition-colors duration-200">
+                  <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
                     <strong className="inline-block w-20 sm:w-24">
                       Phone:
                     </strong>{" "}
                     {consultant.phone}
                   </p>
-                  <p className="font-inter text-sm sm:text-base text-gray-600 hover:bg-gray-100 p-1 rounded transition-colors duration-200">
+                  <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
                     <strong className="inline-block w-20 sm:w-24">
                       Email:
                     </strong>{" "}
                     {consultant.email}
                   </p>
-                  <p className="font-inter text-sm sm:text-base text-gray-600 hover:bg-gray-100 p-1 rounded transition-colors duration-200">
+                  <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
                     <strong className="inline-block w-20 sm:w-24">Age:</strong>{" "}
                     {consultant.age}
                   </p>
                   {consultant.role === "Homeroom Teacher" && (
-                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:bg-gray-100 p-1 rounded transition-colors duration-200">
+                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
                       <strong className="inline-block w-20 sm:w-24">
                         Class:
                       </strong>{" "}
@@ -267,11 +256,11 @@ export const ConsultantSelection = () => {
               animate={{ opacity: 1, scale: 1 }}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              className={`rounded-xl bg-gray-50 border-2 ${
+              className={`rounded-xl bg-gray-50 border ${
                 bookingData.consultantId === consultant.id
                   ? "border-blue-500"
-                  : "border-gray-700"
-              } w-full hover:shadow-lg transition-shadow duration-300`}
+                  : "border-gray-300"
+              } w-full hover:shadow-lg transition-all duration-300`}
               style={{ minWidth: "180px" }}
               onClick={() => handleSelectConsultant(consultant)}
             >
@@ -283,29 +272,59 @@ export const ConsultantSelection = () => {
                     </span>
                   </div>
                   <div className="text-center sm:text-left">
-                    <p className="font-inter font-bold text-lg sm:text-xl text-gray-800">
+                    <p
+                      className={`font-inter font-bold text-lg sm:text-xl ${
+                        bookingData.consultantId === consultant.id
+                          ? "text-blue-700"
+                          : "text-gray-800"
+                      }`}
+                    >
                       {consultant.name}
                     </p>
-                    <p className="font-inter font-medium text-base sm:text-lg text-gray-600">
+                    <p
+                      className={`font-inter font-medium text-base sm:text-lg ${
+                        bookingData.consultantId === consultant.id
+                          ? "text-blue-600"
+                          : "text-gray-600"
+                      }`}
+                    >
                       {consultant.role}
                     </p>
                   </div>
                 </div>
                 <div className="mt-3 sm:mt-4 w-full flex justify-center">
                   <div className="text-left w-full max-w-[240px] sm:max-w-xs space-y-1">
-                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:bg-gray-100 p-1 rounded transition-colors duration-200">
+                    <p
+                      className={`font-inter text-sm sm:text-base ${
+                        bookingData.consultantId === consultant.id
+                          ? "text-blue-600"
+                          : "text-gray-600"
+                      } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
+                    >
                       <strong className="inline-block w-20 sm:w-24">
                         Phone:
                       </strong>{" "}
                       {consultant.phone}
                     </p>
-                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:bg-gray-100 p-1 rounded transition-colors duration-200">
+                    <p
+                      className={`font-inter text-sm sm:text-base ${
+                        bookingData.consultantId === consultant.id
+                          ? "text-blue-600"
+                          : "text-gray-600"
+                      } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
+                    >
                       <strong className="inline-block w-20 sm:w-24">
                         Email:
                       </strong>{" "}
                       {consultant.email}
                     </p>
-                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:bg-gray-100 p-1 rounded transition-colors duration-200">
+                    <p
+                      className={`font-inter text-sm sm:text-base ${
+                        bookingData.consultantId === consultant.id
+                          ? "text-blue-600"
+                          : "text-gray-600"
+                      } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
+                    >
                       <strong className="inline-block w-20 sm:w-24">
                         Age:
                       </strong>{" "}

@@ -3,8 +3,6 @@ import { CCard, CCardBody, CRow, CCol, CButton, CSpinner } from "@coreui/react";
 import { FaClock } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { Link } from "react-router-dom";
 
 const AppointmentsList = ({
   isLoading,
@@ -13,6 +11,7 @@ const AppointmentsList = ({
   handleCancelAppointment,
   handleChat,
   handleNavigate,
+  selectedDate,
 }) => {
   return (
     <div className="appointments-container scrollbar-hide">
@@ -54,7 +53,7 @@ const AppointmentsList = ({
                             fontSize: "24px",
                           }}
                         >
-                          {appointment.lesson || "Unknown Consultant"}
+                          {appointment.consultant || "Unknown Consultant"}
                         </h5>
                       </CCol>
                     </CRow>
@@ -82,13 +81,13 @@ const AppointmentsList = ({
                             style={{
                               fontSize: "16px",
                               color:
-                                appointment.platform === "Online"
+                                appointment.type === "Online"
                                   ? "#3b82f6"
                                   : "#8b5cf6",
                               fontWeight: "500",
                             }}
                           >
-                            {appointment.platform}
+                            {appointment.type}
                           </span>
                           <span
                             style={{
@@ -104,39 +103,6 @@ const AppointmentsList = ({
                           >
                             {appointment.status}
                           </span>
-                        </div>
-                      </CCol>
-                    </CRow>
-
-                    <CRow className="mb-4">
-                      <CCol>
-                        <div
-                          className="p-3 rounded"
-                          style={{
-                            backgroundColor: "#dbeafe",
-                            fontSize: "15px",
-                          }}
-                        >
-                          {appointment.sessions.monthly && (
-                            <p className="mb-1">
-                              <span
-                                style={{ color: "#3b82f6", fontWeight: "bold" }}
-                              >
-                                {appointment.sessions.monthly} more sessions
-                              </span>{" "}
-                              to Fixed Schedule BONUS - Monthly
-                            </p>
-                          )}
-                          {appointment.sessions.quarterly && (
-                            <p className="mb-0">
-                              <span
-                                style={{ color: "#8b5cf6", fontWeight: "bold" }}
-                              >
-                                {appointment.sessions.quarterly} more sessions
-                              </span>{" "}
-                              to Fixed Schedule BONUS - Quarterly
-                            </p>
-                          )}
                         </div>
                       </CCol>
                     </CRow>
@@ -168,7 +134,7 @@ const AppointmentsList = ({
                                 Join
                               </CButton>
                             )}
-                          {appointment.platform === "Online" &&
+                          {appointment.type === "Online" &&
                             appointment.googleMeetURL && (
                               <CButton
                                 color="info"
@@ -256,7 +222,7 @@ const AppointmentsList = ({
       ) : (
         <div className="text-center py-10">
           <h5 className="text-blue-600 dark:text-blue-400 text-lg">
-            No appointments for this date
+            No appointments for {format(selectedDate, "EEEE, MM/dd/yyyy")}
           </h5>
           <button
             onClick={handleNavigate}

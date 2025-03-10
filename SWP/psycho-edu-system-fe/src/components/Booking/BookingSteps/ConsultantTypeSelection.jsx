@@ -10,9 +10,9 @@ const cardVariants = {
   initial: { scale: 0.9, opacity: 0, y: 20 },
   animate: { scale: 1, opacity: 1, y: 0 },
   hover: {
-    scale: 1.05,
-    y: -8,
-    boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.15)",
+    scale: 1.03, // Giảm scale khi hover
+    y: -5, // Giảm độ nâng lên khi hover
+    boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.12)",
     transition: { duration: 0.2, ease: "easeOut" },
   },
   tap: { scale: 0.98, transition: { duration: 0.1 } },
@@ -21,7 +21,6 @@ const cardVariants = {
 export const ConsultantTypeSelection = () => {
   const { updateBookingData, bookingData, isParent } = useBooking();
   const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Memoize authData to prevent unnecessary re-renders
   const authData = useMemo(() => getAuthDataFromLocalStorage(), []);
@@ -42,7 +41,6 @@ export const ConsultantTypeSelection = () => {
     }
 
     try {
-      setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
       const response = await axios.get(
         `https://localhost:7192/api/User/${studentId}/class`,
@@ -66,8 +64,6 @@ export const ConsultantTypeSelection = () => {
           "Failed to fetch class and teacher"
       );
       return null;
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -86,28 +82,31 @@ export const ConsultantTypeSelection = () => {
         return;
       }
 
+      // Cập nhật ngay lập tức consultantType để tránh trạng thái loading
+      updateBookingData({
+        consultantType: type,
+        isHomeroomTeacher: type === "homeroom",
+      });
+
+      // Nếu là homeroom, thực hiện fetch teacher trong background mà không hiển thị loading
       if (type === "homeroom") {
-        const teacherId = await fetchClassAndTeacher(studentId);
-        if (teacherId) {
-          updateBookingData({
-            consultantType: type,
-            consultantId: teacherId,
-            consultantName: "",
-            isHomeroomTeacher: true,
-          });
-        } else {
-          updateBookingData({
-            consultantType: type,
-            isHomeroomTeacher: true,
-          });
-          setError("Could not fetch homeroom teacher.");
-        }
+        fetchClassAndTeacher(studentId).then((teacherId) => {
+          if (teacherId) {
+            updateBookingData({
+              consultantId: teacherId,
+              consultantName: "",
+            });
+          } else {
+            // Vẫn hiển thị lỗi nếu có, nhưng không ảnh hưởng đến việc chọn loại consultant
+            setError(
+              "Could not fetch homeroom teacher. You can continue with the selection."
+            );
+          }
+        });
       } else {
         updateBookingData({
-          consultantType: type,
           consultantId: "",
           consultantName: "",
-          isHomeroomTeacher: false,
         });
       }
     },
@@ -120,31 +119,6 @@ export const ConsultantTypeSelection = () => {
     ]
   );
 
-  if (isLoading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-center text-gray-600 p-4"
-      >
-        <Typography
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: {
-              xs: "clamp(0.875rem, 3vw, 1rem)",
-              sm: "clamp(1rem, 3.5vw, 1.25rem)",
-              md: "clamp(1.125rem, 4vw, 1.5rem)",
-            },
-            color: "#666",
-            textAlign: "center",
-          }}
-        >
-          Loading...
-        </Typography>
-      </motion.div>
-    );
-  }
-
   if (error) {
     return (
       <motion.div
@@ -156,9 +130,9 @@ export const ConsultantTypeSelection = () => {
           sx={{
             fontFamily: "Inter, sans-serif",
             fontSize: {
-              xs: "clamp(0.875rem, 3vw, 1rem)",
-              sm: "clamp(1rem, 3.5vw, 1.25rem)",
-              md: "clamp(1.125rem, 4vw, 1.5rem)",
+              xs: "clamp(0.75rem, 2vw, 0.875rem)",
+              sm: "clamp(0.875rem, 2.5vw, 1rem)",
+              md: "clamp(0.875rem, 3vw, 1.125rem)",
             },
             color: "#dc2626",
             textAlign: "center",
@@ -172,109 +146,113 @@ export const ConsultantTypeSelection = () => {
 
   return (
     <Box
-      className="py-6 px-4 sm:px-6 lg:px-8 flex justify-center"
+      className="py-4 px-3 sm:px-4 lg:px-6 flex justify-center"
       sx={{ width: "100%", overflowX: "hidden" }}
     >
-      <Box sx={{ width: "100%", maxWidth: "800px" }}>
+      <Box sx={{ width: "100%", maxWidth: "700px" }}>
         <Typography
           variant="h5"
           sx={{
             fontFamily: "Inter, sans-serif",
             fontWeight: 600,
             color: "#333",
-            mb: 4,
+            mb: 3,
             textAlign: "center",
             fontSize: {
-              xs: "clamp(1rem, 4vw, 1.25rem)",
-              sm: "clamp(1.25rem, 4.5vw, 1.5rem)",
-              md: "clamp(1.5rem, 5vw, 1.75rem)",
-              lg: "clamp(1.75rem, 5.5vw, 2rem)",
+              xs: "clamp(0.875rem, 3vw, 1rem)",
+              sm: "clamp(1rem, 3.5vw, 1.25rem)",
+              md: "clamp(1.125rem, 4vw, 1.5rem)",
+              lg: "clamp(1.25rem, 4.5vw, 1.75rem)",
             },
             transition: "font-size 0.3s ease-in-out",
           }}
         >
           Select Consultant Type
         </Typography>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
-          sx={{ width: "100%" }}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+          }}
         >
-          {["counselor", "homeroom"].map((type) => (
-            <Card
-              key={type}
-              component={motion.div}
-              variants={cardVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              whileTap="tap"
-              className={`rounded-2xl border-2 ${
-                bookingData.consultantType === type
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 bg-white"
-              }`}
-              sx={{
-                minWidth: {
-                  xs: "200px", // Increased base width
-                  sm: "250px", // Wider for small screens
-                  md: "300px", // Wider for medium screens
-                },
-                width: {
-                  xs: "100%", // Full width on extra small screens
-                  sm: type === "homeroom" ? "auto" : "250px", // Dynamic width for homeroom
-                  md: type === "homeroom" ? "auto" : "300px",
-                },
-                maxWidth: "450px", // Increased max width
-                mx: "auto",
-                cursor: "pointer",
-                "&:hover": {
-                  borderColor: "#93c5fd",
-                  backgroundColor: "#eff6ff",
-                },
-              }}
-              onClick={(e) => handleSelectType(e, type)}
-            >
-              <CardContent
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            sx={{
+              width: "100%",
+              maxWidth: "600px", // Giới hạn chiều rộng tối đa của container
+            }}
+          >
+            {["counselor", "homeroom"].map((type) => (
+              <Box
+                key={type}
                 sx={{
-                  p: { xs: 3, sm: 4 },
                   display: "flex",
                   justifyContent: "center",
-                  alignItems: "center",
-                  minHeight: { xs: "80px", sm: "100px" }, // Ensure consistent height
                 }}
               >
-                <Typography
+                <Card
+                  component={motion.div}
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="animate"
+                  whileHover="hover"
+                  whileTap="tap"
+                  className={`rounded-xl border-2 ${
+                    bookingData.consultantType === type
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 bg-white"
+                  }`}
                   sx={{
-                    fontFamily: "Inter, sans-serif",
-                    fontWeight: 700,
-                    fontSize: {
-                      xs: "clamp(0.875rem, 3vw, 1rem)",
-                      sm: "clamp(1rem, 3.5vw, 1.25rem)",
-                      md: "clamp(1.25rem, 4vw, 1.5rem)",
-                      lg: "clamp(1.5rem, 4.5vw, 1.75rem)",
+                    width: "100%",
+                    height: { xs: "70px", sm: "80px", md: "90px" },
+                    maxWidth: "240px", // Cố định kích thước tối đa
+                    cursor: "pointer",
+                    "&:hover": {
+                      borderColor: "#93c5fd",
+                      backgroundColor: "#eff6ff",
                     },
-                    color:
-                      bookingData.consultantType === type ? "#1e40af" : "#333",
-                    textAlign: "center",
-                    transition:
-                      "font-size 0.3s ease-in-out, color 0.2s ease-in-out",
-                    whiteSpace: {
-                      xs: "normal", // Allow wrapping on small screens
-                      sm: "nowrap", // Prevent wrapping by default
-                    },
-                    maxWidth: "100%",
-                    overflowWrap: "break-word",
                   }}
+                  onClick={(e) => handleSelectType(e, type)}
                 >
-                  {type === "counselor" ? "Counselor" : "Homeroom Teacher"}
-                </Typography>
-              </CardContent>
-            </Card>
-          ))}
-        </motion.div>
+                  <CardContent
+                    sx={{
+                      p: { xs: 2, sm: 2.5 },
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: "100%",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 600,
+                        fontSize: {
+                          xs: "clamp(0.75rem, 2.5vw, 0.875rem)",
+                          sm: "clamp(0.875rem, 3vw, 1rem)",
+                          md: "clamp(0.875rem, 3.5vw, 1.125rem)",
+                        },
+                        color:
+                          bookingData.consultantType === type
+                            ? "#1e40af"
+                            : "#333",
+                        textAlign: "center",
+                        transition:
+                          "font-size 0.3s ease-in-out, color 0.2s ease-in-out",
+                      }}
+                    >
+                      {type === "counselor" ? "Counselor" : "Homeroom Teacher"}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Box>
+            ))}
+          </motion.div>
+        </Box>
       </Box>
     </Box>
   );
