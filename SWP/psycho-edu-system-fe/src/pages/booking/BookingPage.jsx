@@ -10,7 +10,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import axios from "axios";
-import { Box, Button, Typography, CircularProgress } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 import { motion } from "framer-motion";
 
 const BookingPageContent = () => {
@@ -19,29 +19,24 @@ const BookingPageContent = () => {
   const [step, setStep] = useState(1);
   const [totalSteps, setTotalSteps] = useState(5);
   const [studentId, setStudentId] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Thêm state để disable nút khi submitting
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  // Lấy authData một lần ngoài useEffect để tránh thay đổi tham chiếu
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
 
-  // Xác định studentId dựa trên role (chỉ chạy khi mount hoặc role thay đổi)
   useEffect(() => {
     let isMounted = true;
 
     const determineStudentId = async () => {
-      if (!isMounted) return;
-      if (studentId) return;
+      if (!isMounted || studentId) return;
 
       if (!isParent()) {
-        // Role Student: Lấy studentId từ accessToken (userId)
         if (isMounted) {
           setStudentId(userId);
           updateBookingData({ appointmentFor: userId });
         }
       } else {
-        // Role Parent: Lấy studentId từ bookingData.childId hoặc fetch nếu chưa có
         if (bookingData.childId && isMounted) {
           setStudentId(bookingData.childId);
           updateBookingData({ appointmentFor: bookingData.childId });
@@ -77,14 +72,12 @@ const BookingPageContent = () => {
 
     determineStudentId();
 
-    // Cleanup
     return () => {
       isMounted = false;
     };
   }, [isParent, userId]);
 
   useEffect(() => {
-    // Cập nhật totalSteps dựa trên role
     setTotalSteps(isParent() ? 5 : 4);
   }, [isParent]);
 
@@ -97,7 +90,7 @@ const BookingPageContent = () => {
   };
 
   const handleNextWithValidation = () => {
-    const userInfoStep = isParent() ? 5 : 4; // Bước UserInfoForm
+    const userInfoStep = isParent() ? 5 : 4;
     if (step === userInfoStep) {
       if (!bookingData.userName || !bookingData.phone || !bookingData.email) {
         console.log("Missing fields:", {
@@ -133,7 +126,7 @@ const BookingPageContent = () => {
       return;
     }
 
-    setIsSubmitting(true); // Disable nút khi bắt đầu submit
+    setIsSubmitting(true);
     try {
       const authData = getAuthDataFromLocalStorage();
       const appointmentData = {
@@ -196,7 +189,7 @@ const BookingPageContent = () => {
         }
       );
     } finally {
-      setIsSubmitting(false); // Enable lại nút sau khi hoàn tất
+      setIsSubmitting(false);
     }
   };
 
@@ -233,147 +226,78 @@ const BookingPageContent = () => {
   };
 
   return (
-    <Box
-      sx={{
-        width: "960px",
-        mx: "auto",
-        p: { xs: 1, sm: 2, md: 3 },
-        bgcolor: "white",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflowX: "hidden",
-        position: "relative",
-        pb: { xs: 14, sm: 10, md: 8 },
-      }}
-    >
+    <div className="w-[960px] mx-auto p-2 sm:p-4 md:p-6 bg-white min-h-screen flex flex-col overflow-x-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        sx={{ mb: { xs: 2, sm: 3, md: 4 }, textAlign: "center" }}
+        className="mb-4 sm:mb-6 md:mb-8 text-center"
       >
-        <Typography
-          variant="h4"
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontWeight: 700,
-            background: "linear-gradient(to right, #1e88e5, #8e24aa)",
-            WebkitBackgroundClip: "text",
-            color: "transparent",
-            fontSize: { xs: "1.25rem", sm: "1.75rem", md: "2rem" },
-            lineHeight: 1.2,
-          }}
-        >
-          Book an Appointment
-        </Typography>
-        <Typography
-          variant="body1"
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: { xs: "0.75rem", sm: "0.85rem", md: "0.9rem" },
-            color: "#555",
-            mt: 1,
-            px: { xs: 1, sm: 0 },
-          }}
+        <div className="flex justify-center items-center w-full px-4 sm:px-6 md:px-8">
+          <h1
+            className="font-inter font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 
+            text-[1.25rem] sm:text-[1.5rem] md:text-[1.75rem] lg:text-[2rem] leading-tight 
+            antialiased break-words transition-all duration-300 ease-in-out"
+          >
+            Book an Appointment
+          </h1>
+        </div>
+        <p
+          className="font-inter text-gray-600 mt-2 sm:mt-3 md:mt-4 px-2 sm:px-4 md:px-6 lg:px-0 
+          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
+          md:text-[clamp(0.85rem,3.5vw,1rem)] lg:text-[clamp(0.9rem,4vw,1.125rem)] 
+          leading-relaxed break-words transition-all duration-300 ease-in-out"
         >
           Follow the steps below to schedule your consultation
-        </Typography>
+        </p>
       </motion.div>
 
-      {renderStepContent()}
+      {/* Step Content */}
+      <div className="">{renderStepContent()}</div>
 
-      {/* Fixed Navigation Buttons */}
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          bgcolor: "white",
-          boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.1)",
-          p: { xs: 1, sm: 2, md: 2 },
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 1.5, sm: 2 },
-          zIndex: 1000,
-          width: "960px",
-          mx: "auto",
-        }}
-      >
-        {step > 1 && (
-          <Button
-            onClick={handleBack}
-            variant="outlined"
-            sx={{
-              fontFamily: "Inter, sans-serif",
-              px: { xs: 2, sm: 3 },
-              py: 0.75,
-              textTransform: "none",
-              width: { xs: "100%", sm: "auto" },
-              fontSize: { xs: "0.75rem", sm: "0.85rem" },
-              borderColor: "#1e88e5",
-              color: "#1e88e5",
-              "&:hover": {
-                borderColor: "#1565c0",
-                color: "#1565c0",
-              },
-            }}
-            disabled={isSubmitting}
-          >
-            Back
-          </Button>
-        )}
-        {step < totalSteps ? (
-          <Button
-            onClick={handleNextWithValidation}
-            variant="contained"
-            sx={{
-              fontFamily: "Inter, sans-serif",
-              px: { xs: 2, sm: 3 },
-              py: 0.75,
-              ml: { xs: 0, sm: "auto" },
-              backgroundColor: "#1e88e5",
-              "&:hover": { backgroundColor: "#1565c0" },
-              textTransform: "none",
-              width: { xs: "100%", sm: "auto" },
-              fontSize: { xs: "0.75rem", sm: "0.85rem" },
-            }}
-            disabled={isSubmitting}
-          >
-            Next
-          </Button>
-        ) : (
-          <Button
-            onClick={handleConfirm}
-            variant="contained"
-            sx={{
-              fontFamily: "Inter, sans-serif",
-              px: { xs: 2, sm: 3 },
-              py: 0.75,
-              ml: { xs: 0, sm: "auto" },
-              backgroundColor: "#4caf50",
-              "&:hover": { backgroundColor: "#388e3c" },
-              textTransform: "none",
-              width: { xs: "100%", sm: "auto" },
-              fontSize: { xs: "0.75rem", sm: "0.85rem" },
-            }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              "Confirm Booking"
-            )}
-          </Button>
-        )}
-      </Box>
+      {/* Navigation Buttons */}
+      <div className="bg-white p-2 sm:p-4 md:p-6 flex justify-between items-center w-full">
+        <button
+          onClick={handleBack}
+          className={`font-inter px-4 sm:px-6 py-2 
+          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
+          md:text-[clamp(0.85rem,3.5vw,1rem)] border border-blue-600 text-blue-600 rounded 
+          hover:border-blue-800 hover:text-blue-800 transition-colors duration-300 
+          ${step > 1 ? "visible" : "invisible"} ${
+            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          disabled={isSubmitting}
+        >
+          Back
+        </button>
+        <button
+          onClick={step < totalSteps ? handleNextWithValidation : handleConfirm}
+          className={`font-inter px-4 sm:px-6 py-2 
+          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
+          md:text-[clamp(0.85rem,3.5vw,1rem)] rounded text-white 
+          ${
+            step < totalSteps
+              ? "bg-blue-600 hover:bg-blue-800"
+              : "bg-green-600 hover:bg-green-800"
+          } 
+          transition-all duration-300 ${
+            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : step < totalSteps ? (
+            "Next"
+          ) : (
+            "Confirm Booking"
+          )}
+        </button>
+      </div>
 
       <ToastContainer />
-    </Box>
+    </div>
   );
 };
 
