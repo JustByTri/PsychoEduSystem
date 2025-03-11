@@ -9,7 +9,7 @@ import {
   startOfMonth,
   isSameDay,
   isBefore,
-  parseISO,
+  startOfDay,
 } from "date-fns";
 import {
   fetchUserProfile,
@@ -53,7 +53,6 @@ const SchedulePage = () => {
   }, []);
 
   const [bookings, setBookings] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -67,36 +66,30 @@ const SchedulePage = () => {
     isOpen: false,
     selectedAppointment: null,
   });
-  const [currentDate] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(0);
   const [animationDirection, setAnimationDirection] = useState("");
   const [visibleDaysCount, setVisibleDaysCount] = useState(15);
   const [appointmentViewKey, setAppointmentViewKey] = useState(0); // For simple fade-in animation
   const calendarContainerRef = useRef(null);
+  const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
+  const [currentDate] = useState(startOfDay(new Date()));
 
   const generateMonthDays = () => {
     const monthStart = startOfMonth(currentDate);
     const totalDays = getDaysInMonth(currentDate);
-    const days = [];
-    for (let i = 0; i < totalDays; i++) {
-      const currentDay = addDays(monthStart, i);
-      const dayNumber = currentDay.getDate();
-      const dayOfWeek = format(currentDay, "E")[0];
-      const isPast =
-        isBefore(currentDay, currentDate) &&
-        !isSameDay(currentDay, currentDate);
-      const isToday = isSameDay(currentDay, currentDate);
-
-      days.push({
-        day: dayNumber,
-        weekday: dayOfWeek,
+    return Array.from({ length: totalDays }, (_, i) => {
+      const currentDay = startOfDay(addDays(monthStart, i)); // Chuẩn hóa ngày
+      return {
+        day: currentDay.getDate(),
+        weekday: format(currentDay, "E")[0],
         fullDate: currentDay,
-        isPast,
-        isToday,
-        dayOfWeek,
-      });
-    }
-    return days;
+        isPast:
+          isBefore(currentDay, currentDate) &&
+          !isSameDay(currentDay, currentDate),
+        isToday: isSameDay(currentDay, currentDate),
+        dayOfWeek: format(currentDay, "E")[0],
+      };
+    });
   };
 
   const allDays = generateMonthDays();
@@ -106,28 +99,23 @@ const SchedulePage = () => {
       const profile = await fetchUserProfile();
       setUserProfile(profile);
     } catch (error) {
-      setErrorMessage("Không thể tải thông tin người dùng: " + error.message);
+      console.error("Failed to load user:", error);
     }
   };
 
   const loadAppointments = async (date) => {
     if (!userProfile?.userId) return;
-
+    const formattedDate = format(date, "yyyy-MM-dd");
     try {
       const appointmentsData = await fetchAppointments(
         userProfile.userId,
-        date
+        formattedDate
       );
-      console.log("Raw appointments from API:", appointmentsData);
       setBookings(appointmentsData || []);
-      // Trigger appointment view animation
       setAppointmentViewKey((prev) => prev + 1);
-      return appointmentsData;
     } catch (error) {
       console.error("Failed to load appointments:", error);
-      setError("Không thể tải cuộc hẹn. Vui lòng thử lại sau.");
       setBookings([]);
-      return [];
     }
   };
 
@@ -218,7 +206,6 @@ const SchedulePage = () => {
 
   const handleSelectDate = (date) => {
     if (!isBefore(date, currentDate) || isSameDay(date, currentDate)) {
-      // Đặt hướng animation cho calendar
       setAnimationDirection(date > selectedDate ? "next" : "prev");
 
       setSelectedDate(date);
@@ -264,15 +251,7 @@ const SchedulePage = () => {
 
   // Tải thông tin người dùng khi component mount
   useEffect(() => {
-    loadUserProfile();
-  }, []);
-
-  useEffect(() => {
     if (userProfile?.userId) {
-      console.log(
-        "Loading appointments for date:",
-        format(selectedDate, "yyyy-MM-dd")
-      );
       loadAppointments(selectedDate);
     }
   }, [selectedDate, userProfile]);
@@ -286,14 +265,6 @@ const SchedulePage = () => {
 
     initializeData();
   }, []);
-
-  // Lọc cuộc hẹn dựa trên trạng thái đã chọn
-  const filteredAppointments =
-    filterStatus === "All"
-      ? bookings
-      : bookings.filter((booking) => booking.status === filterStatus);
-
-  console.log("Các cuộc hẹn sẽ hiển thị:", filteredAppointments);
 
   return (
     <div

@@ -31,7 +31,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import AuthContext from "../../context/auth/AuthContext";
 
-const drawerWidth = 240;
+const drawerWidth = 150;
 const headerHeight = 64;
 
 const SideBar = () => {
@@ -94,7 +94,6 @@ const SideBar = () => {
                   sx={{ color: "#333333", fontSize: "14px" }}
                 />
               )}
-
             </ListItemButton>
           </ListItem>
         ))}

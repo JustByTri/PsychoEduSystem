@@ -1,5 +1,5 @@
 import axios from "axios";
-import { parseISO } from "date-fns";
+import { parseISO, startOfDay } from "date-fns";
 import { getAuthDataFromLocalStorage } from "../utils/auth";
 
 const API_BASE_URL = "https://localhost:7192/api";
@@ -36,38 +36,35 @@ export const fetchUserProfile = async () => {
   }
 };
 
-// Lấy danh sách appointments theo ngày và userId
 export const fetchAppointments = async (userId, date) => {
   try {
-    const formattedDate = date.toISOString().split("T")[0]; // Format yyyy-MM-dd
-    console.log("Fetching appointments for date:", formattedDate);
     const response = await axios.get(
-      `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${formattedDate}`
+      `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${date}`
     );
-    console.log("API response:", response.data);
     if (response.data.isSuccess) {
-      return response.data.result.map((appointment) => ({
-        id: appointment.appointmentId,
-        studentId: userId,
-        student: appointment.appointmentFor || "Unknown Student",
-        consultant: appointment.meetingWith || "Unknown Counsultant",
-        type: appointment.isOnline ? "Online" : "Offline",
-        // sessions: {
-        //   monthly: appointment.monthlySessionsRemaining || 10,
-        //   quarterly: appointment.quarterlySessionsRemaining || 4,
-        // },
-        date: parseISO(appointment.date.split("/").reverse().join("-")),
-        slot: appointment.slotId || 0,
-        status: appointment.isCancelled
-          ? "Cancelled"
-          : appointment.isCompleted
-          ? "Completed"
-          : "Scheduled",
-        // evaluated: appointment.isEvaluated || appointment.isCompleted,
-        appointmentId: appointment.appointmentId,
-        isCancelled: appointment.isCancelled || false,
-        googleMeetURL: appointment.googleMeetURL || null, // Thêm googleMeetURL
-      }));
+      return response.data.result.map((appointment) => {
+        const parsedDate = parseISO(
+          appointment.date.split("/").reverse().join("-")
+        );
+        const localDate = startOfDay(parsedDate); // Chuẩn hóa ngày
+        return {
+          id: appointment.appointmentId,
+          studentId: userId,
+          student: appointment.appointmentFor || "Unknown Student",
+          consultant: appointment.meetingWith || "Unknown Counsultant",
+          type: appointment.isOnline ? "Online" : "Offline",
+          date: localDate,
+          slot: appointment.slotId || 0,
+          status: appointment.isCancelled
+            ? "Cancelled"
+            : appointment.isCompleted
+            ? "Completed"
+            : "Scheduled",
+          appointmentId: appointment.appointmentId,
+          isCancelled: appointment.isCancelled || false,
+          googleMeetURL: appointment.googleMeetURL || null,
+        };
+      });
     } else {
       throw new Error(response.data.message || "Failed to fetch appointments");
     }
