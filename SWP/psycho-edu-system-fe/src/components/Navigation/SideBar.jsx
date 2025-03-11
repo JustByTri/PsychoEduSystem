@@ -94,6 +94,7 @@ const SideBar = () => {
                   sx={{ color: "#333333", fontSize: "14px" }}
                 />
               )}
+
             </ListItemButton>
           </ListItem>
         ))}
@@ -142,6 +143,7 @@ const getNavItems = (role) => {
     case "Psychologist":
       return [
         { icon: faHome, label: "Dashboard", path: "/psychologist" },
+
         { icon: faBookOpen, label: "Program", path: "/psychologist/programs" },
         { icon: faBell, label: "Schedule", path: "/psychologist/schedule" },
         { icon: faFileAlt, label: "Book Slots", path: "/psychologist/slot" },

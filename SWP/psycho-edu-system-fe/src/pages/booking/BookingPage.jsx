@@ -10,6 +10,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import axios from "axios";
+import { CircularProgress } from "@mui/material";
+import { motion } from "framer-motion";
 
 const BookingPageContent = () => {
   const { isParent, bookingData, updateBookingData, resetBookingData } =
@@ -17,29 +19,24 @@ const BookingPageContent = () => {
   const [step, setStep] = useState(1);
   const [totalSteps, setTotalSteps] = useState(5);
   const [studentId, setStudentId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  // Lấy authData một lần ngoài useEffect để tránh thay đổi tham chiếu
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
 
-  // Xác định studentId dựa trên role (chỉ chạy khi mount hoặc role thay đổi)
   useEffect(() => {
     let isMounted = true;
 
     const determineStudentId = async () => {
-      if (!isMounted) return;
-
-      if (studentId) return; // Tránh chạy lại nếu đã có studentId
+      if (!isMounted || studentId) return;
 
       if (!isParent()) {
-        // Role Student: Lấy studentId từ accessToken (userId)
         if (isMounted) {
           setStudentId(userId);
           updateBookingData({ appointmentFor: userId });
         }
       } else {
-        // Role Parent: Lấy studentId từ bookingData.childId hoặc fetch nếu chưa có
         if (bookingData.childId && isMounted) {
           setStudentId(bookingData.childId);
           updateBookingData({ appointmentFor: bookingData.childId });
@@ -75,14 +72,12 @@ const BookingPageContent = () => {
 
     determineStudentId();
 
-    // Cleanup
     return () => {
       isMounted = false;
     };
-  }, [isParent, userId]); // Loại bỏ authData.accessToken và bookingData.childId khỏi dependency
+  }, [isParent, userId]);
 
   useEffect(() => {
-    // Cập nhật totalSteps dựa trên role
     setTotalSteps(isParent() ? 5 : 4);
   }, [isParent]);
 
@@ -95,7 +90,7 @@ const BookingPageContent = () => {
   };
 
   const handleNextWithValidation = () => {
-    const userInfoStep = isParent() ? 5 : 4; // Bước UserInfoForm
+    const userInfoStep = isParent() ? 5 : 4;
     if (step === userInfoStep) {
       if (!bookingData.userName || !bookingData.phone || !bookingData.email) {
         console.log("Missing fields:", {
@@ -131,15 +126,16 @@ const BookingPageContent = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const authData = getAuthDataFromLocalStorage();
       const appointmentData = {
-        bookedBy: userId, // ID của người đặt lịch (Parent hoặc Student)
-        appointmentFor: studentId, // ID của student (từ userId hoặc childId)
-        meetingWith: bookingData.consultantId, // ID của teacher hoặc counselor
+        bookedBy: userId,
+        appointmentFor: studentId,
+        meetingWith: bookingData.consultantId,
         date: bookingData.date,
         slotId: bookingData.slotId,
-        isOnline: bookingData.appointmentType === "online",
+        isOnline: bookingData.appointmentType === "Online",
       };
 
       console.log("Submitting appointment data:", appointmentData);
@@ -192,6 +188,8 @@ const BookingPageContent = () => {
           draggable: true,
         }
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -228,44 +226,76 @@ const BookingPageContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-2 bg-blue-500 transition-all duration-300"
-            style={{ width: `${(step / totalSteps) * 100}%` }}
-          />
+    <div className="w-[960px] mx-auto p-2 sm:p-4 md:p-6 bg-white min-h-screen flex flex-col overflow-x-hidden">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="mb-4 sm:mb-6 md:mb-8 text-center"
+      >
+        <div className="flex justify-center items-center w-full px-4 sm:px-6 md:px-8">
+          <h1
+            className="font-inter font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 
+            text-[1.25rem] sm:text-[1.5rem] md:text-[1.75rem] lg:text-[2rem] leading-tight 
+            antialiased break-words transition-all duration-300 ease-in-out"
+          >
+            Book an Appointment
+          </h1>
         </div>
+        <p
+          className="font-inter text-gray-600 mt-2 sm:mt-3 md:mt-4 px-2 sm:px-4 md:px-6 lg:px-0 
+          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
+          md:text-[clamp(0.85rem,3.5vw,1rem)] lg:text-[clamp(0.9rem,4vw,1.125rem)] 
+          leading-relaxed break-words transition-all duration-300 ease-in-out"
+        >
+          Follow the steps below to schedule your consultation
+        </p>
+      </motion.div>
 
-        {renderStepContent()}
+      {/* Step Content */}
+      <div className="">{renderStepContent()}</div>
 
-        <div className="mt-8 flex justify-between">
-          {step > 1 && (
-            <button
-              onClick={handleBack}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              Back
-            </button>
-          )}
-
-          {step < totalSteps ? (
-            <button
-              onClick={handleNextWithValidation}
-              className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Next
-            </button>
+      {/* Navigation Buttons */}
+      <div className="bg-white p-2 sm:p-4 md:p-6 flex justify-between items-center w-full">
+        <button
+          onClick={handleBack}
+          className={`font-inter px-4 sm:px-6 py-2 
+          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
+          md:text-[clamp(0.85rem,3.5vw,1rem)] border border-blue-600 text-blue-600 rounded 
+          hover:border-blue-800 hover:text-blue-800 transition-colors duration-300 
+          ${step > 1 ? "visible" : "invisible"} ${
+            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          disabled={isSubmitting}
+        >
+          Back
+        </button>
+        <button
+          onClick={step < totalSteps ? handleNextWithValidation : handleConfirm}
+          className={`font-inter px-4 sm:px-6 py-2 
+          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
+          md:text-[clamp(0.85rem,3.5vw,1rem)] rounded text-white 
+          ${
+            step < totalSteps
+              ? "bg-blue-600 hover:bg-blue-800"
+              : "bg-green-600 hover:bg-green-800"
+          } 
+          transition-all duration-300 ${
+            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : step < totalSteps ? (
+            "Next"
           ) : (
-            <button
-              onClick={handleConfirm}
-              className="ml-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Confirm Booking
-            </button>
+            "Confirm Booking"
           )}
-        </div>
+        </button>
       </div>
+
       <ToastContainer />
     </div>
   );
