@@ -11,11 +11,7 @@ import {
   isBefore,
   startOfDay,
 } from "date-fns";
-import {
-  fetchUserProfile,
-  fetchAppointments,
-  cancelAppointment,
-} from "../../services/apiService";
+import apiService from "../../services/apiService"; // Import từ apiService.js
 import CalendarHeader from "../../components/Header/CalendarHeader";
 import AppointmentDetailModal from "../../components/Modal/AppointmentDetailModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
@@ -96,7 +92,7 @@ const SchedulePage = () => {
 
   const loadUserProfile = async () => {
     try {
-      const profile = await fetchUserProfile();
+      const profile = await apiService.fetchUserProfile(); // Sử dụng apiService
       setUserProfile(profile);
     } catch (error) {
       console.error("Failed to load user:", error);
@@ -107,10 +103,10 @@ const SchedulePage = () => {
     if (!userProfile?.userId) return;
     const formattedDate = format(date, "yyyy-MM-dd");
     try {
-      const appointmentsData = await fetchAppointments(
+      const appointmentsData = await apiService.fetchAppointments(
         userProfile.userId,
         formattedDate
-      );
+      ); // Sử dụng apiService
       setBookings(appointmentsData || []);
       setAppointmentViewKey((prev) => prev + 1);
     } catch (error) {
@@ -121,7 +117,7 @@ const SchedulePage = () => {
 
   const handleCancelAppointmentApi = async (appointmentId) => {
     try {
-      await cancelAppointment(appointmentId);
+      await apiService.cancelAppointment(appointmentId); // Sử dụng apiService
       setBookings((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment.appointmentId === appointmentId
