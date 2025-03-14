@@ -264,7 +264,7 @@ const SchedulePage = () => {
 
   return (
     <div
-      className="w-full bg-gradient-to-br from-blue-200 to-blue-100 dark:from-gray-900 dark:to-gray-800"
+      className="w-full bg-gradient-to-br white"
       style={{
         transform: "scale(0.5)",
         transformOrigin: "top left",
