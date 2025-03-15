@@ -7,7 +7,7 @@ const BreadcrumbsComponent = () => {
   const pathnames = location.pathname.split("/").filter((x) => x);
 
   return (
-    <nav className="p-4 text-sm">
+    <nav className="text-sm">
       <Breadcrumbs
         separator={<ChevronRight fontSize="small" />}
         aria-label="breadcrumb"
@@ -42,19 +42,17 @@ const BreadcrumbsComponent = () => {
             return (
               <div key={name}>
                 {isLast ? (
-                  <Tooltip title={name.replace("-", " ")} arrow>
-                    <Typography
-                      sx={{
-                        color: "text.secondary",
-                        fontWeight: "600",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {name.replace("-", " ")}
-                    </Typography>
-                  </Tooltip>
+                  <Typography
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: "600",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {name.replace("-", " ")}
+                  </Typography>
                 ) : (
                   <Link
                     to={routeTo}
@@ -65,9 +63,7 @@ const BreadcrumbsComponent = () => {
                       padding: "0 8px",
                     }}
                   >
-                    <Tooltip title={name.replace("-", " ")} arrow>
-                      <span>{name.replace("-", " ")}</span>
-                    </Tooltip>
+                    <span>{name.replace("-", " ")}</span>
                   </Link>
                 )}
               </div>

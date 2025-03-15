@@ -1,16 +1,5 @@
 import { useContext, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Drawer,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-} from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
@@ -31,118 +20,67 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import AuthContext from "../../context/auth/AuthContext";
 
-const drawerWidth = 150;
-const headerHeight = 64;
-
 const SideBar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { user } = useContext(AuthContext) || {};
-
-  // Define navItems based on user role
   const navItems = getNavItems(user?.role);
 
   return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: isCollapsed ? 80 : drawerWidth,
-        flexShrink: 0,
-        "& .MuiDrawer-paper": {
-          width: isCollapsed ? 80 : drawerWidth,
-          transition: "width 0.3s",
-          backgroundColor: "#FFFFFF",
-          color: "#333333", // Chữ tối màu
-          marginTop: `${headerHeight}px`,
-          height: `calc(100vh - ${headerHeight}px)`,
-          borderRight: "1px solid #E0E0E0",
-          display: "flex",
-          alignItems: "center",
-        },
-      }}
+    <div
+      className={`bg-white transition-all duration-300 flex flex-col border-r border-gray-200 ${
+        isCollapsed ? "w-20" : "w-48"
+      }`}
+      style={{ minHeight: "calc(100vh - 72px)" }} // Đảm bảo chiều cao tối thiểu
     >
-      <Toolbar>
-        <IconButton onClick={() => setIsCollapsed(!isCollapsed)}>
-          <MenuIcon sx={{ color: "#333333" }} />
-        </IconButton>
-      </Toolbar>
+      {/* Toggle Button */}
+      <div className="p-4 flex justify-center border-b border-gray-200">
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M3 4h14v2H3V4zm0 6h14v2H3v-2zm0 6h14v2H3v-2z" />
+          </svg>
+        </button>
+      </div>
 
-      <List sx={{ width: "100%", textAlign: "center" }}>
-        {navItems.map((item, index) => (
-          <ListItem
-            key={index}
-            disablePadding
-            sx={{ display: "flex", justifyContent: "center" }}
+      {/* Navigation Items */}
+      <div className="flex-1 flex flex-col items-center gap-4 py-4">
+        {navItems.map((item) => (
+          <Link
+            key={item.label}
+            to={item.path}
+            className="flex flex-col items-center gap-1 text-gray-700 hover:bg-gray-100 p-2 rounded-lg transition-colors w-full no-underline"
           >
-            <ListItemButton
-              component={Link}
-              to={item.path}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                textAlign: "center",
-                paddingY: 1.5,
-              }}
-            >
-              <ListItemIcon sx={{ color: "#333333", minWidth: "auto" }}>
-                {/* Use FontAwesomeIcon component */}
-                <FontAwesomeIcon icon={item.icon} />
-              </ListItemIcon>
-              {!isCollapsed && (
-                <ListItemText
-                  primary={item.label}
-                  sx={{ color: "#333333", fontSize: "14px" }}
-                />
-              )}
-            </ListItemButton>
-          </ListItem>
+            <FontAwesomeIcon icon={item.icon} className="text-lg" />
+            {!isCollapsed && (
+              <span className="text-sm font-medium">{item.label}</span>
+            )}
+          </Link>
         ))}
-      </List>
-    </Drawer>
+      </div>
+    </div>
   );
 };
 
-// Function to return navItems based on user role
 const getNavItems = (role) => {
   switch (role) {
     case "Student":
       return [
         { icon: faHome, label: "Home", path: "/student" },
         { icon: faBookOpen, label: "Program", path: "/student/programs" },
-        {
-          icon: faCalendarAlt,
-          label: "Schedules",
-          path: "/student/schedule",
-        },
+        { icon: faCalendarAlt, label: "Schedules", path: "/student/schedule" },
         { icon: faCalendarCheck, label: "Booking", path: "/student/booking" },
-        // { icon: faUserCircle, label: "Account", path: "#" },
       ];
     case "Teacher":
       return [
         { icon: faHome, label: "Home", path: "/teacher" },
-        // {
-        //   icon: faChartBar,
-        //   label: "Student Progress",
-        //   path: "/teacher/progress",
-        // },
-        // {
-        //   icon: faClipboardList,
-        //   label: "Assignments",
-        //   path: "/teacher/assignments",
-        // },
-        // {
-        //   icon: faBell,
-        //   label: "Notifications",
-        //   path: "/teacher/notifications",
-        // },
         { icon: faCalendarPlus, label: "Book Slots", path: "/teacher/slot" },
         { icon: faCalendarAlt, label: "Schedule", path: "/teacher/schedule" },
-        // { icon: faUser, label: "Account", path: "/teacher/account" },
       ];
     case "Psychologist":
       return [
         { icon: faHome, label: "Dashboard", path: "/psychologist" },
-
         { icon: faBookOpen, label: "Program", path: "/psychologist/programs" },
         { icon: faBell, label: "Schedule", path: "/psychologist/schedule" },
         { icon: faFileAlt, label: "Book Slots", path: "/psychologist/slot" },
@@ -150,16 +88,6 @@ const getNavItems = (role) => {
     case "Parent":
       return [
         { icon: faHome, label: "Home", path: "/parent" },
-        // {
-        //   icon: faChartBar,
-        //   label: "Student Progress",
-        //   path: "/parent/progress",
-        // // },
-        // {
-        //   icon: faClipboardList,
-        //   label: "Assignments",
-        //   path: "/parent/assignments",
-        // },
         { icon: faBell, label: "Schedule", path: "/parent/schedule" },
         { icon: faFileAlt, label: "Booking", path: "/parent/booking" },
       ];
@@ -173,13 +101,6 @@ const getNavItems = (role) => {
           label: "Create Parent",
           path: "/admin/create-parent",
         },
-        // { icon: faUsers, label: "Users", path: "/admin/users" },
-        // {
-        //   icon: faCalendarCheck,
-        //   label: "Appointments",
-        //   path: "/admin/appointments",
-        // },
-        // { icon: faChartBar, label: "Reports", path: "/admin/reports" },
       ];
     default:
       return [];
