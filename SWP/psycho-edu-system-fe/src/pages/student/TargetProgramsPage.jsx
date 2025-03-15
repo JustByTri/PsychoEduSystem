@@ -49,9 +49,9 @@ const TargetProgramsPage = () => {
     dots: true,
     infinite: true,
     speed: 500,
-    slidesToShow: 3, // Display 3 items at once
+    slidesToShow: Math.min(3, programs.length),
     slidesToScroll: 1,
-    autoplay: true,
+    autoplay: programs.length > 1,
     autoplaySpeed: 3000,
     arrows: false, // Hides navigation arrows for a cleaner look
     responsive: [
