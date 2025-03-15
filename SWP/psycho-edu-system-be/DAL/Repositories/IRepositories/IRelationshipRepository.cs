@@ -9,5 +9,6 @@ namespace DAL.Repositories.IRepositories
 {
    public interface IRelationshipRepository : IGenericRepository<Relationship>
     {
+        Task AddRangeAsync(IEnumerable<Relationship> relationships);
     }
 }

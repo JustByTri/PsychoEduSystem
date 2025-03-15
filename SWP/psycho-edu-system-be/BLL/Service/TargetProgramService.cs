@@ -442,15 +442,18 @@ namespace BLL.Service
                 {
                     return new ResponseDTO("Target program has been happened", 200, false, string.Empty);
                 }
+
                 if (program.Capacity == 0)
                 {
                     return new ResponseDTO("Target program is full.", 200, false, string.Empty);
                 }
+
                 var enrolledProgram = await _unitOfWork.ProgramEnrollment.GetByConditionAsync(p => p.StudentId == userId && p.ProgramId == programId);
                 if (enrolledProgram != null)
                 {
                     return new ResponseDTO("You have enrolled this program", 200, false, string.Empty);
                 }
+
                 var newEnrollment = new ProgramEnrollment
                 {
                     ProgramId = programId,
@@ -458,6 +461,7 @@ namespace BLL.Service
                     EnrolledAt = DateTime.Now,
                     CreateAt = DateTime.Now,
                 };
+
                 await _unitOfWork.ProgramEnrollment.AddAsync(newEnrollment);
                 program.Capacity -= 1;
                 await _unitOfWork.TargetProgram.UpdateAsync(program);
