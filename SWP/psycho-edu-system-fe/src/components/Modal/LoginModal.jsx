@@ -70,7 +70,7 @@ const LoginModal = () => {
       cancelButtonText: "No",
       confirmButtonColor: "#E63946",
       cancelButtonColor: "#3085d6",
-      reverseButtons: false, // Đặt Yes bên trái, No bên phải
+      reverseButtons: false,
       focusCancel: true,
       customClass: {
         popup: "rounded-xl shadow-md",
@@ -81,7 +81,6 @@ const LoginModal = () => {
     }).then((result) => {
       if (result.isConfirmed) {
         logout();
-        // Show success message with auto-close
         Swal.fire({
           title: "Logged Out",
           text: "You have successfully logged out.",
@@ -127,23 +126,26 @@ const LoginModal = () => {
       toast.error(error);
     }
   };
+
   return (
     <>
       <ToastContainer />
       {isAuthenticated === false ? (
         <a
-          className="block py-2 pr-4 pl-3 text-[#002B36] text-sm hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition cursor-pointer"
+          className="flex items-center py-2 px-3 text-sm font-semibold text-teal-900 hover:text-teal-600 transition-all duration-200 no-underline"
           onClick={() => setIsLoginModal(true)}
         >
-          <FontAwesomeIcon icon={faUser} /> Sign In
+          <FontAwesomeIcon icon={faUser} className="mr-2" />
+          Sign In
         </a>
       ) : (
         <div className="relative cursor-pointer">
           <div
             onClick={handleOpenMenu}
-            className="block py-2 pr-4 pl-3 text-sm text-[#002B36] hover:text-[#65CCB8] font-semibold hover:bg-[#C9EDE4] lg:hover:bg-transparent lg:border-0 lg:hover:text-primary-700 lg:p-0 transition"
+            className="flex items-center py-2 px-3 text-sm font-semibold text-teal-900 hover:text-teal-600 hover:bg-teal-50 lg:hover:bg-transparent transition-all duration-200 rounded-md no-underline"
           >
-            <FontAwesomeIcon icon={faUser} /> <span>User</span>
+            <FontAwesomeIcon icon={faUser} className="mr-2" />
+            <span>User</span>
           </div>
           {isOpenMenu && (
             <motion.div
@@ -151,16 +153,13 @@ const LoginModal = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="absolute right-0 mt-2 w-44 bg-[#dbf7f1] rounded-lg shadow-2xl text-left"
+              className="absolute right-0 mt-2 w-44 bg-teal-50 rounded-lg shadow-lg text-left"
             >
-              <ul
-                className="py-2 px-1 text-sm font-thin text-blue-700"
-                aria-labelledby="dropdownDefaultButton"
-              >
+              <ul className="py-2 px-1 text-sm font-medium text-teal-900">
                 <li>
                   <a
                     href={role}
-                    className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
+                    className="block px-4 py-2 hover:bg-teal-200 hover:text-teal-600 hover:rounded-sm no-underline"
                   >
                     Portal
                   </a>
@@ -168,7 +167,7 @@ const LoginModal = () => {
                 <li>
                   <a
                     href="#"
-                    className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
+                    className="block px-4 py-2 hover:bg-teal-200 hover:text-teal-600 hover:rounded-sm no-underline"
                   >
                     Profile
                   </a>
@@ -176,7 +175,7 @@ const LoginModal = () => {
                 <li>
                   <a
                     href="#"
-                    className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-sm"
+                    className="block px-4 py-2 hover:bg-teal-200 hover:text-teal-600 hover:rounded-sm no-underline"
                   >
                     Switch Account
                   </a>
@@ -184,7 +183,7 @@ const LoginModal = () => {
                 <li>
                   <a
                     href="#"
-                    className="block px-4 py-2 font-bold hover:bg-[#3B945E] hover:text-slate-50 hover:rounded-sm shadow-md"
+                    className="block px-4 py-2 hover:bg-teal-200 hover:text-teal-600 hover:rounded-sm no-underline"
                     onClick={handleLogout}
                   >
                     Sign out
@@ -202,111 +201,91 @@ const LoginModal = () => {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
         >
           <motion.div
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="relative p-4 w-full max-w-md max-h-full drop-shadow-lg"
+            className="relative p-6 w-full max-w-md bg-white rounded-lg shadow-xl"
+            ref={modalRef}
           >
-            <div ref={modalRef} className="relative bg-white rounded-lg">
-              <div className="flex items-center justify-between p-4 md:p-5">
-                <h3 className="text-xl font-bold text-blue-600 flex-grow text-center">
-                  Sign In
-                </h3>
-                <button
-                  type="button"
-                  className=" text-gray-400 border-none focus:ring-0 focus:outline-none hover:bg-gray-200 hover:text-gray-900 w-8 h-8 ms-auto inline-flex justify-center items-center"
-                  data-modal-hide="authentication-modal"
-                  onClick={() => setIsLoginModal(false)}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-teal-900">Sign In</h3>
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-teal-300"
+                onClick={() => setIsLoginModal(false)}
+              >
+                <svg
+                  className="w-4 h-4"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 14 14"
                 >
-                  <svg
-                    className="w-3 h-3"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 14 14"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
-                    />
-                  </svg>
-                  <span className="sr-only">Close modal</span>
-                </button>
-              </div>
-              <h5 className="text-xs font-light italic text-gray-400">
-                Please input your account information
-              </h5>
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+                  />
+                </svg>
+                <span className="sr-only">Close modal</span>
+              </button>
+            </div>
 
-              <div className="p-4 md:p-5">
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                  <div>
-                    <input
-                      type="text"
-                      className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
-                      placeholder="Username"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <hr className="h-px my-8 bg-gray-200 border-0"></hr>
-                  <div>
-                    <input
-                      type="password"
-                      name="password"
-                      id="password"
-                      placeholder="Password"
-                      className="bg-gray-100 text-gray-900 text-sm block w-full p-2.5 focus:outline-none"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                    <hr className="h-px my-8 bg-gray-200 border-0"></hr>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="flex items-start">
-                      <div className="flex items-center h-5">
-                        <input
-                          id="remember"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4"
-                        />
-                      </div>
-                      <label
-                        htmlFor="remember"
-                        className="ms-2 text-sm font-medium text-gray-400"
-                      >
-                        Remember me
-                      </label>
-                    </div>
-                    <a
-                      href="#"
-                      className="text-sm text-blue-400 hover:underline"
-                    >
-                      Lost Password?
-                    </a>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium text-sm px-5 py-2.5 text-center rounded-none shadow-md hover:shadow-lg transition-all duration-300"
-                  >
-                    Login
-                  </button>
-                </form>
-                <hr className="h-px my-5 bg-gray-200 border-0"></hr>
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
+            <div className="mb-6 flex justify-center relative">
+              <img
+                src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmJyMndqOG9sYjQ5ZmxiNW1uejhmbjdnNjg3eGg3MXl1eGx1M2xodiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JVmYAO3MkGNiM/giphy.gif"
+                alt="Welcome Animation"
+                className="w-full max-w-[400px] h-40 object-cover object-[50%_35%] transform transition-all duration-300"
+              />
+            </div>
+
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <input
+                  type="text"
+                  className="w-full p-3 bg-teal-50 text-teal-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300"
+                  placeholder="Username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
+              <div>
+                <input
+                  type="password"
+                  name="password"
+                  id="password"
+                  placeholder="Password"
+                  className="w-full p-3 bg-teal-50 text-teal-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-teal-600 text-white py-3 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-300 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+              >
+                Login
+              </button>
+            </form>
+
+            <div className="mt-6 flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                size="large"
+                theme="outline"
+                text="signin_with"
+                shape="pill" // Bo viền tròn hơn (thay vì rectangular)
+                className="py-3 hover:shadow-lg hover:scale-105 transition-all duration-200 border-teal-600 text-teal-900 font-semibold" // Tùy chỉnh thêm
+              />
             </div>
           </motion.div>
         </motion.div>

@@ -32,7 +32,6 @@ const apiService = {
         );
       }
     } catch (error) {
-      console.error("Error fetching user profile:", error);
       throw new Error("Failed to load user profile. Please try again later.");
     }
   },
@@ -79,7 +78,6 @@ const apiService = {
         );
       }
     } catch (error) {
-      console.error("Error fetching appointments:", error);
       throw error;
     }
   },
@@ -87,8 +85,6 @@ const apiService = {
   // Hủy appointment
   cancelAppointment: async (appointmentId) => {
     try {
-      console.log("Cancelling appointment with ID:", appointmentId);
-
       if (!appointmentId) {
         throw new Error("Appointment ID is undefined");
       }
@@ -141,10 +137,7 @@ const apiService = {
         );
       }
     } catch (error) {
-      console.error("Error fetching available slots:", error);
-      throw new Error(
-        "Failed to load available slots. Please try again later."
-      );
+      throw new Error();
     }
   },
 
