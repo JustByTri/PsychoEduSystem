@@ -66,6 +66,7 @@ const ChildSelector = ({ onChildSelected }) => {
     fetchChildren();
   }, [parentId, authData.accessToken]);
 
+  
   const handleSelectChild = (childId) => {
     console.log("Child selected:", childId);
     onChildSelected(childId);

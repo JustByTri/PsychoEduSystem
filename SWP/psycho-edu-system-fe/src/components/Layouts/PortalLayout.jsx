@@ -1,24 +1,31 @@
+import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../Header/Header";
 import SideBar from "../Navigation/SideBar";
 import Breadcrumbs from "../Breadcrumbs ";
+
 const PortalLayout = () => {
   return (
-    <div className="flex flex-col h-screen">
+    <div className="min-h-screen w-full bg-gray-100 flex flex-col font-sans text-sm">
       {/* Header */}
-      <Header />
+      <div className="w-full bg-white sticky-top top-0 z-20 flex items-center">
+        <Header />
+      </div>
 
-      {/* Main layout with Sidebar and Content */}
-      <div className="flex flex-1">
-        {/* Sidebar (Fixed height, no scrolling) */}
-        <div className="flex-shrink-0 h-full">
-          <SideBar />
-        </div>
+      {/* Main Content */}
+      <div className="flex flex-1 top-0 z-20 overflow-hidden">
+        {/* Sidebar */}
+        <SideBar />
 
-        {/* Outlet (Scrollable Content) */}
-        <div className="flex-1">
-          <Breadcrumbs />
-          <Outlet />
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col bg-gray-50 overflow-auto">
+          {/* <div className="bg-white p-4 border-b border-gray-200 top-0 z-20">
+            <Breadcrumbs />
+          </div> */}
+
+          <div className="flex-1 p-6 overflow-auto">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>

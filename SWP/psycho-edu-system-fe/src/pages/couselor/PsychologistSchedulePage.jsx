@@ -14,7 +14,7 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import axios from "axios";
+import apiService from "../../services/apiService"; // Import apiService
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import moment from "moment";
 import { Clock } from "lucide-react";
@@ -75,18 +75,8 @@ const PsychologistSchedulePage = () => {
       try {
         setIsLoading(true);
 
-        const profileResponse = await axios.get(
-          `https://localhost:7192/api/User/profile?userId=${teacherId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authData.accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (profileResponse.status === 200 && profileResponse.data.isSuccess) {
-          setUserProfile(profileResponse.data.result);
-        }
+        const profileData = await apiService.fetchUserProfile(); // Sử dụng apiService
+        setUserProfile(profileData);
 
         await Promise.all([
           fetchAppointments(selectedDate),
@@ -106,63 +96,43 @@ const PsychologistSchedulePage = () => {
   const fetchAppointments = async (date) => {
     try {
       const selectedDateStr = moment(date).format("YYYY-MM-DD");
-      const appointmentResponse = await axios.get(
-        `https://localhost:7192/api/appointments/consultants/${teacherId}/appointments?selectedDate=${selectedDateStr}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const appointments = await apiService.fetchConsultantAppointments(
+        teacherId,
+        selectedDateStr
+      ); // Sử dụng apiService
 
-      let appointments = [];
-      if (
-        appointmentResponse.status === 200 &&
-        appointmentResponse.data.isSuccess
-      ) {
-        appointments = appointmentResponse.data.result || [];
-        if (!Array.isArray(appointments)) {
-          setBookings([]);
-        } else {
-          const bookedSlots = appointments.map((appointment) => {
-            const startDateTime = moment(
-              `${moment(appointment.date, "DD/MM/YYYY").format(
-                "YYYY-MM-DD"
-              )} ${getTimeFromSlotId(appointment.slotId)}`,
-              "YYYY-MM-DD HH:mm"
-            ).toDate();
-            const endDateTime = moment(startDateTime)
-              .add(60, "minutes")
-              .toDate();
-
-            let title = `Meeting with ${
-              appointment.appointmentFor || "Student"
-            }`;
-            return {
-              id: appointment.appointmentId,
-              title: `${title} ${appointment.isOnline ? "Online" : "Offline"}`,
-              start: startDateTime,
-              end: endDateTime,
-              details: {
-                studentId: appointment.appointmentFor || "Unknown",
-                consultantId: appointment.meetingWith || teacherId,
-                bookedBy: appointment.bookedBy || "Unknown",
-                appointmentFor: appointment.appointmentFor || "Unknown",
-                date: moment(appointment.date, "DD/MM/YYYY").format(
-                  "YYYY-MM-DD"
-                ),
-                slotId: appointment.slotId,
-                meetingType: appointment.isOnline ? "Online" : "Offline",
-                isCompleted: appointment.isCompleted,
-                isCancelled: appointment.isCancelled,
-              },
-            };
-          });
-          setBookings(bookedSlots);
-        }
-      } else {
+      if (!Array.isArray(appointments)) {
         setBookings([]);
+      } else {
+        const bookedSlots = appointments.map((appointment) => {
+          const startDateTime = moment(
+            `${moment(appointment.date, "DD/MM/YYYY").format(
+              "YYYY-MM-DD"
+            )} ${getTimeFromSlotId(appointment.slotId)}`,
+            "YYYY-MM-DD HH:mm"
+          ).toDate();
+          const endDateTime = moment(startDateTime).add(60, "minutes").toDate();
+
+          let title = `Meeting with ${appointment.appointmentFor || "Student"}`;
+          return {
+            id: appointment.appointmentId,
+            title: `${title} ${appointment.isOnline ? "Online" : "Offline"}`,
+            start: startDateTime,
+            end: endDateTime,
+            details: {
+              studentId: appointment.appointmentFor || "Unknown",
+              consultantId: appointment.meetingWith || teacherId,
+              bookedBy: appointment.bookedBy || "Unknown",
+              appointmentFor: appointment.appointmentFor || "Unknown",
+              date: moment(appointment.date, "DD/MM/YYYY").format("YYYY-MM-DD"),
+              slotId: appointment.slotId,
+              meetingType: appointment.isOnline ? "Online" : "Offline",
+              isCompleted: appointment.isCompleted,
+              isCancelled: appointment.isCancelled,
+            },
+          };
+        });
+        setBookings(bookedSlots);
       }
     } catch (error) {
       setBookings([]);
@@ -172,51 +142,38 @@ const PsychologistSchedulePage = () => {
   const fetchSchedules = async (date) => {
     try {
       const selectedDateStr = moment(date).format("YYYY-MM-DD");
-      const scheduleResponse = await axios.get(
-        `https://localhost:7192/api/Schedule/user-schedules/${teacherId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const schedules = await apiService.fetchUserSchedules(teacherId); // Sử dụng apiService
 
-      if (scheduleResponse.status === 200) {
-        const schedules = scheduleResponse.data || [];
-        if (!Array.isArray(schedules)) {
-          setAvailableSlots([]);
-        } else {
-          const available = schedules
-            .filter((schedule) =>
-              moment(schedule.date).isSame(selectedDateStr, "day")
-            )
-            .map((schedule) => ({
-              id: schedule.scheduleId,
-              title: `Available Slot`,
-              start: moment(schedule.date)
-                .set({
-                  hour: parseInt(schedule.slotName.split(":")[0], 10),
-                  minute: 0,
-                })
-                .toDate(),
-              end: moment(schedule.date)
-                .set({
-                  hour: parseInt(schedule.slotName.split(":")[0], 10) + 1,
-                  minute: 0,
-                })
-                .toDate(),
-              details: {
-                slotId: schedule.slotId,
-                date: moment(schedule.date).format("YYYY-MM-DD"),
-                slotName: schedule.slotName,
-                createAt: schedule.createAt,
-              },
-            }));
-          setAvailableSlots(available);
-        }
-      } else {
+      if (!Array.isArray(schedules)) {
         setAvailableSlots([]);
+      } else {
+        const available = schedules
+          .filter((schedule) =>
+            moment(schedule.date).isSame(selectedDateStr, "day")
+          )
+          .map((schedule) => ({
+            id: schedule.scheduleId,
+            title: `Available Slot`,
+            start: moment(schedule.date)
+              .set({
+                hour: parseInt(schedule.slotName.split(":")[0], 10),
+                minute: 0,
+              })
+              .toDate(),
+            end: moment(schedule.date)
+              .set({
+                hour: parseInt(schedule.slotName.split(":")[0], 10) + 1,
+                minute: 0,
+              })
+              .toDate(),
+            details: {
+              slotId: schedule.slotId,
+              date: moment(schedule.date).format("YYYY-MM-DD"),
+              slotName: schedule.slotName,
+              createAt: schedule.createAt,
+            },
+          }));
+        setAvailableSlots(available);
       }
     } catch (error) {
       setAvailableSlots([]);
@@ -263,36 +220,26 @@ const PsychologistSchedulePage = () => {
 
     try {
       setIsLoading(true);
-      const response = await axios.get(
-        `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const message = await apiService.cancelAppointment(selectedEvent.id); // Sử dụng apiService
 
-      if (response.status === 200 && response.data.isSuccess) {
-        setBookings((prev) =>
-          prev.map((booking) =>
-            booking.id === selectedEvent.id
-              ? {
-                  ...booking,
-                  details: { ...booking.details, isCancelled: true },
-                }
-              : booking
-          )
-        );
-        setSelectedEvent((prev) => ({
-          ...prev,
-          details: { ...prev.details, isCancelled: true },
-        }));
-        setIsConfirmModalOpen(false);
-        setSelectedEventToCancel(null);
-        setSelectedEvent(null);
-        setIsSuccessModalOpen(true);
-      }
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === selectedEvent.id
+            ? {
+                ...booking,
+                details: { ...booking.details, isCancelled: true },
+              }
+            : booking
+        )
+      );
+      setSelectedEvent((prev) => ({
+        ...prev,
+        details: { ...prev.details, isCancelled: true },
+      }));
+      setIsConfirmModalOpen(false);
+      setSelectedEventToCancel(null);
+      setSelectedEvent(null);
+      setIsSuccessModalOpen(true);
     } catch (error) {
       // No toast here
     } finally {
