@@ -92,16 +92,19 @@ const SchedulePage = () => {
 
   const loadAppointments = async (date) => {
     if (!userProfile?.userId) return;
-    const formattedDate = format(date, "yyyy-MM-dd");
+    setIsLoading(true); // Thêm loading để debug dễ hơn
     try {
       const appointmentsData = await apiService.fetchAppointments(
         userProfile.userId,
-        formattedDate
+        date // Truyền trực tiếp date, định dạng sẽ xử lý trong apiService
       );
       setBookings(appointmentsData || []);
       setAppointmentViewKey((prev) => prev + 1);
     } catch (error) {
+      console.error("Failed to load appointments:", error);
       setBookings([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 

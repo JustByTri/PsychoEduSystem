@@ -1,5 +1,5 @@
 import axios from "axios";
-import { parseISO, startOfDay } from "date-fns";
+import { parseISO, startOfDay, format } from "date-fns";
 import { getAuthDataFromLocalStorage } from "../utils/auth";
 
 const API_BASE_URL = "https://localhost:7192/api";
@@ -89,8 +89,10 @@ const apiService = {
   // Lấy danh sách appointment của sinh viên
   fetchAppointments: async (userId, date) => {
     try {
+      // Đổi định dạng ngày sang yyyy-MM-dd để khớp với backend
+      const formattedDate = format(new Date(date), "yyyy-MM-dd");
       const response = await axios.get(
-        `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${date}`,
+        `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${formattedDate}`,
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -128,10 +130,10 @@ const apiService = {
         );
       }
     } catch (error) {
+      console.error("Error fetching appointments:", error);
       throw error;
     }
   },
-
   // Hủy appointment
   cancelAppointment: async (appointmentId) => {
     try {
