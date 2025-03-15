@@ -197,7 +197,7 @@ const CreateUserPage = () => {
               <option value="">Select Role</option>
               <option value="teacher">Teacher</option>
               <option value="parent">Parent</option>
-              <option value="counselor">Counselor</option>
+              <option value="counselor">Psychologist</option>
             </select>
             {errors.role && (
               <span className="block mt-2 text-xs bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent p-1 rounded">

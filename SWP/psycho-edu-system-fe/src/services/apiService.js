@@ -31,11 +31,10 @@ const apiService = {
         );
       }
     } catch (error) {
+      console.error("Error fetching user profile:", error);
       throw new Error("Failed to load user profile. Please try again later.");
     }
   },
-
-  // Các API khác giữ nguyên, thêm 2 API mới dưới đây
 
   // Kiểm tra sự tồn tại của user (dùng cho email và studentEmail)
   checkUserExistence: async (email) => {
