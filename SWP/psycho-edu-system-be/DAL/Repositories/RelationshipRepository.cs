@@ -11,6 +11,19 @@ namespace DAL.Repositories
 {
     public class RelationshipRepository : GenericRepository<Relationship>, IRelationshipRepository
     {
-        public RelationshipRepository(MindAidContext context) : base(context) { }
+        private readonly MindAidContext _context;
+
+        public RelationshipRepository(MindAidContext context) : base(context)
+        {
+            _context = context;
+        }
+
+        public async Task AddRangeAsync(IEnumerable<Relationship> relationships)
+        {
+            if (relationships == null || !relationships.Any())
+                return;
+
+            await _context.Set<Relationship>().AddRangeAsync(relationships);
+        }
     }
 }
