@@ -1,11 +1,18 @@
-/* eslint-disable no-unused-vars */
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { UserService } from "../../api/services/userService";
 import { useEffect, useState } from "react";
+import { UserService } from "../../api/services/userService";
 import { SurveyService } from "../../api/services/surveyService";
+import {
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Grid,
+} from "@mui/material";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -16,18 +23,34 @@ const Dashboard = () => {
     const fetchChildren = async () => {
       try {
         const childrenData = await UserService.getChildren();
-        setChildren(childrenData);
+        const childrenWithProfiles = await Promise.all(
+          childrenData.map(async (child) => {
+            try {
+              const profileResponse = await fetch(
+                `https://localhost:7192/api/User/profile?userId=${child.studentId}`
+              );
+              if (!profileResponse.ok) {
+                throw new Error("Failed to fetch profile");
+              }
+              const profileData = await profileResponse.json();
+              return { ...child, profile: profileData.result };
+            } catch (error) {
+              console.error("Error fetching child profile:", error);
+              return { ...child, profile: null };
+            }
+          })
+        );
+        setChildren(childrenWithProfiles);
       } catch (error) {
-        console.log(error);
-        toast.error("Lỗi khi tải danh sách trẻ!");
+        console.error(error);
+        toast.error("Error loading child list!");
       }
     };
-
     fetchChildren();
   }, []);
 
   const handleHelpClick = () => {
-    toast.success("Liên hệ hỗ trợ qua email hoặc hotline: 1900 123 456", {
+    toast.success("Contact support via email or hotline: 1900 123 456", {
       position: "top-right",
       duration: 4000,
     });
@@ -43,15 +66,14 @@ const Dashboard = () => {
             surveyStatus.surveys[0].surveyId
           );
           localStorage.setItem("questions", JSON.stringify(surveyData));
-          console.log("Survey data saved to localStorage ✅");
         }
         navigate(`/survey/${studentId}`);
       } else {
-        toast.info("Không có khảo sát nào khả dụng!");
+        toast.info("No available surveys!");
       }
     } catch (error) {
-      console.log(error);
-      toast.error("Lỗi khi kiểm tra trạng thái khảo sát!");
+      console.error(error);
+      toast.error("Error checking survey status!");
     } finally {
       setLoading(false);
     }
@@ -64,114 +86,103 @@ const Dashboard = () => {
   return (
     <div className="flex flex-col items-center min-h-screen p-10 bg-gray-50">
       <ToastContainer />
-      <motion.h1
-        className="text-4xl font-bold text-gray-900 mb-4"
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        Chọn bé để làm khảo sát
-      </motion.h1>
-
-      <motion.p
-        className="text-gray-700 text-lg text-center max-w-lg mb-8 leading-relaxed"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-      >
-        Hãy chọn một bé để bắt đầu khảo sát hoặc xem kết quả khảo sát trước đó.
-      </motion.p>
+        <Typography variant="h4" gutterBottom>
+          Select a child for the survey
+        </Typography>
+      </motion.div>
 
       <motion.div
-        className={`${
-          children.length === 1
-            ? "flex justify-center"
-            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 justify-center items-center"
-        }`}
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: { opacity: 0, y: 20 },
-          visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.2 } },
-        }}
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ staggerChildren: 0.2 }}
       >
         {children.map((child) => (
           <motion.div
             key={child.studentId}
-            className="p-6 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col items-center transition-transform hover:-translate-y-1"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="relative">
-              <img
-                src={
-                  child.image ||
-                  `https://i.pravatar.cc/150?img=${
-                    Math.floor(Math.random() * 70) + 1
-                  }`
-                }
-                alt={child.name}
-                className="w-24 h-24 object-cover rounded-full border-4 border-blue-400 shadow-md"
-              />
-              <div className="absolute inset-0 rounded-full border-2 border-white"></div>
-            </div>
-            <h2 className="text-lg font-medium text-gray-800 mt-4">
-              {child.relationshipName}
-            </h2>
+            <Card elevation={3} sx={{ p: 2, borderRadius: 2 }}>
+              <CardContent className="flex flex-col items-center text-center">
+                <img
+                  src={
+                    child.image ||
+                    `https://i.pravatar.cc/150?img=${
+                      Math.floor(Math.random() * 70) + 1
+                    }`
+                  }
+                  alt={child.profile?.fullName || "Unknown"}
+                  className="w-24 h-24 rounded-full border-4 border-blue-500 shadow-md mb-3"
+                />
+                <CardContent>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    color="primary"
+                    gutterBottom
+                  >
+                    {child.profile?.fullName || "No Name"}
+                  </Typography>
 
-            {/* Buttons for survey actions */}
-            <div className="mt-4 flex space-x-4">
-              <motion.button
-                onClick={() => handleTakeSurvey(child.studentId)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md text-sm font-medium hover:bg-blue-600 transition"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label={`Làm survey cho ${child.relationshipName}`}
-              >
-                Làm Survey
-              </motion.button>
+                  <Typography fontWeight="bold" color="primary" gutterBottom>
+                    📧 {child.profile?.email || "N/A"}
+                  </Typography>
 
-              <motion.button
-                onClick={() => handleViewSurveyResults(child.studentId)}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md text-sm font-medium hover:bg-green-600 transition"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label={`Xem kết quả survey của ${child.relationshipName}`}
-              >
-                Xem Kết Quả
-              </motion.button>
-            </div>
+                  <Grid container>
+                    <Grid item xs={12}>
+                      <Typography variant="body1" color="textSecondary">
+                        📞 {child.profile?.phone || "N/A"}
+                      </Typography>
+                      <Typography variant="body1" color="textSecondary">
+                        🎂 {child.profile?.birthDay || "N/A"}
+                      </Typography>
+                      <Typography variant="body1" color="textSecondary">
+                        🚻 {child.profile?.gender || "N/A"}
+                      </Typography>
+                      <Typography variant="body1" color="textSecondary">
+                        🏠 {child.profile?.address || "N/A"}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+
+                <div className="mt-3 flex space-x-3">
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleTakeSurvey(child.studentId)}
+                    disabled={loading}
+                  >
+                    {loading ? <CircularProgress size={20} /> : "Take Survey"}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={() => handleViewSurveyResults(child.studentId)}
+                  >
+                    View Results
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         ))}
       </motion.div>
 
-      {/* Footer Buttons */}
-      <motion.div
-        className="mt-12 flex space-x-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-      >
-        <motion.button
-          onClick={() => navigate("/")}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md text-lg font-medium hover:bg-blue-700 transition"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          aria-label="Quay lại trang chính"
-        >
-          Quay lại trang chính
-        </motion.button>
-
-        <motion.button
-          onClick={handleHelpClick}
-          className="px-6 py-3 bg-gray-600 text-white rounded-lg shadow-md text-lg font-medium hover:bg-gray-700 transition"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          aria-label="Trợ giúp"
-        >
-          Trợ giúp
-        </motion.button>
-      </motion.div>
+      <div className="mt-10 flex space-x-4">
+        <Button variant="outlined" onClick={() => navigate("/")}>
+          Back to Home
+        </Button>
+        <Button variant="outlined" color="secondary" onClick={handleHelpClick}>
+          Help
+        </Button>
+      </div>
     </div>
   );
 };

@@ -92,18 +92,6 @@ const SurveyResult = () => {
             borderRadius: 10,
             order: 2,
           },
-          {
-            type: "line",
-            label: "Average Score",
-            data: surveyResult.dimensions.map((dim) => dim.points),
-            borderColor: "#1976D2",
-            borderWidth: 2,
-            fill: false,
-            tension: 0.4,
-            pointBackgroundColor: "#1976D2",
-            pointRadius: 5,
-            order: 1,
-          },
         ],
       }
     : null;
