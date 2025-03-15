@@ -15,7 +15,6 @@ import SchedulePage from "./pages/student/SchedulePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SurveyList from "./pages/admin/survey/SurveyList";
 import SurveyDetail from "./pages/admin/survey/SurveyDetail";
-import CreateParentAccount from "./pages/admin/CreateParentAccount"; // Thêm import
 import RequireSurvey from "./components/Survey/RequireSurvey";
 import ParentDashboard from "./pages/parent/Dashboard";
 import ParentSurveyPage from "./pages/parent/SurveyPage";
@@ -33,6 +32,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Chat from "./pages/chat/Chat";
 import TargetPrograms from "./pages/admin/TargetPrograms";
+import CreateUserPage from "./pages/admin/CreateUserPage";
 
 function App() {
   return (
@@ -82,10 +82,7 @@ function App() {
               <Route path="survey" element={<SurveyList />} />
               <Route path="survey/:id" element={<SurveyDetail />} />
               <Route path="programs" element={<TargetPrograms />} />
-              <Route
-                path="create-parent"
-                element={<CreateParentAccount />}
-              />{" "}
+              <Route path="create-parent" element={<CreateUserPage />} />{" "}
               {/* Thêm route */}
             </Route>
           </Route>

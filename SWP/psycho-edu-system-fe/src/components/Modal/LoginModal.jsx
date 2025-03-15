@@ -241,7 +241,7 @@ const LoginModal = () => {
               <img
                 src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmJyMndqOG9sYjQ5ZmxiNW1uejhmbjdnNjg3eGg3MXl1eGx1M2xodiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JVmYAO3MkGNiM/giphy.gif"
                 alt="Welcome Animation"
-                className="w-full max-w-[400px] h-40 object-cover object-[50%_35%] transform transition-all duration-300"
+                className="w-full max-w-[400px] h-60 object-cover object-[30%_43%] transform transition-all duration-300"
               />
             </div>
 

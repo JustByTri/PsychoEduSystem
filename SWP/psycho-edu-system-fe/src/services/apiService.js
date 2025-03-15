@@ -1,4 +1,3 @@
-// api/apiService.js
 import axios from "axios";
 import { parseISO, startOfDay } from "date-fns";
 import { getAuthDataFromLocalStorage } from "../utils/auth";
@@ -36,6 +35,58 @@ const apiService = {
     }
   },
 
+  // Các API khác giữ nguyên, thêm 2 API mới dưới đây
+
+  // Kiểm tra sự tồn tại của user (dùng cho email và studentEmail)
+  checkUserExistence: async (email) => {
+    try {
+      if (!authData || !authData.accessToken) {
+        throw new Error("Authentication required. Please log in.");
+      }
+
+      const response = await axios.get(
+        `${API_BASE_URL}/User/check-existence?userName=dummy&email=${email}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data; // { message: "User does not exist" } hoặc khác
+    } catch (error) {
+      console.error("Error checking user existence:", error);
+      throw error;
+    }
+  },
+
+  // Tạo tài khoản mới
+  createUserAccount: async (userData) => {
+    try {
+      if (!authData || !authData.accessToken) {
+        throw new Error("Authentication required. Please log in.");
+      }
+
+      const response = await axios.post(
+        `${API_BASE_URL}/User/create-account`,
+        userData,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.data.message) {
+        return response.data; // { message: "Account created successfully." }
+      } else {
+        throw new Error("Failed to create account");
+      }
+    } catch (error) {
+      console.error("Error creating user account:", error);
+      throw error;
+    }
+  },
   // Lấy danh sách appointment của sinh viên
   fetchAppointments: async (userId, date) => {
     try {
