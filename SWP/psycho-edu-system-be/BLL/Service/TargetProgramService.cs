@@ -188,17 +188,16 @@ namespace BLL.Service
         {
             if (dto.ProgramId == null) throw new Exception("ProgramId is required");
 
-            var existingProgram = await _unitOfWork.TargetProgram.GetByIdAsync(dto.ProgramId.Value);
+            var existingProgram = await _unitOfWork.TargetProgram.GetByConditionAsync(p => p.ProgramId == dto.ProgramId);
+
             if (existingProgram == null) throw new Exception("Program not found");
 
             existingProgram.Name = dto.Name;
             existingProgram.Description = dto.Description;
-            existingProgram.StartDate = dto.StartDate;
             existingProgram.MinPoint = dto.MinPoint;
             existingProgram.Capacity = dto.Capacity;
             existingProgram.DimensionId = dto.DimensionId;
 
-            await _unitOfWork.TargetProgram.UpdateAsync(existingProgram);
             await _unitOfWork.SaveChangeAsync();
         }
         public async Task DeleteProgramAsync(Guid? programId)

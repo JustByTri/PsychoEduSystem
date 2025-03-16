@@ -87,32 +87,24 @@ namespace PsychoEduSystem.Controller
             }
         }
 
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateProgramAsync(Guid id, [FromBody] TargetProgramDTO programDto)
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateProgramAsync([FromBody] TargetProgramDTO programDto)
         {
             if (programDto == null)
             {
                 return BadRequest("Invalid program data.");
             }
 
-            var existingProgram = await _targetProgramService.GetProgramByIdAsync(id);
-            if (existingProgram == null)
+            try
             {
-                return NotFound("Program not found.");
+                await _targetProgramService.UpdateProgramAsync(programDto);
+                return Ok(new { Message = "Program updated successfully" });
             }
-
-            // Cập nhật thông tin từ DTO
-            existingProgram.Name = programDto.Name;
-            existingProgram.Description = programDto.Description;
-            existingProgram.StartDate = programDto.StartDate;
-            existingProgram.MinPoint = programDto.MinPoint;
-            existingProgram.Capacity = programDto.Capacity;
-
-            await _targetProgramService.UpdateProgramAsync(existingProgram);
-            return Ok(new { Message = "Program updated successfully", UpdatedProgram = programDto });
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "An error occurred while updating the program.", Details = ex.Message });
+            }
         }
-
-
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteProgramAsync(Guid id)
         {
