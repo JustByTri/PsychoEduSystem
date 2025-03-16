@@ -186,10 +186,35 @@ namespace BLL.Service
         }
         public async Task UpdateProgramAsync(TargetProgramDTO dto)
         {
-            if (dto.ProgramId == null) throw new Exception("ProgramId is required");
+            if (dto.ProgramId == null)
+                throw new Exception("ProgramId is required");
 
             var existingProgram = await _unitOfWork.TargetProgram.GetByIdAsync(dto.ProgramId.Value);
-            if (existingProgram == null) throw new Exception("Program not found");
+            if (existingProgram == null)
+                throw new Exception("Program not found");
+
+           
+            if (dto.CounselorId != Guid.Empty && dto.CounselorId != existingProgram.CounselorId)
+            {
+                var counselor = await _unitOfWork.User.GetByIdAsync(dto.CounselorId);
+                if (counselor == null || counselor.RoleId != 2)
+                    throw new Exception("Invalid counselor");
+
+            
+                TimeSpan startTime = dto.StartDate.TimeOfDay;
+                int slotNumber = GetSlotNumber(startTime);
+                var availableSlot = await _unitOfWork.Schedule.GetByConditionAsync(s =>
+                    s.SlotId == slotNumber &&
+                    DateOnly.FromDateTime(s.Date) == DateOnly.FromDateTime(dto.StartDate) &&
+                    s.UserId == counselor.UserId);
+
+                if (availableSlot == null)
+                    throw new Exception("Counselor has no available slots at this time");
+            }
+
+           
+            if (dto.Capacity < existingProgram.CurrentCapacity)
+                throw new Exception("New capacity cannot be less than current capacity");
 
             existingProgram.Name = dto.Name;
             existingProgram.Description = dto.Description;
@@ -197,6 +222,8 @@ namespace BLL.Service
             existingProgram.MinPoint = dto.MinPoint;
             existingProgram.Capacity = dto.Capacity;
             existingProgram.DimensionId = dto.DimensionId;
+            if (dto.CounselorId != Guid.Empty)
+                existingProgram.CounselorId = dto.CounselorId;
 
             await _unitOfWork.TargetProgram.UpdateAsync(existingProgram);
             await _unitOfWork.SaveChangeAsync();

@@ -91,25 +91,39 @@ namespace PsychoEduSystem.Controller
         public async Task<IActionResult> UpdateProgramAsync(Guid id, [FromBody] TargetProgramDTO programDto)
         {
             if (programDto == null)
-            {
                 return BadRequest("Invalid program data.");
-            }
 
-            var existingProgram = await _targetProgramService.GetProgramByIdAsync(id);
-            if (existingProgram == null)
+            if (id == Guid.Empty || programDto.ProgramId != id)
+                return BadRequest("Invalid program ID.");
+
+            try
             {
-                return NotFound("Program not found.");
+                var existingProgram = await _targetProgramService.GetProgramByIdAsync(id);
+                if (existingProgram == null)
+                    return NotFound("Program not found.");
+
+                await _targetProgramService.UpdateProgramAsync(programDto);
+
+                return Ok(new
+                {
+                    Message = "Program updated successfully",
+                    UpdatedProgram = new
+                    {
+                        programDto.ProgramId,
+                        programDto.Name,
+                        programDto.Description,
+                        programDto.StartDate,
+                        programDto.MinPoint,
+                        programDto.Capacity,
+                        programDto.DimensionId,
+                        programDto.CounselorId
+                    }
+                });
             }
-
-            // Cập nhật thông tin từ DTO
-            existingProgram.Name = programDto.Name;
-            existingProgram.Description = programDto.Description;
-            existingProgram.StartDate = programDto.StartDate;
-            existingProgram.MinPoint = programDto.MinPoint;
-            existingProgram.Capacity = programDto.Capacity;
-
-            await _targetProgramService.UpdateProgramAsync(existingProgram);
-            return Ok(new { Message = "Program updated successfully", UpdatedProgram = programDto });
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal Server Error: {ex.Message}");
+            }
         }
 
 
