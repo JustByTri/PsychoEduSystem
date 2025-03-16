@@ -135,13 +135,15 @@ const BookingPageContent = () => {
     setIsSubmitting(true);
     try {
       const appointmentData = {
-        bookedBy: userId,
-        appointmentFor: studentId,
+        bookedBy: userId, // Luôn là ID của người đăng nhập (Parent hoặc Student)
+        appointmentFor: studentId, // ID của student được đặt lịch
         meetingWith: bookingData.consultantId,
-        date: bookingData.date, // "YYYY-MM-DD" từ DateTimeSelection
+        date: bookingData.date,
         slotId: bookingData.slotId,
         isOnline: bookingData.appointmentType === "Online",
       };
+
+      console.log("Sending appointment data:", appointmentData); // Log để kiểm tra
 
       const response = await apiService.bookAppointment(appointmentData);
 

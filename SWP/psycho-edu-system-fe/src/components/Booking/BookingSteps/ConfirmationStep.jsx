@@ -8,6 +8,7 @@ import { Box, Typography, CircularProgress } from "@mui/material";
 export const ConfirmationStep = () => {
   const { bookingData } = useBooking();
   const [consultantDetails, setConsultantDetails] = useState(null);
+  const [bookedByDetails, setBookedByDetails] = useState(null); // Thêm state cho bookedBy
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -16,11 +17,9 @@ export const ConfirmationStep = () => {
   const fetchConsultantDetails = useCallback(async () => {
     if (!bookingData.consultantId) {
       setError("Consultant ID is missing.");
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
     try {
       const response = await axios.get(
         `https://localhost:7192/api/User/profile?userId=${bookingData.consultantId}`,
@@ -39,14 +38,43 @@ export const ConfirmationStep = () => {
       }
     } catch (err) {
       setError(`Error fetching consultant details: ${err.message}`);
-    } finally {
-      setIsLoading(false);
     }
   }, [bookingData.consultantId, authData.accessToken]);
 
+  const fetchBookedByDetails = useCallback(async () => {
+    if (!authData.userId) {
+      setError("User ID is missing from authentication data.");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `https://localhost:7192/api/User/profile?userId=${authData.userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.isSuccess && response.data.statusCode === 200) {
+        setBookedByDetails(response.data.result);
+      } else {
+        throw new Error("Failed to fetch bookedBy details.");
+      }
+    } catch (err) {
+      setError(`Error fetching bookedBy details: ${err.message}`);
+    }
+  }, [authData.userId, authData.accessToken]);
   useEffect(() => {
-    fetchConsultantDetails();
-  }, [fetchConsultantDetails]);
+    const fetchData = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchConsultantDetails(), fetchBookedByDetails()]);
+      setIsLoading(false);
+    };
+    fetchData();
+  }, [fetchConsultantDetails, fetchBookedByDetails]);
 
   if (isLoading) {
     return (
@@ -106,6 +134,35 @@ export const ConfirmationStep = () => {
                 : "Student Booking"}
             </Typography>
           </Box>
+
+          {/* Booked By Information */}
+          {bookedByDetails && (
+            <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <Typography
+                className="text-gray-600"
+                sx={{ fontFamily: "Inter, sans-serif" }}
+              >
+                Booked By:
+              </Typography>
+              <Box className="text-right">
+                <Typography
+                  className="font-medium text-gray-800"
+                  sx={{ fontFamily: "Inter, sans-serif" }}
+                >
+                  {bookedByDetails.fullName || "Unknown"} (
+                  {bookingData.userRole})
+                </Typography>
+                <Box className="text-sm text-gray-600 mt-1">
+                  <Typography sx={{ fontFamily: "Inter, sans-serif" }}>
+                    Phone: {bookedByDetails.phone || "N/A"}
+                  </Typography>
+                  <Typography sx={{ fontFamily: "Inter, sans-serif" }}>
+                    Email: {bookedByDetails.email || "N/A"}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          )}
 
           {/* Child Information (if parent) */}
           {bookingData.userRole === "Parent" && bookingData.childName && (
@@ -199,28 +256,9 @@ export const ConfirmationStep = () => {
               {bookingData.appointmentType || "Not specified"}
             </Typography>
           </Box>
-
-          {/* Additional Consultant Details (if available) */}
-          {consultantDetails && bookingData.consultantType === "homeroom" && (
-            <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <Typography
-                className="text-gray-600"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                Class:
-              </Typography>
-              <Typography
-                className="font-medium text-gray-800"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                {consultantDetails.className || "N/A"}
-              </Typography>
-            </Box>
-          )}
         </Box>
       </Box>
 
-      {/* Optional: Instructions */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
