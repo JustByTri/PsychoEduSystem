@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const AppointmentsCard = ({
   student,
@@ -14,58 +14,57 @@ const AppointmentsCard = ({
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      whileHover={{ scale: 1.02, boxShadow: "0 8px 16px rgba(0,0,0,0.05)" }}
       onDoubleClick={onViewDetail}
-      className="w-full max-w-[450px] mx-auto"
+      className="w-full h-[200px]" // Chiều cao cố định để vừa lưới 3 cột
     >
-      <div className="bg-white rounded-lg shadow-lg p-5 transform scale-100 transition-transform duration-300 hover:scale-[1.02]">
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 h-full flex flex-col justify-between">
         <div className="flex flex-col gap-2">
-          {/* Dòng 1: Student */}
+          {/* Student */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-lg font-semibold text-gray-600">Student</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-semibold text-gray-800">
-                {student}
-              </span>
-            </div>
+            <span className="text-[0.95rem] font-semibold text-gray-600 whitespace-nowrap">
+              Student
+            </span>
+            <span className="text-[0.95rem] font-semibold text-gray-800 truncate max-w-[70%]">
+              {student}
+            </span>
           </div>
 
-          {/* Dòng 2: Lesson (Psychologist) */}
+          {/* Psychologist */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-lg font-semibold text-gray-600">
+            <span className="text-[0.95rem] font-semibold text-gray-600 whitespace-nowrap">
               Psychologist
             </span>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-semibold text-gray-800">
-                {lesson}
-              </span>
-            </div>
+            <span className="text-[0.95rem] font-semibold text-gray-800 truncate max-w-[70%]">
+              {lesson}
+            </span>
           </div>
 
-          {/* Dòng 3: Date Time */}
+          {/* Date & Time */}
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 bg-gray-300 rounded-full"></span>
-            <span className="text-lg font-semibold text-gray-800">{date}</span>
-            <span className="text-lg text-gray-800">{timeRange}</span>
+            <span className="w-4 h-4 bg-gray-300 rounded-full flex-shrink-0"></span>
+            <span className="text-[0.9rem] font-semibold text-gray-800 truncate">
+              {date} | {timeRange}
+            </span>
           </div>
 
-          {/* Dòng 4: Status, Join, Cancel */}
+          {/* Status & Actions */}
           <div className="flex items-center justify-between gap-2">
             <span
-              className={`flex items-center gap-1 text-lg font-semibold ${
+              className={`flex items-center gap-2 text-[0.9rem] font-semibold ${
                 status === "Completed"
                   ? "text-green-500"
                   : status === "Canceled"
                   ? "text-red-500"
-                  : "text-yellow-500"
+                  : "text-yellow-500 animate-pulse"
               }`}
             >
               <span
-                className={`w-4 h-4 ${
+                className={`w-3 h-3 ${
                   status === "Completed"
                     ? "bg-green-500"
                     : status === "Canceled"
@@ -76,31 +75,34 @@ const AppointmentsCard = ({
               {status.toUpperCase()}
             </span>
             <div className="flex gap-2">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={onJoin}
-                className="text-base text-white bg-green-500 rounded px-5 py-2 hover:bg-green-600 transition-colors duration-200"
+                className="text-[0.875rem] text-white bg-green-500 rounded-lg px-3 py-1 hover:bg-green-600 transition-colors duration-200"
               >
                 Join
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={onCancel}
-                className="text-base text-white bg-red-500 rounded px-5 py-2 hover:bg-red-600 transition-colors duration-200"
+                className="text-[0.875rem] text-white bg-red-500 rounded-lg px-3 py-1 hover:bg-red-600 transition-colors duration-200"
               >
                 Cancel
-              </button>
+              </motion.button>
             </div>
           </div>
+        </div>
 
-          {/* Dòng 5: View detail */}
-          <div className="flex justify-end">
-            <a
-              href="#"
-              onClick={onViewDetail}
-              className="text-lg text-orange-500 hover:underline transition-colors duration-200"
-            >
-              View detail
-            </a>
-          </div>
+        {/* View Detail */}
+        <div className="flex justify-end">
+          <motion.a
+            whileHover={{ x: 5 }}
+            href="#"
+            onClick={onViewDetail}
+            className="text-[0.9rem] text-orange-500 hover:underline"
+          >
+            View detail
+          </motion.a>
         </div>
       </div>
     </motion.div>

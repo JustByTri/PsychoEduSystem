@@ -252,7 +252,7 @@ const SchedulePage = () => {
     >
       <CContainer
         fluid
-        className="max-w-[1440px] min-h-[100vh] mx-auto px-4 py-6 grid grid-rows-[auto_1fr] gap-6"
+        className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr]"
       >
         <div ref={calendarContainerRef} className="w-full">
           <CalendarHeader
@@ -279,7 +279,7 @@ const SchedulePage = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-[1rem]"
+              className="bg-red-100 border border-red-400 text-red-700 rounded mb-4 text-[1rem]"
             >
               <p>{errorMessage}</p>
             </motion.div>

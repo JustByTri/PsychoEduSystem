@@ -15,7 +15,7 @@ const AppointmentsList = ({
   selectedDate,
 }) => {
   const [appointmentsWithNames, setAppointmentsWithNames] = useState([]);
-  const userProfileCache = useRef({}); // Đảm bảo khai báo userProfileCache
+  const userProfileCache = useRef({});
 
   const getTimeFromSlotId = (slotId) => {
     const times = [
@@ -49,8 +49,6 @@ const AppointmentsList = ({
       if (!appointment.studentId) {
         throw new Error(`Invalid studentId: ${appointment.studentId}`);
       }
-
-      // Lấy thông tin sinh viên từ fetchUserProfile
       let studentProfile = userProfileCache.current[appointment.studentId];
       if (!studentProfile) {
         studentProfile = await apiService.fetchUserProfile(
@@ -58,27 +56,19 @@ const AppointmentsList = ({
         );
         userProfileCache.current[appointment.studentId] = studentProfile;
       }
-
-      // Sử dụng trực tiếp meetingWith làm tên của psychologist
       const psychologistName =
         appointment.meetingWith || "Unknown Psychologist";
-
       return {
         ...appointment,
         student:
-          studentProfile.fullName || studentProfile.name || "Unknown Student", // Ưu tiên fullName
-        lesson: psychologistName, // Sử dụng meetingWith làm tên
+          studentProfile.fullName || studentProfile.name || "Unknown Student",
+        lesson: psychologistName,
       };
     } catch (error) {
-      console.error("Error fetching names for appointment:", {
-        studentId: appointment.studentId,
-        meetingWith: appointment.meetingWith,
-        error: error.message,
-      });
       return {
         ...appointment,
         student: "Unknown Student",
-        lesson: appointment.meetingWith || "Unknown Psychologist", // Fallback nếu có lỗi
+        lesson: appointment.meetingWith || "Unknown Psychologist",
       };
     }
   };
@@ -94,54 +84,64 @@ const AppointmentsList = ({
   }, [filteredAppointments]);
 
   return (
-    <div className="appointments-container">
-      {isLoading ? (
-        <div className="flex justify-center items-center min-h-[200px]">
-          <CSpinner color="primary" />
-        </div>
-      ) : filteredAppointments.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <AnimatePresence>
-            {appointmentsWithNames.map((appointment, index) => (
-              <AppointmentsCard
-                key={appointment.id}
-                student={appointment.student}
-                lesson={appointment.lesson}
-                date={format(appointment.date, "EEE, dd-MM-yyyy")}
-                timeRange={
-                  calculateTimeRange(appointment.slot) ||
-                  appointment.time ||
-                  "Unknown"
-                }
-                status={
-                  appointment.isCancelled
-                    ? "Canceled"
-                    : appointment.isCompleted
-                    ? "Completed"
-                    : "Not Yet"
-                }
-                onJoin={() => handleChat(appointment.id)}
-                onCancel={() =>
-                  handleCancelAppointment(appointment.appointmentId)
-                }
-                onViewDetail={() => handleViewDetail(appointment)}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <h5 className="text-blue-600 text-[clamp(16px,2vw,18px)]">
-            No appointments for {format(selectedDate, "EEEE, MM/dd/yyyy")}
-          </h5>
-          <button
-            onClick={handleNavigate}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-[clamp(14px,1.5vw,16px)]"
+    <div className="appointments-container h-full overflow-hidden flex flex-col bg-gray-50">
+      {/* Nội dung chính */}
+      <div className="flex-1 flex flex-col">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <CSpinner color="primary" />
+          </div>
+        ) : filteredAppointments.length > 0 ? (
+          <motion.div
+            className="flex-1 px-6 py-6 grid grid-cols-3 gap-6 max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            Schedule a New Appointment
-          </button>
-        </div>
-      )}
+            <AnimatePresence>
+              {appointmentsWithNames.map((appointment) => (
+                <AppointmentsCard
+                  key={appointment.id}
+                  student={appointment.student}
+                  lesson={appointment.lesson}
+                  date={format(appointment.date, "EEE, dd-MM-yyyy")}
+                  timeRange={
+                    calculateTimeRange(appointment.slot) ||
+                    appointment.time ||
+                    "Unknown"
+                  }
+                  status={
+                    appointment.isCancelled
+                      ? "Canceled"
+                      : appointment.isCompleted
+                      ? "Completed"
+                      : "Not Yet"
+                  }
+                  onJoin={() => handleChat(appointment.id)}
+                  onCancel={() =>
+                    handleCancelAppointment(appointment.appointmentId)
+                  }
+                  onViewDetail={() => handleViewDetail(appointment)}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        ) : (
+          <div className="flex-1 flex flex-col justify-center items-center text-center px-6">
+            <h5 className="text-gray-600 text-[1.125rem] mb-4">
+              No appointments scheduled
+            </h5>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleNavigate}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-[1rem] shadow-md"
+            >
+              Schedule a New Appointment
+            </motion.button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

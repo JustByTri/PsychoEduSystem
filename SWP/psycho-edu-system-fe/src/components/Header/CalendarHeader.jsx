@@ -44,7 +44,7 @@ const CalendarHeader = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-4 mb-6 shadow-lg"
+      className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-4 mb-6"
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-4 md:space-y-0">
         <h1 className="text-white text-2xl font-medium">Your Schedule</h1>
