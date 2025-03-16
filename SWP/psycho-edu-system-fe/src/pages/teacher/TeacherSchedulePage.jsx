@@ -20,6 +20,7 @@ import moment from "moment";
 import { Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import FeedbackForm from "../../components/Modal/FeedbackForm";
 
 const TeacherSchedulePage = () => {
   const [bookings, setBookings] = useState([]);
@@ -148,6 +149,7 @@ const TeacherSchedulePage = () => {
                 studentId: appointment.appointmentFor || "Unknown",
                 consultantId: appointment.meetingWith || teacherId,
                 bookedBy: appointment.bookedBy || "Unknown",
+                notes: appointment.notes,
                 appointmentFor: appointment.appointmentFor || "Unknown",
                 date: moment(appointment.date, "DD/MM/YYYY").format(
                   "YYYY-MM-DD"
@@ -861,26 +863,26 @@ const TeacherSchedulePage = () => {
                 </Box>
               ))}
             </Box>
+            <FeedbackForm appointment={selectedEvent} role={authData.role} />
           </DialogContent>
           <DialogActions sx={{ p: 3, justifyContent: "space-between" }}>
-            {selectedEvent.details.studentId &&
-              !selectedEvent.details.isCancelled && (
-                <Button
-                  onClick={() => openConfirmModal(selectedEvent)}
-                  variant="contained"
-                  color="error"
-                  sx={{
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: "0.95rem",
-                    textTransform: "none",
-                    px: 4,
-                    py: 1,
-                    minWidth: 120,
-                  }}
-                >
-                  Cancel Appointment
-                </Button>
-              )}
+            {!selectedEvent.details.isCancelled && (
+              <Button
+                onClick={() => openConfirmModal(selectedEvent)}
+                variant="contained"
+                color="error"
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: "0.95rem",
+                  textTransform: "none",
+                  px: 4,
+                  py: 1,
+                  minWidth: 120,
+                }}
+              >
+                Cancel Appointment
+              </Button>
+            )}
             <Button
               onClick={closeModal}
               variant="outlined"

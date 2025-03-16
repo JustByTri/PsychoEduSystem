@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
+import FeedbackForm from "./FeedbackForm";
 
 const AppointmentDetailModal = ({
   isOpen,
@@ -17,7 +18,7 @@ const AppointmentDetailModal = ({
   const [counselorDetails, setCounselorDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [role, setRole] = useState(null);
   useEffect(() => {
     const fetchAllDetails = async () => {
       if (!appointment || !isOpen) return;
@@ -27,7 +28,7 @@ const AppointmentDetailModal = ({
         const authData = getAuthDataFromLocalStorage();
         const studentId =
           appointment.studentId || appointment.student || appointment.id;
-
+        setRole(authData.role);
         if (
           !studentId ||
           typeof studentId !== "string" ||
@@ -487,6 +488,8 @@ const AppointmentDetailModal = ({
                       </p>
                     </div>
                   </div>
+
+                  <FeedbackForm appointment={appointment} role={role} />
                 </div>
               </>
             )}
@@ -494,27 +497,32 @@ const AppointmentDetailModal = ({
 
           {/* Footer đẩy xuống dưới */}
           <div className="flex justify-end gap-4 mt-auto border-t border-gray-300 pt-4">
-            <motion.button
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
-              onClick={() => {
-                console.log("Join clicked for appointment ID:", appointment.id);
-                handleChat(appointment.id);
-              }}
-              disabled={
-                appointment.status === "Completed" ||
-                appointment.status === "Cancelled"
-              }
-              className={`${
-                appointment.status === "Completed" ||
-                appointment.status === "Cancelled"
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600"
-              } text-white font-bold rounded-full shadow-md transition-all duration-200 w-[150px] h-12 flex items-center justify-center text-[clamp(14px,1.5vw,16px)] truncate`}
-            >
-              Join
-            </motion.button>
+            {appointment.type === "Online" && (
+              <motion.button
+                variants={buttonVariants}
+                whileHover="hover"
+                whileTap="tap"
+                onClick={() => {
+                  console.log(
+                    "Join clicked for appointment ID:",
+                    appointment.id
+                  );
+                  handleChat(appointment.id);
+                }}
+                disabled={
+                  appointment.status === "Completed" ||
+                  appointment.status === "Cancelled"
+                }
+                className={`${
+                  appointment.status === "Completed" ||
+                  appointment.status === "Cancelled"
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600"
+                } text-white font-bold rounded-full shadow-md transition-all duration-200 w-[150px] h-12 flex items-center justify-center text-[clamp(14px,1.5vw,16px)] truncate`}
+              >
+                Join
+              </motion.button>
+            )}
             <motion.a
               variants={buttonVariants}
               whileHover="hover"
@@ -530,26 +538,27 @@ const AppointmentDetailModal = ({
             >
               G-Meet
             </motion.a>
-            <motion.button
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
-              onClick={() => {
-                console.log(
-                  "Cancel clicked for appointment ID:",
-                  appointment.appointmentId
-                );
-                handleCancel();
-              }}
-              disabled={appointment.status === "Cancelled"}
-              className={`${
-                appointment.status === "Cancelled"
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-red-500 hover:bg-red-600"
-              } text-white font-bold rounded-full shadow-md transition-all duration-200 w-[150px] h-12 flex items-center justify-center text-[clamp(14px,1.5vw,16px)] truncate`}
-            >
-              Cancel
-            </motion.button>
+            {appointment.status === "Scheduled" && (
+              <motion.button
+                variants={buttonVariants}
+                whileHover="hover"
+                whileTap="tap"
+                onClick={() => {
+                  console.log(
+                    "Cancel clicked for appointment ID:",
+                    appointment.appointmentId
+                  );
+                  handleCancel();
+                }}
+                className={`${
+                  appointment.status === "Cancelled"
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-red-500 hover:bg-red-600"
+                } text-white font-bold rounded-full shadow-md transition-all duration-200 w-[150px] h-12 flex items-center justify-center text-[clamp(14px,1.5vw,16px)] truncate`}
+              >
+                Cancel
+              </motion.button>
+            )}
           </div>
         </div>
       </motion.div>

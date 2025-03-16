@@ -25,13 +25,13 @@ const UserProfilePage = () => {
     }
 
     setRole(authData.role);
-    fetchProfile();
+    fetchProfile(authData.userId);
   }, []);
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (id) => {
     setLoading(true);
     try {
-      const userProfile = await apiService.fetchUserProfile();
+      const userProfile = await apiService.fetchUserProfile(id);
       setProfile(userProfile);
       setFormData(userProfile);
     } catch (error) {

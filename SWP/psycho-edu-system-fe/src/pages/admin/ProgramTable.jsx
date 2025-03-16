@@ -50,6 +50,9 @@ const ProgramTable = ({ programs, loading, error, onSelectProgram }) => {
                   Min Score
                 </TableCell>
                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                  Dimension
+                </TableCell>
+                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
                   Capacity
                 </TableCell>
                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>
@@ -69,6 +72,7 @@ const ProgramTable = ({ programs, loading, error, onSelectProgram }) => {
                   <TableCell>{program.day}</TableCell>
                   <TableCell>{program.time}</TableCell>
                   <TableCell>{program.minPoint}</TableCell>
+                  <TableCell>{program.dimensionName}</TableCell>
                   <TableCell>
                     {program.currentCapacity}/{program.capacity}
                   </TableCell>
