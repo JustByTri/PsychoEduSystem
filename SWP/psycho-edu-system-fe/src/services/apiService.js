@@ -7,14 +7,14 @@ const authData = getAuthDataFromLocalStorage();
 
 const apiService = {
   // Lấy profile người dùng
-  fetchUserProfile: async () => {
+  fetchUserProfile: async (userId) => {
     try {
-      if (!authData || !authData.accessToken || !authData.userId) {
+      if (!authData || !authData.accessToken) {
         throw new Error("Authentication data not found. Please log in.");
       }
 
       const profileResponse = await axios.get(
-        `${API_BASE_URL}/User/profile?userId=${authData.userId}`,
+        `${API_BASE_URL}/User/profile?userId=${userId}`,
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -24,7 +24,7 @@ const apiService = {
       );
 
       if (profileResponse.data.isSuccess) {
-        return { ...profileResponse.data.result, userId: authData.userId };
+        return { ...profileResponse.data.result, userId };
       } else {
         throw new Error(
           profileResponse.data.message || "Failed to get user profile"
@@ -89,7 +89,6 @@ const apiService = {
   // Lấy danh sách appointment của sinh viên
   fetchAppointments: async (userId, date) => {
     try {
-      // Đổi định dạng ngày sang yyyy-MM-dd để khớp với backend
       const formattedDate = format(new Date(date), "yyyy-MM-dd");
       const response = await axios.get(
         `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${formattedDate}`,
@@ -100,6 +99,7 @@ const apiService = {
           },
         }
       );
+      console.log("fetchAppointments response:", response.data);
       if (response.data.isSuccess) {
         return response.data.result.map((appointment) => {
           const parsedDate = parseISO(
@@ -108,7 +108,7 @@ const apiService = {
           const localDate = startOfDay(parsedDate);
           return {
             id: appointment.appointmentId,
-            studentId: userId,
+            studentId: appointment.studentId || userId,
             student: appointment.appointmentFor || "Unknown Student",
             consultant: appointment.meetingWith || "Unknown Consultant",
             type: appointment.isOnline ? "Online" : "Offline",
@@ -122,6 +122,7 @@ const apiService = {
             appointmentId: appointment.appointmentId,
             isCancelled: appointment.isCancelled || false,
             googleMeetURL: appointment.googleMeetURL || null,
+            meetingWith: appointment.meetingWith,
           };
         });
       } else {

@@ -17,6 +17,7 @@ import AppointmentDetailModal from "../../components/Modal/AppointmentDetailModa
 import ConfirmModal from "../../components/Modal/ConfirmModal";
 import AppointmentsList from "../../components/StudentSchedule/AppointmentsList";
 import { motion } from "framer-motion";
+import { getAuthDataFromLocalStorage } from "../../utils/auth"; // Đảm bảo import đúng
 
 // CSS toàn cục để cố định font và box-sizing
 const globalStyles = `
@@ -82,7 +83,13 @@ const SchedulePage = () => {
 
   const loadUserProfile = async () => {
     try {
-      const profile = await apiService.fetchUserProfile();
+      const authData = getAuthDataFromLocalStorage();
+      if (!authData || !authData.userId) {
+        throw new Error("Authentication data not found. Please log in.");
+      }
+      console.log("Auth data in loadUserProfile:", authData);
+      const profile = await apiService.fetchUserProfile(authData.userId);
+      console.log("Loaded user profile:", profile);
       setUserProfile(profile);
     } catch (error) {
       console.error("Failed to load user:", error);
@@ -92,11 +99,11 @@ const SchedulePage = () => {
 
   const loadAppointments = async (date) => {
     if (!userProfile?.userId) return;
-    setIsLoading(true); // Thêm loading để debug dễ hơn
+    setIsLoading(true);
     try {
       const appointmentsData = await apiService.fetchAppointments(
         userProfile.userId,
-        date // Truyền trực tiếp date, định dạng sẽ xử lý trong apiService
+        date
       );
       setBookings(appointmentsData || []);
       setAppointmentViewKey((prev) => prev + 1);
@@ -216,30 +223,37 @@ const SchedulePage = () => {
   }, []);
 
   useEffect(() => {
-    if (userProfile?.userId) loadAppointments(selectedDate);
-  }, [selectedDate, userProfile]);
-
-  useEffect(() => {
     const initializeData = async () => {
       setIsLoading(true);
-      await loadUserProfile();
-      setIsLoading(false);
+      try {
+        await loadUserProfile();
+      } catch (error) {
+        console.error("Failed to initialize data:", error);
+        setErrorMessage("Failed to load user profile. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
     };
     initializeData();
   }, []);
+
+  useEffect(() => {
+    if (userProfile?.userId) {
+      loadAppointments(selectedDate);
+    }
+  }, [userProfile, selectedDate]);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="w-full min-h-screen bg-gradient-to-br white flex items-center justify-center" // Thay h-screen bằng min-h-screen
+      className="w-full min-h-screen bg-gradient-to-br white flex items-center justify-center"
     >
       <CContainer
         fluid
-        className="max-w-[1440px] min-h-[100vh] mx-auto px-4 py-6 grid grid-rows-[auto_1fr] gap-6" // Thay h-[95vh] bằng min-h-[100vh], điều chỉnh grid
+        className="max-w-[1440px] min-h-[100vh] mx-auto px-4 py-6 grid grid-rows-[auto_1fr] gap-6"
       >
-        {/* CalendarHeader */}
         <div ref={calendarContainerRef} className="w-full">
           <CalendarHeader
             currentDate={currentDate}
@@ -260,10 +274,7 @@ const SchedulePage = () => {
           />
         </div>
 
-        {/* Nội dung chính */}
         <div className="w-full flex-1 flex flex-col">
-          {" "}
-          {/* Loại bỏ overflow-hidden và h-full */}
           {errorMessage && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -273,39 +284,29 @@ const SchedulePage = () => {
               <p>{errorMessage}</p>
             </motion.div>
           )}
-          {isLoading ? (
-            <div className="flex justify-center items-center flex-1">
-              <div className="w-full max-w-md space-y-2">
-                <div className="h-4 bg-gray-300 rounded animate-shimmer" />
-                <div className="h-4 bg-gray-300 rounded animate-shimmer" />
-                <div className="h-4 bg-gray-300 rounded animate-shimmer" />
-              </div>
-            </div>
-          ) : (
-            <motion.div
-              key={appointmentViewKey}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="flex-1" // Loại bỏ overflow-y-auto
-            >
-              <AppointmentsList
-                isLoading={false}
-                filteredAppointments={
-                  filterStatus === "All"
-                    ? bookings
-                    : bookings.filter(
-                        (booking) => booking.status === filterStatus
-                      )
-                }
-                handleViewDetail={handleViewDetail}
-                handleCancelAppointment={handleCancelAppointment}
-                handleChat={handleChat}
-                handleNavigate={handleNavigate}
-                selectedDate={selectedDate}
-              />
-            </motion.div>
-          )}
+          <motion.div
+            key={appointmentViewKey}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1"
+          >
+            <AppointmentsList
+              isLoading={isLoading}
+              filteredAppointments={
+                filterStatus === "All"
+                  ? bookings
+                  : bookings.filter(
+                      (booking) => booking.status === filterStatus
+                    )
+              }
+              handleViewDetail={handleViewDetail}
+              handleCancelAppointment={handleCancelAppointment}
+              handleChat={handleChat}
+              handleNavigate={handleNavigate}
+              selectedDate={selectedDate}
+            />
+          </motion.div>
         </div>
 
         <ConfirmModal
