@@ -9,6 +9,7 @@ import ProgramDialog from "./ProgramDialog";
 import ProgramTable from "./ProgramTable";
 import FilterForms from "./FiltersForm";
 import CreateProgramDialog from "./CreateProgramDialog";
+import { toast } from "react-toastify";
 const TargetPrograms = () => {
   const { user } = useContext(AuthContext) || {};
   const [programs, setPrograms] = useState([]);
@@ -70,6 +71,44 @@ const TargetPrograms = () => {
   const applyFilters = () => {
     setFilters(tempFilters);
   };
+  const onUpdateProgram = async (updatedProgram) => {
+    const updatedProgramPayload = {
+      programId: updatedProgram.programId,
+      name: updatedProgram.name,
+      description: updatedProgram.description,
+      minPoint: updatedProgram.minPoint,
+      capacity: updatedProgram.capacity,
+      dimensionId:
+        updatedProgram.dimensionName === "Lo Âu"
+          ? 1
+          : updatedProgram.dimensionName === "Trầm Cảm"
+          ? 2
+          : updatedProgram.dimensionName === "Căng Thẳng"
+          ? 3
+          : updatedProgram.dimensionId,
+    };
+    console.log(updatedProgramPayload);
+    try {
+      const response = await fetch(
+        "https://localhost:7192/api/TargetProgram/update",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedProgramPayload),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.Error || "Failed to update the program.");
+      }
+      toast.success("Program updated successfully");
+      loadPrograms();
+    } catch (error) {
+      toast.error("Error updating program: " + error.message);
+    }
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -86,12 +125,6 @@ const TargetPrograms = () => {
             >
               Create
             </Button>
-            <Button variant="contained" color="secondary" onClick={() => {}}>
-              Update
-            </Button>
-            <Button variant="contained" color="error" onClick={() => {}}>
-              Delete
-            </Button>
           </div>
         )}
         <FilterForms
@@ -102,7 +135,9 @@ const TargetPrograms = () => {
         <ProgramTable
           programs={programs}
           loading={loading}
+          role={user.role}
           error={error}
+          onUpdateProgram={onUpdateProgram}
           onSelectProgram={setSelectedProgram}
         />
         <ProgramDialog
