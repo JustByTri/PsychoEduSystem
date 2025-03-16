@@ -80,5 +80,22 @@ namespace PsychoEduSystem.Controller
 
             return Ok(response);
         }
+        [HttpPost("{appointmentId}/feedback")]
+        public async Task<IActionResult> GiveFeedback(Guid appointmentId, [FromBody] FeedbackRequestDTO request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Notes))
+            {
+                return BadRequest(new ResponseDTO("Feedback notes cannot be empty", 400, false, string.Empty));
+            }
+
+            var result = await _appointmentService.GiveFeedbackAsync(appointmentId, request.Notes);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode, result);
+            }
+
+            return Ok(result);
+        }
     }
 }

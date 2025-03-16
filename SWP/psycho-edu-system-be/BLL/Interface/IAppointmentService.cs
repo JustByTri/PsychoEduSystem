@@ -14,5 +14,6 @@ namespace BLL.Interface
         Task<ResponseDTO> GetAppointmentFromRangeAsyncForConsultant(Guid consultantId, DateOnly selectedDate);
         Task<ResponseDTO> CancelAppointmentAsync(Guid AppointmentId);
         Task<ResponseDTO> DeleteAppointmentAsync();
+        Task<ResponseDTO> GiveFeedbackAsync(Guid appointmentId, string notes);
     }
 }

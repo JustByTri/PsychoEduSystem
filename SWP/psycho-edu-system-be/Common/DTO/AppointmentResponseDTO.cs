@@ -10,6 +10,7 @@ namespace Common.DTO
     {
         public Guid AppointmentId { get; set; }
         public int SlotId { get; set; }
+        public string Notes { get; set; }
         public string GoogleMeetURL { get; set; } = string.Empty;
         public string MeetingWith { get; set; } = string.Empty;
         public string BookedBy { get; set; } = string.Empty;

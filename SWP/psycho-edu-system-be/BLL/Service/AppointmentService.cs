@@ -118,6 +118,7 @@ namespace BLL.Service
                     GoogleMeetURL = GetNameByUserId(a.MeetingWith).Item2,
                     BookedBy = GetNameByUserId(a.BookedBy).Item1,
                     Date = a.Date.ToString("d", cultureInfo),
+                    Notes = a.Notes,
                     SlotId = a.SlotId,
                     IsOnline = a.IsOnline,
                     IsCancelled = a.IsCanceled,
@@ -160,6 +161,7 @@ namespace BLL.Service
                     GoogleMeetURL = GetNameByUserId(a.MeetingWith).Item2,
                     BookedBy = GetNameByUserId(a.BookedBy).Item1,
                     Date = a.Date.ToString("d", cultureInfo),
+                    Notes = a.Notes,
                     SlotId = a.SlotId,
                     IsOnline = a.IsOnline,
                     IsCancelled = a.IsCanceled,
@@ -210,6 +212,27 @@ namespace BLL.Service
                 
 
                 return new ResponseDTO("Appointment cancelled successfully", 200, true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"An error occurred: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GiveFeedbackAsync(Guid appointmentId, string notes)
+        {
+            try
+            {
+                var selectedAppointment = await _unitOfWork.Appointment.GetByIdAsync(appointmentId);
+
+                if (selectedAppointment == null) return new ResponseDTO("Appointment not found", 400, false, string.Empty);
+
+                if (selectedAppointment.IsCanceled == true) return new ResponseDTO("Appointment has been cancelled", 400, false, string.Empty);
+
+                selectedAppointment.Notes = notes;
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO("Update the feedback success", 400, false, string.Empty);
             }
             catch (Exception ex)
             {

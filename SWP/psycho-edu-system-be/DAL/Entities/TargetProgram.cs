@@ -17,13 +17,10 @@ namespace DAL.Entities
         public string Description { get; set; }
         public DateTime StartDate { get; set; }
         public int MinPoint { get; set; }
+        public int CurrentCapacity { get; set; }
         public int Capacity { get; set; }
-        //public Guid CreatedBy { get; set; }
         public DateTime CreateAt { get; set; }
-        // Khóa ngoại liên kết với DimensionHealth
         public int DimensionId { get; set; }
-
-        // Navigation property để lấy thông tin DimensionName
         public DimensionHealth Dimension { get; set; }
     }
 }
