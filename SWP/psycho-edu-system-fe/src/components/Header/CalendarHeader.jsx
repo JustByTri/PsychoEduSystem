@@ -1,9 +1,9 @@
 import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format, addDays, isSameDay } from "date-fns";
+import { format, addDays, isSameDay, setMonth, startOfDay } from "date-fns";
 
 const CalendarHeader = ({
-  currentDate,
+  currentMonth,
   selectedDate,
   setSelectedDate,
   allDays,
@@ -14,6 +14,8 @@ const CalendarHeader = ({
   handleNext,
   handleSelectDate,
   getVisibleDays,
+  handleNextMonth, // Không cần nữa nhưng giữ prop cho tương thích
+  handlePrevMonth, // Không cần nữa nhưng giữ prop cho tương thích
 }) => {
   const calendarContainerRef = useRef(null);
 
@@ -39,6 +41,40 @@ const CalendarHeader = ({
       },
     }),
   };
+
+  // Danh sách 12 tháng
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // Xử lý khi chọn tháng
+  const handleMonthChange = (e) => {
+    const selectedMonthIndex = parseInt(e.target.value, 10);
+    const currentDate = new Date(); // Ngày hiện tại
+    let newDate;
+
+    // Nếu tháng được chọn là tháng hiện tại, đặt ngày thành hôm nay
+    if (selectedMonthIndex === currentDate.getMonth()) {
+      newDate = startOfDay(currentDate);
+    } else {
+      // Nếu không, đặt ngày thành ngày đầu tháng được chọn
+      newDate = setMonth(currentMonth, selectedMonthIndex);
+    }
+
+    handleSelectDate(newDate); // Cập nhật selectedDate và gọi loadAppointments từ SchedulePage
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -49,12 +85,11 @@ const CalendarHeader = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-4 md:space-y-0">
         <h1 className="text-white text-2xl font-medium">Your Schedule</h1>
         <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-3">
+          {/* Dropdown filter status */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           >
             <select
               value={filterStatus}
@@ -74,19 +109,23 @@ const CalendarHeader = ({
               <option value="Cancelled">Cancelled</option>
             </select>
           </motion.div>
-          <span className="text-blue-100 text-sm min-w-[190px] text-center">
+
+          {/* Ngày được chọn */}
+          <span className="text-blue-100 text-lg min-w-[200px] text-center">
             {format(selectedDate, "EEEE, MM/dd/yyyy")}
           </span>
+
+          {/* Nút ngày và dropdown tháng */}
           <div className="flex items-center space-x-2">
+            {/* Nút chuyển ngày trước */}
             <button
-              className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-md"
+              className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white transition-colors duration-200 shadow-md"
               onClick={handlePrev}
-              disabled={isSameDay(selectedDate, currentDate)}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="12"
+                height="12"
                 fill="currentColor"
                 viewBox="0 0 16 16"
               >
@@ -96,17 +135,42 @@ const CalendarHeader = ({
                 />
               </svg>
             </button>
+
+            {/* Dropdown chọn tháng */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <select
+                value={currentMonth.getMonth()} // Giá trị là index của tháng (0-11)
+                onChange={handleMonthChange}
+                className="bg-white text-blue-900 rounded-lg pl-4 pr-8 py-2 text-sm border border-blue-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition-all duration-300 hover:shadow-xl hover:border-blue-400 appearance-none cursor-pointer"
+                style={{
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333333' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 0.75rem center",
+                  backgroundSize: "1rem",
+                }}
+              >
+                {months.map((month, index) => (
+                  <option key={index} value={index}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </motion.div>
+
+            {/* Nút chuyển ngày sau */}
             <button
-              className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-md"
+              className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white transition-colors duration-200 shadow-md"
               onClick={handleNext}
-              disabled={
-                selectedDate.getDate() === allDays[allDays.length - 1].day
-              }
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="12"
+                height="12"
                 fill="currentColor"
                 viewBox="0 0 16 16"
               >
@@ -127,7 +191,7 @@ const CalendarHeader = ({
         <AnimatePresence
           custom={animationDirection}
           initial={false}
-          mode="sync" // Sử dụng 'sync' thay vì 'wait' để phản hồi nhanh hơn
+          mode="sync"
         >
           <motion.div
             key={selectedDate.toISOString()}
@@ -137,14 +201,13 @@ const CalendarHeader = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0.9 }}
             className="flex justify-center space-x-2 absolute w-full"
-            transition={{ duration: 0.1 }} // Rút ngắn thời gian chuyển đổi
+            transition={{ duration: 0.1 }}
           >
             {getVisibleDays().map((day) => (
               <motion.div
                 key={day.day}
-                whileHover={{ scale: day.isPast && !day.isToday ? 1 : 1.05 }}
-                whileTap={{ scale: day.isPast && !day.isToday ? 1 : 0.95 }}
-                // Thêm hiệu ứng animate khi ngày được chọn
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 animate={
                   isSameDay(day.fullDate, selectedDate)
                     ? {
@@ -159,23 +222,15 @@ const CalendarHeader = ({
                 }
                 transition={
                   isSameDay(day.fullDate, selectedDate)
-                    ? {
-                        duration: 0.3,
-                        ease: "easeInOut",
-                        times: [0, 0.5, 1],
-                      }
+                    ? { duration: 0.3, ease: "easeInOut", times: [0, 0.5, 1] }
                     : {}
                 }
-                onClick={() =>
-                  (!day.isPast || day.isToday) && handleSelectDate(day.fullDate)
-                }
+                onClick={() => handleSelectDate(day.fullDate)}
                 className={`flex-shrink-0 flex flex-col items-center justify-center rounded-lg transition-all duration-200 ${
-                  day.isPast && !day.isToday
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : isSameDay(day.fullDate, selectedDate)
+                  isSameDay(day.fullDate, selectedDate)
                     ? "bg-green-500 cursor-pointer hover:bg-green-600"
                     : day.isToday
-                    ? "bg-blue-500 cursor-pointer hover:bg-blue-600"
+                    ? "bg-orange-500 hover:bg-orange-600"
                     : "bg-blue-400 hover:bg-blue-500 cursor-pointer"
                 }`}
                 style={{ width: "60px", height: "60px" }}

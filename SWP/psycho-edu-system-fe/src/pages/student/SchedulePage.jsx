@@ -8,8 +8,9 @@ import {
   getDaysInMonth,
   startOfMonth,
   isSameDay,
-  isBefore,
   startOfDay,
+  addMonths,
+  subMonths,
 } from "date-fns";
 import apiService from "../../services/apiService";
 import CalendarHeader from "../../components/Header/CalendarHeader";
@@ -17,9 +18,8 @@ import AppointmentDetailModal from "../../components/Modal/AppointmentDetailModa
 import ConfirmModal from "../../components/Modal/ConfirmModal";
 import AppointmentsList from "../../components/StudentSchedule/AppointmentsList";
 import { motion } from "framer-motion";
-import { getAuthDataFromLocalStorage } from "../../utils/auth"; // Đảm bảo import đúng
+import { getAuthDataFromLocalStorage } from "../../utils/auth";
 
-// CSS toàn cục để cố định font và box-sizing
 const globalStyles = `
   :root {
     font-size: 14px;
@@ -57,23 +57,20 @@ const SchedulePage = () => {
   const [appointmentViewKey, setAppointmentViewKey] = useState(0);
   const calendarContainerRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
-  const [currentDate] = useState(startOfDay(new Date()));
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
 
   const navigate = useNavigate();
 
   const generateMonthDays = () => {
-    const monthStart = startOfMonth(currentDate);
-    const totalDays = getDaysInMonth(currentDate);
+    const monthStart = startOfMonth(currentMonth);
+    const totalDays = getDaysInMonth(currentMonth);
     return Array.from({ length: totalDays }, (_, i) => {
       const currentDay = startOfDay(addDays(monthStart, i));
       return {
         day: currentDay.getDate(),
         weekday: format(currentDay, "E")[0],
         fullDate: currentDay,
-        isPast:
-          isBefore(currentDay, currentDate) &&
-          !isSameDay(currentDay, currentDate),
-        isToday: isSameDay(currentDay, currentDate),
+        isToday: isSameDay(currentDay, new Date()),
         dayOfWeek: format(currentDay, "E")[0],
       };
     });
@@ -87,9 +84,7 @@ const SchedulePage = () => {
       if (!authData || !authData.userId) {
         throw new Error("Authentication data not found. Please log in.");
       }
-      console.log("Auth data in loadUserProfile:", authData);
       const profile = await apiService.fetchUserProfile(authData.userId);
-      console.log("Loaded user profile:", profile);
       setUserProfile(profile);
     } catch (error) {
       console.error("Failed to load user:", error);
@@ -136,41 +131,40 @@ const SchedulePage = () => {
 
   const handleNext = () => {
     const nextDay = addDays(selectedDate, 1);
-    if (nextDay.getMonth() === currentDate.getMonth()) {
-      setAnimationDirection("next");
-      setSelectedDate(nextDay);
-      if (userProfile?.userId) loadAppointments(nextDay);
-      const nextDayIndex = allDays.findIndex((day) =>
-        isSameDay(day.fullDate, nextDay)
-      );
-      const halfCount = Math.floor(visibleDaysCount / 2);
-      const newPage = Math.max(
-        0,
-        Math.floor((nextDayIndex - halfCount) / visibleDaysCount)
-      );
-      setCurrentPage(newPage);
+    setAnimationDirection("next");
+    setSelectedDate(nextDay);
+    if (userProfile?.userId) loadAppointments(nextDay);
+    if (nextDay.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(addMonths(currentMonth, 1));
     }
+    const nextDayIndex = allDays.findIndex((day) =>
+      isSameDay(day.fullDate, nextDay)
+    );
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((nextDayIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
   };
 
   const handlePrev = () => {
     const prevDay = addDays(selectedDate, -1);
-    if (
-      prevDay.getMonth() === currentDate.getMonth() &&
-      (!isBefore(prevDay, currentDate) || isSameDay(prevDay, currentDate))
-    ) {
-      setAnimationDirection("prev");
-      setSelectedDate(prevDay);
-      if (userProfile?.userId) loadAppointments(prevDay);
-      const prevDayIndex = allDays.findIndex((day) =>
-        isSameDay(day.fullDate, prevDay)
-      );
-      const halfCount = Math.floor(visibleDaysCount / 2);
-      const newPage = Math.max(
-        0,
-        Math.floor((prevDayIndex - halfCount) / visibleDaysCount)
-      );
-      setCurrentPage(newPage);
+    setAnimationDirection("prev");
+    setSelectedDate(prevDay);
+    if (userProfile?.userId) loadAppointments(prevDay);
+    if (prevDay.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(subMonths(currentMonth, 1));
     }
+    const prevDayIndex = allDays.findIndex((day) =>
+      isSameDay(day.fullDate, prevDay)
+    );
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((prevDayIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
   };
 
   const getVisibleDays = () => {
@@ -186,20 +180,19 @@ const SchedulePage = () => {
   };
 
   const handleSelectDate = (date) => {
-    if (!isBefore(date, currentDate) || isSameDay(date, currentDate)) {
-      setAnimationDirection(date > selectedDate ? "next" : "prev");
-      setSelectedDate(date);
-      const dateIndex = allDays.findIndex((day) =>
-        isSameDay(day.fullDate, date)
-      );
-      const halfCount = Math.floor(visibleDaysCount / 2);
-      const newPage = Math.max(
-        0,
-        Math.floor((dateIndex - halfCount) / visibleDaysCount)
-      );
-      setCurrentPage(newPage);
-      if (userProfile?.userId) loadAppointments(date);
+    setAnimationDirection(date > selectedDate ? "next" : "prev");
+    setSelectedDate(date);
+    if (date.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(startOfMonth(date));
     }
+    const dateIndex = allDays.findIndex((day) => isSameDay(day.fullDate, date));
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((dateIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
+    if (userProfile?.userId) loadAppointments(date);
   };
 
   const handleCancelAppointment = (appointmentId) => {
@@ -208,6 +201,20 @@ const SchedulePage = () => {
 
   const handleNavigate = () => navigate("/student/booking");
   const handleChat = (id) => navigate(`/chat/${id}`);
+
+  const handleNextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1));
+    setSelectedDate(startOfMonth(addMonths(currentMonth, 1)));
+    if (userProfile?.userId)
+      loadAppointments(startOfMonth(addMonths(currentMonth, 1)));
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(subMonths(currentMonth, 1));
+    setSelectedDate(startOfMonth(subMonths(currentMonth, 1)));
+    if (userProfile?.userId)
+      loadAppointments(startOfMonth(subMonths(currentMonth, 1)));
+  };
 
   useEffect(() => {
     const updateVisibleDaysCount = () => {
@@ -248,15 +255,15 @@ const SchedulePage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="w-full min-h-screen bg-gradient-to-br white flex items-center justify-center"
+      className="w-full min-h-screen bg-gray-50 flex items-center justify-center" // Sửa nền thành bg-gray-50
     >
       <CContainer
         fluid
-        className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr]"
+        className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr] p-4" // Thêm padding p-4
       >
         <div ref={calendarContainerRef} className="w-full">
           <CalendarHeader
-            currentDate={currentDate}
+            currentMonth={currentMonth}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             allDays={allDays}
@@ -271,6 +278,8 @@ const SchedulePage = () => {
             handleNext={handleNext}
             handleSelectDate={handleSelectDate}
             getVisibleDays={getVisibleDays}
+            handleNextMonth={handleNextMonth}
+            handlePrevMonth={handlePrevMonth}
           />
         </div>
 
@@ -279,7 +288,7 @@ const SchedulePage = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-100 border border-red-400 text-red-700 rounded mb-4 text-[1rem]"
+              className="bg-red-500 text-white rounded-lg mb-4 p-4 shadow-md" // Cập nhật màu đỏ đồng bộ với Cancel
             >
               <p>{errorMessage}</p>
             </motion.div>
@@ -320,6 +329,7 @@ const SchedulePage = () => {
             }
             setConfirmModalState({ visible: false, appointmentId: null });
           }}
+          appointmentId={confirmModalState.appointmentId} // Truyền appointmentId
         />
 
         <AppointmentDetailModal

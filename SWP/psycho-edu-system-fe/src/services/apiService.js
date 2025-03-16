@@ -123,6 +123,8 @@ const apiService = {
             isCancelled: appointment.isCancelled || false,
             googleMeetURL: appointment.googleMeetURL || null,
             meetingWith: appointment.meetingWith,
+            bookedBy: appointment.bookedBy, // Thêm bookedBy
+            appointmentFor: appointment.appointmentFor, // Thêm appointmentFor
           };
         });
       } else {

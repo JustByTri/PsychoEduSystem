@@ -85,7 +85,6 @@ const AppointmentsList = ({
 
   return (
     <div className="appointments-container h-full overflow-hidden flex flex-col bg-gray-50">
-      {/* Nội dung chính */}
       <div className="flex-1 flex flex-col">
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
@@ -117,6 +116,9 @@ const AppointmentsList = ({
                       ? "Completed"
                       : "Not Yet"
                   }
+                  type={appointment.isOnline ? "Online" : "Offline"}
+                  bookedBy={appointment.bookedBy}
+                  appointmentFor={appointment.appointmentFor} // Truyền appointmentFor
                   onJoin={() => handleChat(appointment.id)}
                   onCancel={() =>
                     handleCancelAppointment(appointment.appointmentId)
