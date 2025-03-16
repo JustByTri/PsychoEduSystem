@@ -651,28 +651,15 @@ using System.Text;
             switch (currentUser.Role.RoleName)
             {
                 case "Student":
-                    var student = await _unitOfWork.User.FindAll(u => u.UserId == userId).Select(u => u.UserId).ToListAsync();
-                    query = query.Where(sr => student.Contains(sr.SurveyTargetId))
-              .Include(sr => sr.SurveyTaker)
-              .Where(sr => student.Contains(sr.SurveyTaker.UserId));
-
-
+                    query = query.Where(sr => sr.SurveyTakerId== userId && sr.SurveyTargetId == userId);
                     break;
 
                 case "Parent":
-                    var childrenIds = await _unitOfWork.Relationship
-                        .FindAll(r => r.ParentId == currentUser.UserId)
-                        .Select(r => r.StudentId)
-                        .ToListAsync();
-                    query = query.Where(sr => childrenIds.Contains(sr.SurveyTargetId));
+                    query = query.Where(sr => sr.SurveyTargetId == filter.StudentId);
                     break;
 
                 case "Teacher":
-                    var classStudents = await _unitOfWork.User
-                        .FindAll(u => u.Class.TeacherId == currentUser.UserId)
-                        .Select(u => u.UserId)
-                        .ToListAsync();
-                    query = query.Where(sr => classStudents.Contains(sr.SurveyTargetId));
+                    query = query.Where(sr => sr.SurveyTargetId == filter.StudentId);
                     break;
 
                 case "Psychologist":
