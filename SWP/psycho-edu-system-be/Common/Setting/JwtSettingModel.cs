@@ -26,11 +26,11 @@ namespace Common.Setting
         /// <summary>
         /// The issuer of the token.
         /// </summary>
-        public static string Issuer { get; set; } = "http://localhost:7192"; // Thay đổi cho phù hợp
+        public static string Issuer { get; set; } = "https://localhost:7192";
 
         /// <summary>
         /// The audience of the token.
         /// </summary>
-        public static string Audience { get; set; } = "http://localhost:5157"; // Thay đổi cho phù hợp
+        public static string Audience { get; set; } = "https://localhost:5157"; 
     }
 }

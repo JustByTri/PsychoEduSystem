@@ -162,5 +162,30 @@ namespace PsychoEduSystem.Controller
 
             return Ok(response);
         }
+        [HttpPut("profile/{userId}")]
+        public async Task<IActionResult> UpdateUserProfile(Guid userId, [FromBody] UpdateUserProfileDTO updateDto)
+        {
+            if (userId == Guid.Empty)
+                return BadRequest("User ID is required.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var response = await _userService.UpdateUserProfileAsync(userId, updateDto);
+
+                if (response.IsSuccess)
+                {
+                    return Ok(response);
+                }
+
+                return StatusCode(response.StatusCode, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while updating user profile.", Error = ex.Message });
+            }
+        }
     }
 }
