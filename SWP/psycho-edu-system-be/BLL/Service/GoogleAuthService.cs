@@ -83,6 +83,7 @@ namespace BLL.Services
             var claims = new List<Claim>
     {
         new Claim(JwtClaimTypes.UserId, user.UserId.ToString()),
+        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
         new Claim(JwtClaimTypes.Username, user.UserName)
     };
             var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);

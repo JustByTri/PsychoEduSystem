@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using BLL.Interface;
 using Common.DTO;
+using Common.Enum;
 using DAL.Entities;
 using DAL.UnitOfWork;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -27,6 +28,7 @@ namespace BLL.Service
             var query = _unitOfWork.TargetProgram.GetAll()
                             .Include(p => p.Dimension)
                             .Include(p => p.Counselor)
+                            .OrderByDescending(p => p.CreateAt)
                             .AsQueryable();
 
             if (!string.IsNullOrEmpty(day))
@@ -75,6 +77,7 @@ namespace BLL.Service
                 p.StartDate,
                 p.MinPoint,
                 p.Capacity,
+                p.CurrentCapacity,
                 Counselor = p.Counselor != null ? new
                 {
                     p.Counselor.FullName,
@@ -143,6 +146,7 @@ namespace BLL.Service
                     Name = dto.Name,
                     Description = dto.Description,
                     CounselorId = counselor.UserId,
+                    CurrentCapacity = 0,
                     StartDate = dto.StartDate,
                     MinPoint = dto.MinPoint,
                     Capacity = dto.Capacity,
@@ -224,7 +228,7 @@ namespace BLL.Service
                                     ((p.DimensionId == 1 && request.Anxiety >= p.MinPoint) ||
                                     (p.DimensionId == 2 && request.Depression >= p.MinPoint) ||
                                     (p.DimensionId == 3 && request.Stress >= p.MinPoint)) &&
-                                    p.Capacity > 0);
+                                    p.CurrentCapacity < p.Capacity);
                 if (!targetPrograms.Any())
                     return new ResponseDTO("No matching programs found", 404, false, string.Empty);
 
@@ -241,6 +245,7 @@ namespace BLL.Service
                         {
                             StudentId = request.StudentId,
                             ProgramId = program.ProgramId,
+                            Status = "Not Yet",
                             EnrolledAt = DateTime.UtcNow,
                             CreateAt = DateTime.UtcNow
                         };
@@ -248,7 +253,7 @@ namespace BLL.Service
                         await _unitOfWork.ProgramEnrollment.AddAsync(enrollment);
                         assignedPrograms.Add(program.Name);
 
-                        program.Capacity -= 1;
+                        program.CurrentCapacity += 1;
                         await _unitOfWork.TargetProgram.UpdateAsync(program);
                     }
                 }
@@ -266,7 +271,6 @@ namespace BLL.Service
                 return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
-
         public async Task<List<object>> GetAllProgramsByUserIdAsync(Guid userId, string? day = null, int? capacity = null, string? time = null, int? minPoint = null, string? dimensionName = null)
         {
             var user = await _unitOfWork.User.GetByIdAsync(userId);
@@ -278,6 +282,7 @@ namespace BLL.Service
             var query = _unitOfWork.TargetProgram.GetAll()
                             .Include(p => p.Dimension)
                             .Include(p => p.Counselor)
+                            .OrderByDescending(p => p.CreateAt)
                             .AsQueryable();
             if (user.RoleId == 3)
             {
@@ -337,6 +342,7 @@ namespace BLL.Service
                 p.StartDate,
                 p.MinPoint,
                 p.Capacity,
+                p.CurrentCapacity,
                 Counselor = p.Counselor != null ? new
                 {
                     p.Counselor.FullName,
@@ -351,7 +357,6 @@ namespace BLL.Service
                 DimensionName = p.Dimension?.DimensionName
             }).ToList<object>();
         }
-
         public async Task<ResponseDTO> GetAvailableCounselorsAsync(DateTime selectedDateTime)
         {
             try
@@ -418,7 +423,6 @@ namespace BLL.Service
                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
-
         public async Task<ResponseDTO> RegisterTargetProgramAsync(Guid programId, Guid userId)
         {
             try
@@ -438,12 +442,15 @@ namespace BLL.Service
                     return new ResponseDTO("Target program not found.", 400, false, string.Empty);
                 }
 
-                if (program.StartDate < DateTime.Now)
+                TimeZoneInfo vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                DateTime vietnamNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
+
+                if (program.StartDate < vietnamNow)
                 {
                     return new ResponseDTO("Target program has been happened", 200, false, string.Empty);
                 }
 
-                if (program.Capacity == 0)
+                if (program.CurrentCapacity == program.Capacity)
                 {
                     return new ResponseDTO("Target program is full.", 200, false, string.Empty);
                 }
@@ -463,10 +470,83 @@ namespace BLL.Service
                 };
 
                 await _unitOfWork.ProgramEnrollment.AddAsync(newEnrollment);
-                program.Capacity -= 1;
+                program.CurrentCapacity += 1;
                 await _unitOfWork.TargetProgram.UpdateAsync(program);
                 await _unitOfWork.SaveChangeAsync();
                 return new ResponseDTO("Enrolled success", 200, true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+        public async Task<ResponseDTO> GetStudentsInTargetProgramAsync(Guid programId, int page, int pageSize)
+        {
+            try
+            {
+                var targetProgram = await _unitOfWork.TargetProgram.GetByConditionAsync(t => t.ProgramId == programId);
+
+                if (targetProgram == null) return new ResponseDTO("Invalid program.", 400, false, string.Empty);
+
+                var query = _unitOfWork.ProgramEnrollment.GetEnrollmentsWithStudents(e => e.ProgramId == programId);
+
+                int totalRecords = await query.CountAsync();
+
+                var students = await query.Skip((page - 1) * pageSize).Take(pageSize)
+                    .Select(s => new StudentDTO
+                    {
+                        Id = s.StudentId,
+                        Name = s.Student.FullName,
+                        Email = s.Student.Email,
+                        Status = s.Status,
+                    })
+                    .ToListAsync();
+                var response = new
+                {
+                    TotalRecords = totalRecords,
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    Students = students
+                };
+                return new ResponseDTO("Success", 200, true, response);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+        public async Task<ResponseDTO> UpdateAttendanceAsync(List<AttendanceUpdateRequest> attendanceUpdateRequests)
+        {
+            try
+            {
+                if (attendanceUpdateRequests == null || attendanceUpdateRequests.Count == 0)
+                {
+                    return new ResponseDTO("No attendance data provided.", 400, false, string.Empty);
+                }
+
+                var studentIds = new HashSet<Guid>(attendanceUpdateRequests.Select(r => r.StudentId));
+                var programIds = new HashSet<Guid>(attendanceUpdateRequests.Select(r => r.ProgramId));
+
+                var attendances = await _unitOfWork.ProgramEnrollment.GetAllByListAsync(pe => programIds.Contains(pe.ProgramId) && studentIds.Contains(pe.StudentId));
+
+                if (attendances == null || !attendances.Any())
+                {
+                    return new ResponseDTO("No matching attendance records found.", 404, false, string.Empty);
+                }
+
+                var requestDict = attendanceUpdateRequests.ToDictionary(r => (r.StudentId, r.ProgramId), r => r.StatusName);
+
+                Parallel.ForEach(attendances, attendance =>
+                {
+                    if (requestDict.TryGetValue((attendance.StudentId, attendance.ProgramId), out var newStatus))
+                    {
+                        attendance.Status = newStatus;
+                    }
+                });
+
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO("Attendance updated successfully for all students.", 200, true, string.Empty);
             }
             catch (Exception ex)
             {

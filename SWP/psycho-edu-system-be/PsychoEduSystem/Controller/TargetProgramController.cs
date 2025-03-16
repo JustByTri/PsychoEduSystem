@@ -7,7 +7,7 @@ namespace PsychoEduSystem.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TargetProgramController : ControllerBase // ✅ Kế thừa ControllerBase
+    public class TargetProgramController : ControllerBase
     {
         private readonly ITargetProgramService _targetProgramService;
 
@@ -180,5 +180,38 @@ namespace PsychoEduSystem.Controller
                 return StatusCode(500, $"Error: {ex.Message}");
             }
         }
+        [HttpGet("students/{programId}")]
+        public async Task<IActionResult> GetStudentsByProgram(Guid programId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var response = await _targetProgramService.GetStudentsInTargetProgramAsync(programId, page, pageSize);
+            return StatusCode(response.StatusCode, response);
+        }
+        [HttpPost("attendance/update")]
+        public async Task<IActionResult> UpdateAttendance([FromBody] List<AttendanceUpdateRequest> requests)
+        {
+            if (requests == null || requests.Count == 0)
+            {
+                return BadRequest(new { Success = false, Message = "No attendance data provided." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new
+                {
+                    Success = false,
+                    Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                });
+            }
+
+            var result = await _targetProgramService.UpdateAttendanceAsync(requests);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode, new { Success = false, Message = result.Message });
+            }
+
+            return Ok(new { Success = true, Message = result.Message });
+        }
+
     }
 }
