@@ -20,6 +20,7 @@ import moment from "moment";
 import { Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import FeedbackForm from "../../components/Modal/FeedbackForm";
 
 const PsychologistSchedulePage = () => {
   const [bookings, setBookings] = useState([]);
@@ -123,6 +124,7 @@ const PsychologistSchedulePage = () => {
               studentId: appointment.appointmentFor || "Unknown",
               consultantId: appointment.meetingWith || teacherId,
               bookedBy: appointment.bookedBy || "Unknown",
+              notes: appointment.notes,
               appointmentFor: appointment.appointmentFor || "Unknown",
               date: moment(appointment.date, "DD/MM/YYYY").format("YYYY-MM-DD"),
               slotId: appointment.slotId,
@@ -833,6 +835,7 @@ const PsychologistSchedulePage = () => {
                 </Box>
               ))}
             </Box>
+            <FeedbackForm appointment={selectedEvent} role={authData.role} />
           </DialogContent>
           <DialogActions sx={{ p: 3, justifyContent: "space-between" }}>
             {selectedEvent.details.studentId &&

@@ -82,7 +82,6 @@ const AppointmentsList = ({
     };
     fetchAllNames();
   }, [filteredAppointments]);
-
   return (
     <div className="appointments-container h-full overflow-hidden flex flex-col bg-gray-50">
       <div className="flex-1 flex flex-col">
@@ -109,14 +108,8 @@ const AppointmentsList = ({
                     appointment.time ||
                     "Unknown"
                   }
-                  status={
-                    appointment.isCancelled
-                      ? "Canceled"
-                      : appointment.isCompleted
-                      ? "Completed"
-                      : "Not Yet"
-                  }
-                  type={appointment.isOnline ? "Online" : "Offline"}
+                  status={appointment.status}
+                  type={appointment.type}
                   bookedBy={appointment.bookedBy}
                   appointmentFor={appointment.appointmentFor} // Truyền appointmentFor
                   onJoin={() => handleChat(appointment.id)}

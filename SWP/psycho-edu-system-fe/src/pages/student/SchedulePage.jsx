@@ -334,6 +334,7 @@ const SchedulePage = () => {
 
         <AppointmentDetailModal
           isOpen={detailModalState.isOpen}
+          handleChat={handleChat}
           onClose={() =>
             setDetailModalState((prev) => ({
               ...prev,

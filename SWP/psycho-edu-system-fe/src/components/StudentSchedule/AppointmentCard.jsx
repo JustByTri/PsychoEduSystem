@@ -70,7 +70,7 @@ const AppointmentsCard = ({
                 className={`flex items-center gap-2 text-[0.9rem] font-semibold ${
                   status === "Completed"
                     ? "text-green-500"
-                    : status === "Canceled"
+                    : status === "Cancelled"
                     ? "text-red-500"
                     : "text-yellow-500 animate-pulse"
                 }`}
@@ -86,15 +86,18 @@ const AppointmentsCard = ({
                 ></span>
                 {status.toUpperCase()}
               </span>
-              {status === "Not Yet" && (
+              {status === "Scheduled" && (
                 <div className="flex gap-3 flex-wrap justify-end">
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={onJoin}
-                    className="text-[1.25rem] text-white bg-green-500 rounded-lg px-6 py-2.5 hover:bg-green-600 transition-colors duration-200"
-                  >
-                    Join
-                  </motion.button>
+                  {type === "Online" && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={onJoin}
+                      className="text-[1.25rem] text-white bg-green-500 rounded-lg px-6 py-2.5 hover:bg-green-600 transition-colors duration-200"
+                    >
+                      Join
+                    </motion.button>
+                  )}
+
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={onCancel}

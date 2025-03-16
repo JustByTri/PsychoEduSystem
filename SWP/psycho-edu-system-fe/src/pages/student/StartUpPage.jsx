@@ -5,6 +5,7 @@ import Loading from "../../components/Loadings/Loading";
 import { useOutletContext } from "react-router-dom";
 import { SurveyService } from "../../api/services/surveyService";
 import { motion } from "framer-motion";
+
 const StartUpPage = () => {
   const location = useLocation();
   const context = useOutletContext() || {};
@@ -25,7 +26,7 @@ const StartUpPage = () => {
         localStorage.setItem("questions", JSON.stringify(response));
         console.log("Survey data saved to localStorage ✅");
       } catch (error) {
-        console.error("Lỗi khi lưu survey vào localStorage:", error);
+        console.error("Error saving survey to localStorage:", error);
       } finally {
         setLoading(false);
       }
@@ -36,74 +37,53 @@ const StartUpPage = () => {
 
   if (isLoading) return <Loading />;
 
-  if (!surveyData) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-100 to-gray-300">
+  return (
+    <div className="h-screen flex items-center justify-center bg-white relative">
+      {/* Back Button at Top Left */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition-all duration-300"
+      >
+        Back
+      </button>
+
+      {surveyData ? (
         <motion.div
-          initial={{ opacity: 0, y: -20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="bg-white shadow-xl rounded-xl p-8 w-96 text-center"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col justify-center items-center gap-6 text-gray-800 text-center p-8 bg-white border border-gray-200 rounded-lg shadow-lg w-[90%] max-w-lg"
         >
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-            className="text-gray-800 text-lg font-semibold mb-6"
-          >
-            Bạn đã làm khảo sát rồi! Hẹn gặp lại 🎉
-          </motion.p>
+          <h1 className="text-2xl font-bold">Start Your Survey</h1>
+          <p className="text-lg text-gray-600">
+            Explore and share your thoughts with us.
+          </p>
+          <p className="text-sm text-red-500 font-medium">
+            *As per school regulations, students are required to complete this
+            survey.
+          </p>
 
           <motion.button
-            whileHover={{
-              scale: 1.08,
-              boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.2)",
-            }}
             whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="bg-gray-600 hover:bg-gray-800 text-white font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300"
-            onClick={() => navigate(-1)}
+            transition={{ duration: 0.3 }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-all"
+            onClick={() => navigate("/student/survey-for-student")}
           >
-            Quay lại
+            Start Now
           </motion.button>
         </motion.div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0A4275] to-[#1877F2]">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="flex flex-col justify-center items-center gap-6 text-white text-center p-10 bg-[#0D3A6D] bg-opacity-90 rounded-xl shadow-2xl"
-      >
-        <h1 className="text-2xl font-bold">Bắt đầu khảo sát</h1>
-        <p className="text-lg opacity-80">
-          Khám phá và chia sẻ suy nghĩ của bạn.
-        </p>
-
-        <motion.button
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-          className="bg-[#1877F2] hover:bg-[#0A62D0] text-white font-semibold py-3 px-8 rounded-full shadow-lg transition-all duration-300"
-          onClick={() => navigate("/student/survey-for-student")}
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white shadow-lg rounded-lg p-8 w-96 text-center border border-gray-200"
         >
-          Bắt đầu ngay
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-          className="bg-[#0A62D0] hover:bg-[#083A5B] text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-all duration-300"
-          onClick={() => navigate(-1)}
-        >
-          Quay lại
-        </motion.button>
-      </motion.div>
+          <p className="text-gray-800 text-lg font-medium">
+            You’ve already completed the survey! See you next time 🎉
+          </p>
+        </motion.div>
+      )}
     </div>
   );
 };

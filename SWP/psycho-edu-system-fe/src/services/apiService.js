@@ -119,6 +119,7 @@ const apiService = {
               : appointment.isCompleted
               ? "Completed"
               : "Scheduled",
+            notes: appointment.notes,
             appointmentId: appointment.appointmentId,
             isCancelled: appointment.isCancelled || false,
             googleMeetURL: appointment.googleMeetURL || null,
