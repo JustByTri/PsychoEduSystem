@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { SurveyService } from "../../../api/services/surveyService";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import {
   Button,
   Card,
@@ -103,8 +103,6 @@ const SurveyDetail = () => {
 
   return (
     <>
-      <ToastContainer />
-
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

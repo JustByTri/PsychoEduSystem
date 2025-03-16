@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import React from "react";
 import { Grid, TextField, Select, MenuItem, Button } from "@mui/material";
@@ -73,9 +74,9 @@ const FiltersForm = ({ tempFilters, setTempFilters, applyFilters }) => {
           size="small"
         >
           <MenuItem value="">Select Dimension Name</MenuItem>
-          <MenuItem value="Anxiety">Anxiety</MenuItem>
-          <MenuItem value="Depression">Depression</MenuItem>
-          <MenuItem value="Stress">Stress</MenuItem>
+          <MenuItem value="Lo Âu">Anxiety</MenuItem>
+          <MenuItem value="Trầm Cảm">Depression</MenuItem>
+          <MenuItem value="Căng Thẳng">Stress</MenuItem>
         </Select>
       </Grid>
 

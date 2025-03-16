@@ -50,7 +50,6 @@ const TargetPrograms = () => {
         data = await TargetProgramService.getTargetPrograms(formattedFilters);
       } else {
         data = await TargetProgramService.getTargetProgramsByUserId(
-          user?.id,
           formattedFilters
         );
       }

@@ -133,4 +133,25 @@ export const TargetProgramService = {
       console.error(error);
     }
   },
+  getEnrolledStudents: async (programId, page) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}api/TargetProgram/students/${programId}?page=${page}&pageSize=10`
+      );
+      return response.data;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  updateStudentAttendance: async (data) => {
+    try {
+      const response = await axios.post(
+        `${BASE_URL}api/TargetProgram/attendance/update`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      console.error(error);
+    }
+  },
 };

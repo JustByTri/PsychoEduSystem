@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -355,24 +356,6 @@ const CreateUserPage = () => {
           </button>
         </div>
       </form>
-
-      {/* Toast */}
-      <ToastContainer
-        position="top-center" // Vẫn cần để react-toastify quản lý vị trí cơ bản
-        autoClose={3000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          zIndex: 9999, // Đảm bảo toast vượt qua các lớp khác
-          width: "auto",
-          maxWidth: "90%",
-        }}
-      />
     </div>
   );
 };

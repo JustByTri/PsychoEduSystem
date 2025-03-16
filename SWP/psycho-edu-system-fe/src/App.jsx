@@ -33,11 +33,13 @@ import "react-toastify/dist/ReactToastify.css";
 import Chat from "./pages/chat/Chat";
 import TargetPrograms from "./pages/admin/TargetPrograms";
 import CreateUserPage from "./pages/admin/CreateUserPage";
+import AttendancePage from "./pages/counselor/AttendancePage";
 
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <ToastContainer />
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
@@ -100,6 +102,10 @@ function App() {
               <Route
                 path="slot"
                 element={<PsychologistScheduleRegistration />}
+              />
+              <Route
+                path="attendance/:programId"
+                element={<AttendancePage />}
               />
             </Route>
           </Route>
