@@ -397,5 +397,57 @@ namespace BLL.Service
                 return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
+        public async Task<ResponseDTO> UpdateUserProfileAsync(Guid userId, UpdateUserProfileDTO updateDto)
+        {
+            try
+            {
+                var user = await _unitOfWork.User.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    return new ResponseDTO("User not found", 404, false, string.Empty);
+                }
+
+                if (!string.IsNullOrEmpty(updateDto.FirstName)) user.FirstName = updateDto.FirstName;
+                if (!string.IsNullOrEmpty(updateDto.LastName)) user.LastName = updateDto.LastName;
+                if (!string.IsNullOrEmpty(updateDto.Phone))
+                {
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(updateDto.Phone, @"^(?:\+84|0)[3|5|7|8|9]\d{8}$"))
+                    {
+                        return new ResponseDTO("Invalid phone number format", 400, false, string.Empty);
+                    }
+                    user.Phone = updateDto.Phone;
+                }
+                if (updateDto.BirthDay.HasValue) user.BirthDay = updateDto.BirthDay.Value;
+                if (!string.IsNullOrEmpty(updateDto.Gender)) user.Gender = updateDto.Gender;
+                if (!string.IsNullOrEmpty(updateDto.Address)) user.Address = updateDto.Address;
+
+          
+                if (!string.IsNullOrEmpty(updateDto.FirstName) || !string.IsNullOrEmpty(updateDto.LastName))
+                {
+                    user.FullName = $"{user.FirstName} {user.LastName}".Trim();
+                }
+
+                await _unitOfWork.User.UpdateAsync(user);
+                await _unitOfWork.SaveChangeAsync();
+
+                var updatedProfile = new UserProfileDTO
+                {
+                    FirstName = user.FirstName ?? "",
+                    LastName = user.LastName ?? "",
+                    FullName = user.FullName ?? "",
+                    BirthDay = user.BirthDay.ToString("d", new CultureInfo("vi-VN")),
+                    Gender = user.Gender,
+                    Address = user.Address,
+                    Email = user.Email,
+                    Phone = user.Phone
+                };
+
+                return new ResponseDTO("Profile updated successfully", 200, true, updatedProfile);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
     }
 }

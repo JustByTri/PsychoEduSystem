@@ -167,7 +167,7 @@ namespace BLL.Service
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
 
             // Tạo access token mới
-            var newAccessToken = _jwtProvider.GenerateAccessToken(claims); // Sử dụng _jwtProvider
+            var newAccessToken = _jwtProvider.GenerateAccessToken(claims);
 
             // Lưu refresh token mới vào database
             var newRefreshToken = new RefreshToken

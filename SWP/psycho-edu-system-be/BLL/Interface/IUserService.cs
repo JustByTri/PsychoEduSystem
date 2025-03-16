@@ -20,5 +20,6 @@ namespace BLL.Interface
         Task<ResponseDTO> GetAvailableSlotsAsync(Guid userId, DateOnly date);
         Task<ResponseDTO> GetPsychologistsAsync();
         Task<ResponseDTO> GetUserProfile(Guid userId);
+        Task<ResponseDTO> UpdateUserProfileAsync(Guid userId, UpdateUserProfileDTO updateDto);
     }
 }

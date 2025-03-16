@@ -186,7 +186,8 @@ namespace BLL.Service
         }
         public async Task UpdateProgramAsync(TargetProgramDTO dto)
         {
-            if (dto.ProgramId == null) throw new Exception("ProgramId is required");
+            if (dto.ProgramId == null)
+                throw new Exception("ProgramId is required");
 
             var existingProgram = await _unitOfWork.TargetProgram.GetByConditionAsync(p => p.ProgramId == dto.ProgramId);
 
@@ -197,6 +198,8 @@ namespace BLL.Service
             existingProgram.MinPoint = dto.MinPoint;
             existingProgram.Capacity = dto.Capacity;
             existingProgram.DimensionId = dto.DimensionId;
+            if (dto.CounselorId != Guid.Empty)
+                existingProgram.CounselorId = dto.CounselorId;
 
             await _unitOfWork.SaveChangeAsync();
         }

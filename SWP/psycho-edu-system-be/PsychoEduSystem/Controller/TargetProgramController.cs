@@ -91,9 +91,7 @@ namespace PsychoEduSystem.Controller
         public async Task<IActionResult> UpdateProgramAsync([FromBody] TargetProgramDTO programDto)
         {
             if (programDto == null)
-            {
                 return BadRequest("Invalid program data.");
-            }
 
             try
             {
