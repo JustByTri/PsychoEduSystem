@@ -28,7 +28,6 @@ import {
   LineElement,
 } from "chart.js";
 import TargetProgramsPage from "./TargetProgramsPage";
-
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -93,30 +92,30 @@ const Dashboard = () => {
   return (
     <>
       <TargetProgramsPage />
-
       <motion.div
-        className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-b from-white to-gray-100 px-6 py-8"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <Typography
+          variant="h4"
+          fontWeight="bold"
+          sx={{
+            color: "#1976d2",
+            padding: "10px 20px",
+            borderRadius: "6px",
+            display: "flex",
+          }}
+        >
+          Mental Health Evaluation
+        </Typography>
+      </motion.div>
+      <motion.div
+        className="flex flex-col items-center justify-start bg-gradient-to-b from-white to-gray-100 px-6 py-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
       >
-        {/* Title */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            color="primary"
-            gutterBottom
-          >
-            📊 Mental Health Evaluation
-          </Typography>
-        </motion.div>
-
-        {/* Month & Year Filters */}
         <Grid container spacing={2} justifyContent="center" sx={{ mb: 4 }}>
           <Grid item>
             <FormControl

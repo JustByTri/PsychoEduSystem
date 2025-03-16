@@ -1,4 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
+// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -27,6 +29,7 @@ import {
   TimePicker,
 } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { toast } from "react-toastify";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 const VN_TZ = "Asia/Ho_Chi_Minh";
@@ -59,12 +62,10 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
   const [counselors, setCounselors] = useState([]);
 
   useEffect(() => {
-    if (step === 3) {
+    if (programData.day && programData.time) {
       fetchCounselors();
     }
-  }, [step, programData.day, programData.time]);
-  console.log(programData.day);
-  console.log(programData.time);
+  }, [programData.day, programData.time]);
   const fetchCounselors = async () => {
     try {
       if (programData.day && programData.time) {
@@ -85,10 +86,12 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
     try {
       await TargetProgramService.createProgram(programData);
       reloadPrograms();
+      toast.success("Program created successfully!");
       resetForm();
       onClose();
     } catch (error) {
       console.error("Error creating program:", error);
+      toast.error("Failed to create program. Please try again.");
     }
   };
 
@@ -179,6 +182,7 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
             <Box
               sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}
             >
+              {/* Date & Time Selection */}
               <Typography variant="h6" color="primary">
                 Select Date & Time
               </Typography>
@@ -209,114 +213,111 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
                     ? dayjs(programData.time, "HH:mm").tz(VN_TZ)
                     : null
                 }
-                onChange={(newValue) => {
-                  if (newValue) {
-                    setProgramData({
-                      ...programData,
-                      time: dayjs(newValue).tz(VN_TZ).format("HH:mm"),
-                    });
-                  }
-                }}
+                onChange={(newValue) =>
+                  setProgramData({
+                    ...programData,
+                    time: newValue
+                      ? dayjs(newValue).tz(VN_TZ).format("HH:mm")
+                      : null,
+                  })
+                }
                 format="HH:mm"
                 slotProps={{
                   textField: { fullWidth: true, variant: "outlined" },
                 }}
               />
+
+              {/* Counselor Selection (Previously Step 3) */}
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                gutterBottom
+                color="primary"
+              >
+                Select a Counselor
+              </Typography>
+
+              {counselors.length === 0 ? (
+                <Typography
+                  color="textSecondary"
+                  sx={{ textAlign: "center", mt: 2 }}
+                >
+                  No available counselors for the selected date and time.
+                </Typography>
+              ) : (
+                <Grid container spacing={2}>
+                  {counselors.map((counselor) => {
+                    const isSelected = programData.counselors.includes(
+                      counselor.userId
+                    );
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={counselor.userId}>
+                        <Card
+                          variant="outlined"
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            boxShadow: 1,
+                            "&:hover": { boxShadow: 3 },
+                          }}
+                        >
+                          <CardContent sx={{ textAlign: "left" }}>
+                            <Typography variant="h6" title={counselor.fullName}>
+                              {counselor.fullName}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              {counselor.gender} | 🎂{" "}
+                              {dayjs(counselor.birthDay).format("DD/MM/YYYY")}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              noWrap
+                              title={counselor.address}
+                            >
+                              📍 {counselor.address}
+                            </Typography>
+                            <Typography variant="body2">
+                              📞 {counselor.phone}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              noWrap
+                              title={counselor.email}
+                            >
+                              📧 {counselor.email}
+                            </Typography>
+
+                            <Button
+                              variant={isSelected ? "contained" : "outlined"}
+                              sx={{ mt: 1, width: "100%" }}
+                              onClick={() =>
+                                setProgramData((prev) => ({
+                                  ...prev,
+                                  counselors: isSelected
+                                    ? prev.counselors.filter(
+                                        (id) => id !== counselor.userId
+                                      )
+                                    : [counselor.userId],
+                                }))
+                              }
+                            >
+                              {isSelected ? "Deselect" : "Select"}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              )}
             </Box>
           </LocalizationProvider>
-        )}
-
-        {step === 3 && (
-          <Box sx={{ p: 3 }}>
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              gutterBottom
-              color="primary"
-            >
-              Select a Counselor
-            </Typography>
-
-            {counselors.length === 0 ? (
-              <Typography
-                color="textSecondary"
-                sx={{ textAlign: "center", mt: 2 }}
-              >
-                No available counselors for the selected date and time.
-              </Typography>
-            ) : (
-              <Grid container spacing={2}>
-                {counselors.map((counselor) => {
-                  const isSelected = programData.counselors.includes(
-                    counselor.userId
-                  );
-
-                  return (
-                    <Grid item xs={12} sm={6} md={4} key={counselor.userId}>
-                      <Card
-                        variant="outlined"
-                        sx={{
-                          p: 2,
-                          borderRadius: 2,
-                          boxShadow: 1,
-                          "&:hover": { boxShadow: 3 },
-                        }}
-                      >
-                        <CardContent sx={{ textAlign: "left" }}>
-                          <Typography variant="h6" title={counselor.fullName}>
-                            {counselor.fullName}
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {counselor.gender} | 🎂{" "}
-                            {dayjs(counselor.birthDay).format("DD/MM/YYYY")}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            noWrap
-                            title={counselor.address}
-                          >
-                            📍 {counselor.address}
-                          </Typography>
-                          <Typography variant="body2">
-                            📞 {counselor.phone}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            noWrap
-                            title={counselor.email}
-                          >
-                            📧 {counselor.email}
-                          </Typography>
-
-                          <Button
-                            variant={isSelected ? "contained" : "outlined"}
-                            sx={{ mt: 1, width: "100%" }}
-                            onClick={() =>
-                              setProgramData((prev) => ({
-                                ...prev,
-                                counselors: isSelected
-                                  ? prev.counselors.filter(
-                                      (id) => id !== counselor.userId
-                                    )
-                                  : [counselor.userId],
-                              }))
-                            }
-                          >
-                            {isSelected ? "Deselect" : "Select"}
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  );
-                })}
-              </Grid>
-            )}
-          </Box>
         )}
       </DialogContent>
       <DialogActions>
         {step > 1 && <Button onClick={handleBack}>Back</Button>}
-        {step < 3 ? (
+
+        {step === 1 ? (
           <Button onClick={handleNext}>Next</Button>
         ) : (
           <Button onClick={handleSubmit}>Confirm</Button>

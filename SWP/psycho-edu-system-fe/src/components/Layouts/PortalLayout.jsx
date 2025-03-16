@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "../Header/Header";
@@ -7,22 +8,15 @@ import Breadcrumbs from "../Breadcrumbs ";
 const PortalLayout = () => {
   return (
     <div className="min-h-screen w-full bg-gray-100 flex flex-col font-sans text-sm">
-      {/* Header */}
       <div className="w-full bg-white sticky-top top-0 z-20 flex items-center">
         <Header />
       </div>
-
-      {/* Main Content */}
       <div className="flex flex-1 top-0 z-20 overflow-hidden">
-        {/* Sidebar */}
         <SideBar />
-
-        {/* Content Area */}
         <div className="flex-1 flex flex-col bg-gray-50 overflow-auto">
-          {/* <div className="bg-white p-4 border-b border-gray-200 top-0 z-20">
+          <div className="bg-white p-4 border-b border-gray-200 top-0 z-20">
             <Breadcrumbs />
-          </div> */}
-
+          </div>
           <div className="flex-1 p-6 overflow-auto">
             <Outlet />
           </div>
