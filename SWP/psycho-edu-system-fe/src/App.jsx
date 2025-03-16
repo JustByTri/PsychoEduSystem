@@ -33,6 +33,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Chat from "./pages/chat/Chat";
 import TargetPrograms from "./pages/admin/TargetPrograms";
 import CreateUserPage from "./pages/admin/CreateUserPage";
+import UserProfilePage from "./pages/UserProfilePage";
 
 function App() {
   return (
@@ -111,6 +112,25 @@ function App() {
               <Route path="class/:classId" element={<ClassDetails />} />
               <Route path="slot" element={<TeacherScheduleRegistration />} />
               <Route path="schedule" element={<TeacherSchedulePage />} />
+            </Route>
+          </Route>
+
+          {/* Profile Route - Accessible by all authenticated users */}
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={[
+                  "Student",
+                  "Parent",
+                  "Teacher",
+                  "Psychologist",
+                  "Admin",
+                ]}
+              />
+            }
+          >
+            <Route path="/profile" element={<PortalLayout />}>
+              <Route index element={<UserProfilePage />} />
             </Route>
           </Route>
 

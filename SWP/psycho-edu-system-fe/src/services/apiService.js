@@ -1,5 +1,5 @@
 import axios from "axios";
-import { parseISO, startOfDay } from "date-fns";
+import { parseISO, startOfDay, format } from "date-fns";
 import { getAuthDataFromLocalStorage } from "../utils/auth";
 
 const API_BASE_URL = "https://localhost:7192/api";
@@ -7,14 +7,14 @@ const authData = getAuthDataFromLocalStorage();
 
 const apiService = {
   // Lấy profile người dùng
-  fetchUserProfile: async () => {
+  fetchUserProfile: async (userId) => {
     try {
-      if (!authData || !authData.accessToken || !authData.userId) {
+      if (!authData || !authData.accessToken) {
         throw new Error("Authentication data not found. Please log in.");
       }
 
       const profileResponse = await axios.get(
-        `${API_BASE_URL}/User/profile?userId=${authData.userId}`,
+        `${API_BASE_URL}/User/profile?userId=${userId}`,
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -24,18 +24,17 @@ const apiService = {
       );
 
       if (profileResponse.data.isSuccess) {
-        return { ...profileResponse.data.result, userId: authData.userId };
+        return { ...profileResponse.data.result, userId };
       } else {
         throw new Error(
           profileResponse.data.message || "Failed to get user profile"
         );
       }
     } catch (error) {
+      console.error("Error fetching user profile:", error);
       throw new Error("Failed to load user profile. Please try again later.");
     }
   },
-
-  // Các API khác giữ nguyên, thêm 2 API mới dưới đây
 
   // Kiểm tra sự tồn tại của user (dùng cho email và studentEmail)
   checkUserExistence: async (email) => {
@@ -90,8 +89,9 @@ const apiService = {
   // Lấy danh sách appointment của sinh viên
   fetchAppointments: async (userId, date) => {
     try {
+      const formattedDate = format(new Date(date), "yyyy-MM-dd");
       const response = await axios.get(
-        `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${date}`,
+        `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${formattedDate}`,
         {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
@@ -99,6 +99,7 @@ const apiService = {
           },
         }
       );
+      console.log("fetchAppointments response:", response.data);
       if (response.data.isSuccess) {
         return response.data.result.map((appointment) => {
           const parsedDate = parseISO(
@@ -107,7 +108,7 @@ const apiService = {
           const localDate = startOfDay(parsedDate);
           return {
             id: appointment.appointmentId,
-            studentId: userId,
+            studentId: appointment.studentId || userId,
             student: appointment.appointmentFor || "Unknown Student",
             consultant: appointment.meetingWith || "Unknown Consultant",
             type: appointment.isOnline ? "Online" : "Offline",
@@ -121,6 +122,9 @@ const apiService = {
             appointmentId: appointment.appointmentId,
             isCancelled: appointment.isCancelled || false,
             googleMeetURL: appointment.googleMeetURL || null,
+            meetingWith: appointment.meetingWith,
+            bookedBy: appointment.bookedBy, // Thêm bookedBy
+            appointmentFor: appointment.appointmentFor, // Thêm appointmentFor
           };
         });
       } else {
@@ -129,10 +133,10 @@ const apiService = {
         );
       }
     } catch (error) {
+      console.error("Error fetching appointments:", error);
       throw error;
     }
   },
-
   // Hủy appointment
   cancelAppointment: async (appointmentId) => {
     try {
