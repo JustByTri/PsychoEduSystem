@@ -1,8 +1,9 @@
-import React from "react";
-import { CCard, CCardBody, CSpinner } from "@coreui/react";
-import { FaClock } from "react-icons/fa";
+import React, { useState, useEffect, useRef } from "react";
+import { CSpinner } from "@coreui/react";
+import AppointmentsCard from "./AppointmentCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import apiService from "../../services/apiService";
 
 const AppointmentsList = ({
   isLoading,
@@ -13,6 +14,9 @@ const AppointmentsList = ({
   handleNavigate,
   selectedDate,
 }) => {
+  const [appointmentsWithNames, setAppointmentsWithNames] = useState([]);
+  const userProfileCache = useRef({});
+
   const getTimeFromSlotId = (slotId) => {
     const times = [
       "08:00",
@@ -28,149 +32,118 @@ const AppointmentsList = ({
     return times[slotId - 1] || "Unknown";
   };
 
+  const calculateTimeRange = (slotId) => {
+    const startTime = getTimeFromSlotId(slotId);
+    if (startTime === "Unknown") return "Unknown";
+    const [hours, minutes] = startTime.split(":").map(Number);
+    const endHours = hours + (minutes + 45 >= 60 ? 1 : 0);
+    const endMinutes = (minutes + 45) % 60;
+    const endTime = `${endHours.toString().padStart(2, "0")}:${endMinutes
+      .toString()
+      .padStart(2, "0")}`;
+    return `${startTime} - ${endTime}`;
+  };
+
+  const fetchNamesForAppointment = async (appointment) => {
+    try {
+      if (!appointment.studentId) {
+        throw new Error(`Invalid studentId: ${appointment.studentId}`);
+      }
+      let studentProfile = userProfileCache.current[appointment.studentId];
+      if (!studentProfile) {
+        studentProfile = await apiService.fetchUserProfile(
+          appointment.studentId
+        );
+        userProfileCache.current[appointment.studentId] = studentProfile;
+      }
+      const psychologistName =
+        appointment.meetingWith || "Unknown Psychologist";
+      return {
+        ...appointment,
+        student:
+          studentProfile.fullName || studentProfile.name || "Unknown Student",
+        lesson: psychologistName,
+      };
+    } catch (error) {
+      return {
+        ...appointment,
+        student: "Unknown Student",
+        lesson: appointment.meetingWith || "Unknown Psychologist",
+      };
+    }
+  };
+
+  useEffect(() => {
+    const fetchAllNames = async () => {
+      const appointmentsWithNames = await Promise.all(
+        filteredAppointments.map(fetchNamesForAppointment)
+      );
+      setAppointmentsWithNames(appointmentsWithNames);
+    };
+    fetchAllNames();
+  }, [filteredAppointments]);
+
   return (
-    <div className="appointments-container">
-      {isLoading ? (
-        <div className="flex justify-center items-center min-h-[200px]">
-          <CSpinner color="primary" />
-        </div>
-      ) : filteredAppointments.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <AnimatePresence>
-            {filteredAppointments.map((appointment, index) => (
-              <motion.div
-                key={appointment.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, delay: 0.05 * index }}
-                whileHover={{ scale: 1.02 }} // Hiệu ứng nổi nhẹ khi hover
-                onDoubleClick={() => handleViewDetail(appointment)}
-                className="w-full max-w-[400px] mx-auto"
-              >
-                <CCard className="shadow-md border-0 bg-blue-50 dark:bg-gray-800 rounded-2xl overflow-hidden flex flex-col">
-                  <CCardBody className="p-4 flex flex-col gap-4">
-                    {/* Consultant Info */}
-                    <div className="text-center">
-                      <span className="text-blue-600 dark:text-blue-300 text-[clamp(14px,1.5vw,16px)]">
-                        Consultant
-                      </span>
-                      <h5 className="mt-1 mb-0 font-bold text-gray-800 dark:text-gray-200 text-[clamp(20px,2.5vw,24px)]">
-                        {appointment.consultant || "Unknown Consultant"}
-                      </h5>
-                    </div>
-
-                    {/* Date, Time, Type, Status */}
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center">
-                        <FaClock className="mr-2 text-blue-500 text-[clamp(18px,2vw,20px)]" />
-                        <span className="text-gray-800 dark:text-gray-200 font-medium text-[clamp(16px,2vw,18px)]">
-                          {format(appointment.date, "EEE, do MMM")}{" "}
-                          {appointment.slot
-                            ? getTimeFromSlotId(appointment.slot)
-                            : appointment.time || "Unknown time"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span
-                          className={`font-medium text-[clamp(14px,1.5vw,16px)] ${
-                            appointment.type === "Online"
-                              ? "text-blue-500"
-                              : "text-purple-500"
-                          }`}
-                        >
-                          {appointment.type}
-                        </span>
-                        <span
-                          className={`font-medium text-[clamp(14px,1.5vw,16px)] ${
-                            appointment.status === "Completed"
-                              ? "text-green-500"
-                              : appointment.status === "Cancelled"
-                              ? "text-red-500"
-                              : "text-yellow-500"
-                          }`}
-                        >
-                          {appointment.status}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Buttons - Always show all 4 buttons, gray out if not applicable */}
-                    <div className="flex flex-wrap justify-center gap-2">
-                      <button
-                        onClick={() => handleChat(appointment.id)}
-                        disabled={
-                          appointment.status === "Completed" ||
-                          appointment.status === "Cancelled"
-                        }
-                        className={`${
-                          appointment.status === "Completed" ||
-                          appointment.status === "Cancelled"
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-blue-500 hover:bg-blue-600"
-                        } text-white font-bold rounded-full shadow-md transition-all duration-200 w-[120px] h-10 flex items-center justify-center text-[clamp(12px,1.2vw,14px)] truncate`}
-                      >
-                        Join
-                      </button>
-                      <a
-                        href={appointment.googleMeetURL || "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => {
-                          if (
-                            !appointment.googleMeetURL ||
-                            appointment.type !== "Online"
-                          )
-                            e.preventDefault();
-                        }}
-                        className={`${
-                          appointment.type === "Online" &&
-                          appointment.googleMeetURL
-                            ? "bg-emerald-500 hover:bg-emerald-600"
-                            : "bg-gray-400 cursor-not-allowed"
-                        } text-white font-bold rounded-full shadow-md transition-all duration-200 w-[120px] h-10 flex items-center justify-center text-[clamp(12px,1.2vw,14px)] truncate`}
-                      >
-                        G-Meet
-                      </a>
-                      <button
-                        onClick={() => handleViewDetail(appointment)}
-                        className="bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-full shadow-md transition-all duration-200 w-[120px] h-10 flex items-center justify-center text-[clamp(12px,1.2vw,14px)] truncate"
-                      >
-                        Detail
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleCancelAppointment(appointment.appointmentId)
-                        }
-                        disabled={appointment.status === "Cancelled"}
-                        className={`${
-                          appointment.status === "Cancelled"
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-red-500 hover:bg-red-600"
-                        } text-white font-bold rounded-full shadow-md transition-all duration-200 w-[120px] h-10 flex items-center justify-center text-[clamp(12px,1.2vw,14px)] truncate`}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </CCardBody>
-                </CCard>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <h5 className="text-blue-600 dark:text-blue-400 text-[clamp(16px,2vw,18px)]">
-            No appointments for {format(selectedDate, "EEEE, MM/dd/yyyy")}
-          </h5>
-          <button
-            onClick={handleNavigate}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-[clamp(14px,1.5vw,16px)]"
+    <div className="appointments-container h-full overflow-hidden flex flex-col bg-gray-50">
+      <div className="flex-1 flex flex-col">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <CSpinner color="primary" />
+          </div>
+        ) : filteredAppointments.length > 0 ? (
+          <motion.div
+            className="flex-1 px-6 py-6 grid grid-cols-3 gap-6 max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            Schedule a New Appointment
-          </button>
-        </div>
-      )}
+            <AnimatePresence>
+              {appointmentsWithNames.map((appointment) => (
+                <AppointmentsCard
+                  key={appointment.id}
+                  student={appointment.student}
+                  lesson={appointment.lesson}
+                  date={format(appointment.date, "EEE, dd-MM-yyyy")}
+                  timeRange={
+                    calculateTimeRange(appointment.slot) ||
+                    appointment.time ||
+                    "Unknown"
+                  }
+                  status={
+                    appointment.isCancelled
+                      ? "Canceled"
+                      : appointment.isCompleted
+                      ? "Completed"
+                      : "Not Yet"
+                  }
+                  type={appointment.isOnline ? "Online" : "Offline"}
+                  bookedBy={appointment.bookedBy}
+                  appointmentFor={appointment.appointmentFor} // Truyền appointmentFor
+                  onJoin={() => handleChat(appointment.id)}
+                  onCancel={() =>
+                    handleCancelAppointment(appointment.appointmentId)
+                  }
+                  onViewDetail={() => handleViewDetail(appointment)}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        ) : (
+          <div className="flex-1 flex flex-col justify-center items-center text-center px-6">
+            <h5 className="text-gray-600 text-[1.125rem] mb-4">
+              No appointments scheduled
+            </h5>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleNavigate}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-[1rem] shadow-md"
+            >
+              Schedule a New Appointment
+            </motion.button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

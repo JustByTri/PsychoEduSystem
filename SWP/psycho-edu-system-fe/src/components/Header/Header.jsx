@@ -187,22 +187,6 @@ const Header = () => {
 
           <MenuItem
             component={Link}
-            to="/settings"
-            onClick={handleMenuClose}
-            sx={{
-              fontSize: "0.95rem",
-              py: 1,
-              "&:hover": { backgroundColor: "#f5f5f5" },
-            }}
-          >
-            <ListItemIcon>
-              <SettingsIcon fontSize="small" sx={{ color: "#1976D2" }} />
-            </ListItemIcon>
-            Settings
-          </MenuItem>
-
-          <MenuItem
-            component={Link}
             to="/"
             onClick={handleMenuClose}
             sx={{
