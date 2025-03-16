@@ -200,7 +200,14 @@ const SchedulePage = () => {
   };
 
   const handleNavigate = () => navigate("/student/booking");
-  const handleChat = (id) => navigate(`/chat/${id}`);
+  const handleChat = (id) => {
+    const appointment = bookings.find(
+      (appt) => appt.id === id || appt.appointmentId === id
+    );
+    navigate(`/chat/${id}`, {
+      state: { googleMeetURL: appointment?.googleMeetURL || null },
+    });
+  };
 
   const handleNextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));

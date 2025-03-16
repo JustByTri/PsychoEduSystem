@@ -24,6 +24,7 @@ const apiService = {
       );
 
       if (profileResponse.data.isSuccess) {
+        console.log("User Profile Response:", profileResponse.data.result); // Log dữ liệu
         return { ...profileResponse.data.result, userId };
       } else {
         throw new Error(
@@ -100,6 +101,7 @@ const apiService = {
         }
       );
       if (response.data.isSuccess) {
+        console.log("API Response:", response.data.result);
         return response.data.result.map((appointment) => {
           const parsedDate = parseISO(
             appointment.date.split("/").reverse().join("-")
@@ -108,8 +110,9 @@ const apiService = {
           return {
             id: appointment.appointmentId,
             studentId: appointment.studentId || userId,
-            student: appointment.appointmentFor || "Unknown Student",
-            consultant: appointment.meetingWith || "Unknown Consultant",
+            appointmentFor: appointment.appointmentFor, // Không gán mặc định
+            bookedBy: appointment.bookedBy, // Không gán mặc định
+            meetingWith: appointment.meetingWith, // Không gán mặc định
             type: appointment.isOnline ? "Online" : "Offline",
             date: localDate,
             slot: appointment.slotId || 0,
@@ -122,9 +125,6 @@ const apiService = {
             appointmentId: appointment.appointmentId,
             isCancelled: appointment.isCancelled || false,
             googleMeetURL: appointment.googleMeetURL || null,
-            meetingWith: appointment.meetingWith,
-            bookedBy: appointment.bookedBy, // Thêm bookedBy
-            appointmentFor: appointment.appointmentFor, // Thêm appointmentFor
           };
         });
       } else {
@@ -133,7 +133,6 @@ const apiService = {
         );
       }
     } catch (error) {
-      // console.error("Error fetching appointments:", error);
       throw error;
     }
   },
@@ -242,33 +241,30 @@ const apiService = {
   // Đặt lịch hẹn
   bookAppointment: async (appointmentData) => {
     try {
-      // Kiểm tra dữ liệu đầu vào
       const { bookedBy, appointmentFor, meetingWith, date, slotId, isOnline } =
         appointmentData;
       if (!bookedBy || !appointmentFor || !meetingWith || !date || !slotId) {
         throw new Error("Missing required fields in appointment data");
       }
 
-      // Chuyển đổi date thành định dạng ISO 8601 (nếu server yêu cầu)
       let formattedDate;
       try {
-        const parsedDate = parseISO(date); // "2025-03-17" -> Date object
-        formattedDate = format(parsedDate, "yyyy-MM-dd"); // Giữ định dạng YYYY-MM-DD
-        // Nếu API yêu cầu ISO đầy đủ, uncomment dòng sau:
-        // formattedDate = parsedDate.toISOString(); // "2025-03-17T00:00:00.000Z"
+        const parsedDate = parseISO(date);
+        formattedDate = format(parsedDate, "yyyy-MM-dd");
       } catch (error) {
         throw new Error("Invalid date format. Please use YYYY-MM-DD");
       }
 
-      // Tạo payload với định dạng chuẩn
       const payload = {
-        bookedBy,
-        appointmentFor,
-        meetingWith,
+        bookedBy: bookedBy, // Giữ nguyên ID của người book
+        appointmentFor: appointmentFor,
+        meetingWith: meetingWith,
         date: formattedDate,
-        slotId: Number(slotId), // Đảm bảo slotId là số
+        slotId: Number(slotId),
         isOnline: Boolean(isOnline),
       };
+
+      console.log("Booking Payload:", payload); // Log payload gửi đi
 
       const response = await axios.post(
         `${API_BASE_URL}/appointments`,
@@ -285,7 +281,20 @@ const apiService = {
         throw new Error(response.data.message || "Failed to book appointment");
       }
 
-      return response.data;
+      // Trả về dữ liệu đầy đủ để lưu trữ
+      return {
+        isSuccess: true,
+        message: response.data.message || "Booking successful",
+        result: {
+          appointmentId: response.data.result?.appointmentId || null,
+          bookedBy: payload.bookedBy,
+          appointmentFor: payload.appointmentFor,
+          meetingWith: payload.meetingWith,
+          date: payload.date,
+          slotId: payload.slotId,
+          isOnline: payload.isOnline,
+        },
+      };
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
@@ -296,11 +305,10 @@ const apiService = {
         statusCode: error.response?.data?.statusCode || 500,
         message: errorMessage,
         isSuccess: false,
-        result: "",
+        result: null,
       };
     }
   },
-
   // Lấy danh sách slot đã book của user
   fetchUserSchedules: async (userId) => {
     try {

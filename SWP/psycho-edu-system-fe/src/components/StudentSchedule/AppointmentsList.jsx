@@ -58,17 +58,22 @@ const AppointmentsList = ({
       }
       const psychologistName =
         appointment.meetingWith || "Unknown Psychologist";
+      console.log(appointment.meetingWith);
       return {
         ...appointment,
         student:
           studentProfile.fullName || studentProfile.name || "Unknown Student",
         lesson: psychologistName,
+        bookedBy: appointment.bookedBy || "Unknown",
+        appointmentFor: appointment.appointmentFor || "Unknown",
       };
     } catch (error) {
       return {
         ...appointment,
         student: "Unknown Student",
         lesson: appointment.meetingWith || "Unknown Psychologist",
+        bookedBy: appointment.bookedBy || "Unknown",
+        appointmentFor: appointment.appointmentFor || "Unknown",
       };
     }
   };
@@ -111,7 +116,7 @@ const AppointmentsList = ({
                   status={appointment.status}
                   type={appointment.type}
                   bookedBy={appointment.bookedBy}
-                  appointmentFor={appointment.appointmentFor} // Truyền appointmentFor
+                  appointmentFor={appointment.appointmentFor}
                   onJoin={() => handleChat(appointment.id)}
                   onCancel={() =>
                     handleCancelAppointment(appointment.appointmentId)
