@@ -142,7 +142,12 @@ const ProgramCard = ({ program, handleEnroll }) => {
             <Typography variant="body2" color="textSecondary">
               <strong>Time:</strong> {program.startDate.split("T")[1]}
             </Typography>
-
+            <Typography variant="body2" color="textSecondary">
+              <strong>Min Score:</strong> {program.minPoint}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              <strong>Topic:</strong> {program.dimensionName}
+            </Typography>
             <Typography variant="body2" color="textSecondary">
               <strong>Capacity:</strong>
               {program.currentCapacity}/{program.capacity}

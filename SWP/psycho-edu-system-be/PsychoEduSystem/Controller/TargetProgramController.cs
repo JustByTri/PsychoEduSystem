@@ -87,46 +87,22 @@ namespace PsychoEduSystem.Controller
             }
         }
 
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateProgramAsync(Guid id, [FromBody] TargetProgramDTO programDto)
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateProgramAsync([FromBody] TargetProgramDTO programDto)
         {
             if (programDto == null)
                 return BadRequest("Invalid program data.");
 
-            if (id == Guid.Empty || programDto.ProgramId != id)
-                return BadRequest("Invalid program ID.");
-
             try
             {
-                var existingProgram = await _targetProgramService.GetProgramByIdAsync(id);
-                if (existingProgram == null)
-                    return NotFound("Program not found.");
-
                 await _targetProgramService.UpdateProgramAsync(programDto);
-
-                return Ok(new
-                {
-                    Message = "Program updated successfully",
-                    UpdatedProgram = new
-                    {
-                        programDto.ProgramId,
-                        programDto.Name,
-                        programDto.Description,
-                        programDto.StartDate,
-                        programDto.MinPoint,
-                        programDto.Capacity,
-                        programDto.DimensionId,
-                        programDto.CounselorId
-                    }
-                });
+                return Ok(new { Message = "Program updated successfully" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal Server Error: {ex.Message}");
+                return StatusCode(500, new { Error = "An error occurred while updating the program.", Details = ex.Message });
             }
         }
-
-
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteProgramAsync(Guid id)
         {
