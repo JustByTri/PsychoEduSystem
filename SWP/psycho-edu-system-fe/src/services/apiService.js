@@ -99,7 +99,6 @@ const apiService = {
           },
         }
       );
-      console.log("fetchAppointments response:", response.data);
       if (response.data.isSuccess) {
         return response.data.result.map((appointment) => {
           const parsedDate = parseISO(
@@ -134,7 +133,7 @@ const apiService = {
         );
       }
     } catch (error) {
-      console.error("Error fetching appointments:", error);
+      // console.error("Error fetching appointments:", error);
       throw error;
     }
   },
@@ -243,9 +242,37 @@ const apiService = {
   // Đặt lịch hẹn
   bookAppointment: async (appointmentData) => {
     try {
+      // Kiểm tra dữ liệu đầu vào
+      const { bookedBy, appointmentFor, meetingWith, date, slotId, isOnline } =
+        appointmentData;
+      if (!bookedBy || !appointmentFor || !meetingWith || !date || !slotId) {
+        throw new Error("Missing required fields in appointment data");
+      }
+
+      // Chuyển đổi date thành định dạng ISO 8601 (nếu server yêu cầu)
+      let formattedDate;
+      try {
+        const parsedDate = parseISO(date); // "2025-03-17" -> Date object
+        formattedDate = format(parsedDate, "yyyy-MM-dd"); // Giữ định dạng YYYY-MM-DD
+        // Nếu API yêu cầu ISO đầy đủ, uncomment dòng sau:
+        // formattedDate = parsedDate.toISOString(); // "2025-03-17T00:00:00.000Z"
+      } catch (error) {
+        throw new Error("Invalid date format. Please use YYYY-MM-DD");
+      }
+
+      // Tạo payload với định dạng chuẩn
+      const payload = {
+        bookedBy,
+        appointmentFor,
+        meetingWith,
+        date: formattedDate,
+        slotId: Number(slotId), // Đảm bảo slotId là số
+        isOnline: Boolean(isOnline),
+      };
+
       const response = await axios.post(
         `${API_BASE_URL}/appointments`,
-        appointmentData,
+        payload,
         {
           headers: {
             "Content-Type": "application/json",
@@ -253,10 +280,24 @@ const apiService = {
           },
         }
       );
+
+      if (!response.data.isSuccess) {
+        throw new Error(response.data.message || "Failed to book appointment");
+      }
+
       return response.data;
     } catch (error) {
-      console.error("Error booking appointment:", error);
-      throw error;
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Error booking appointment";
+      console.error("Error booking appointment:", errorMessage);
+      throw {
+        statusCode: error.response?.data?.statusCode || 500,
+        message: errorMessage,
+        isSuccess: false,
+        result: "",
+      };
     }
   },
 

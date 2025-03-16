@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useBooking } from "../../../context/BookingContext";
+import { useBooking } from "../../../context/BookingContext"; // Thêm import này
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
 import { motion } from "framer-motion";
 import axios from "axios";
@@ -10,8 +10,8 @@ const cardVariants = {
   initial: { scale: 0.9, opacity: 0, y: 20 },
   animate: { scale: 1, opacity: 1, y: 0 },
   hover: {
-    scale: 1.03, // Giảm scale khi hover
-    y: -5, // Giảm độ nâng lên khi hover
+    scale: 1.03,
+    y: -5,
     boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.12)",
     transition: { duration: 0.2, ease: "easeOut" },
   },
@@ -21,93 +21,62 @@ const cardVariants = {
 export const ConsultantTypeSelection = () => {
   const { updateBookingData, bookingData, isParent } = useBooking();
   const [error, setError] = useState(null);
-
-  // Memoize authData to prevent unnecessary re-renders
+  const [isLoading, setIsLoading] = useState(false);
   const authData = useMemo(() => getAuthDataFromLocalStorage(), []);
   const userId = authData?.userId;
 
-  // Optimize useEffect with proper dependency handling
-  useEffect(() => {
-    const shouldUpdateUserId = !bookingData.userId && userId && !isParent();
-    if (shouldUpdateUserId) {
-      updateBookingData({ userId });
-    }
-  }, [userId, isParent, updateBookingData, bookingData.userId]);
-
-  const fetchClassAndTeacher = useCallback(async (studentId) => {
-    if (!studentId) {
-      setError("Student ID is required.");
-      return null;
-    }
-
-    try {
-      const authData = getAuthDataFromLocalStorage();
-      const response = await axios.get(
-        `https://localhost:7192/api/User/${studentId}/class`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
+  const fetchHomeroomTeacher = useCallback(
+    async (studentId) => {
+      setIsLoading(true);
+      try {
+        const response = await axios.get(
+          `https://localhost:7192/api/User/${studentId}/class`,
+          {
+            headers: {
+              Authorization: `Bearer ${authData.accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.data.isSuccess && response.data.statusCode === 200) {
+          return response.data.result.teacherId;
         }
-      );
-
-      if (response.data.isSuccess && response.data.statusCode === 200) {
-        return response.data.result.teacherId;
+        throw new Error("Invalid response from server.");
+      } catch (error) {
+        setError("Failed to fetch homeroom teacher: " + error.message);
+        return null;
+      } finally {
+        setIsLoading(false);
       }
-      setError("Invalid response from server.");
-      return null;
-    } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to fetch class and teacher"
-      );
-      return null;
-    }
-  }, []);
+    },
+    [authData.accessToken]
+  );
 
   const handleSelectType = useCallback(
     async (event, type) => {
       event.preventDefault();
       setError(null);
 
-      let studentId = !isParent() ? userId : bookingData.childId;
+      const studentId = !isParent() ? userId : bookingData.childId;
       if (!studentId) {
         setError(
-          isParent()
-            ? "No valid student ID available. Please ensure a child is selected."
-            : "No valid user ID available. Please check your authentication."
+          "No valid student ID available. Please go back and select a child."
         );
         return;
       }
 
-      // Cập nhật ngay lập tức consultantType để tránh trạng thái loading
       updateBookingData({
         consultantType: type,
         isHomeroomTeacher: type === "homeroom",
       });
 
-      // Nếu là homeroom, thực hiện fetch teacher trong background mà không hiển thị loading
       if (type === "homeroom") {
-        fetchClassAndTeacher(studentId).then((teacherId) => {
-          if (teacherId) {
-            updateBookingData({
-              consultantId: teacherId,
-              consultantName: "",
-            });
-          } else {
-            // Vẫn hiển thị lỗi nếu có, nhưng không ảnh hưởng đến việc chọn loại consultant
-            setError(
-              "Could not fetch homeroom teacher. You can continue with the selection."
-            );
-          }
-        });
+        const teacherId = await fetchHomeroomTeacher(studentId);
+        if (teacherId) {
+          updateBookingData({ consultantId: teacherId, consultantName: "" });
+        }
       } else {
-        updateBookingData({
-          consultantId: "",
-          consultantName: "",
-        });
+        updateBookingData({ consultantId: "", consultantName: "" });
       }
     },
     [
@@ -115,34 +84,12 @@ export const ConsultantTypeSelection = () => {
       userId,
       bookingData.childId,
       updateBookingData,
-      fetchClassAndTeacher,
+      fetchHomeroomTeacher,
     ]
   );
 
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-center text-red-600 p-4"
-      >
-        <Typography
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: {
-              xs: "clamp(0.75rem, 2vw, 0.875rem)",
-              sm: "clamp(0.875rem, 2.5vw, 1rem)",
-              md: "clamp(0.875rem, 3vw, 1.125rem)",
-            },
-            color: "#dc2626",
-            textAlign: "center",
-          }}
-        >
-          Error: {error}
-        </Typography>
-      </motion.div>
-    );
-  }
+  if (isLoading) return <div className="text-center">Loading...</div>;
+  if (error) return <div className="text-center text-red-600">{error}</div>;
 
   return (
     <Box
@@ -169,30 +116,18 @@ export const ConsultantTypeSelection = () => {
         >
           Select Consultant Type
         </Typography>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            width: "100%",
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-            sx={{
-              width: "100%",
-              maxWidth: "600px", // Giới hạn chiều rộng tối đa của container
-            }}
+            sx={{ width: "100%", maxWidth: "600px" }}
           >
             {["counselor", "homeroom"].map((type) => (
               <Box
                 key={type}
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                }}
+                sx={{ display: "flex", justifyContent: "center" }}
               >
                 <Card
                   component={motion.div}
@@ -209,7 +144,7 @@ export const ConsultantTypeSelection = () => {
                   sx={{
                     width: "100%",
                     height: { xs: "70px", sm: "80px", md: "90px" },
-                    maxWidth: "240px", // Cố định kích thước tối đa
+                    maxWidth: "240px",
                     cursor: "pointer",
                     "&:hover": {
                       borderColor: "#93c5fd",

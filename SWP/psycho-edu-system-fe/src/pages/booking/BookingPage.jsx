@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BookingProvider, useBooking } from "../../context/BookingContext";
 import { ChildSelection } from "../../components/Booking/BookingSteps/ChildSelection";
 import { ConsultantTypeSelection } from "../../components/Booking/BookingSteps/ConsultantTypeSelection";
@@ -12,7 +12,7 @@ import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import axios from "axios";
 import { CircularProgress } from "@mui/material";
 import { motion } from "framer-motion";
-
+import apiService from "../../services/apiService";
 const BookingPageContent = () => {
   const { isParent, bookingData, updateBookingData, resetBookingData } =
     useBooking();
@@ -20,73 +20,72 @@ const BookingPageContent = () => {
   const [totalSteps, setTotalSteps] = useState(5);
   const [studentId, setStudentId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
-
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
 
-  useEffect(() => {
-    let isMounted = true;
+  const determineStudentId = useCallback(async () => {
+    if (studentId) return;
 
-    const determineStudentId = async () => {
-      if (!isMounted || studentId) return;
+    setIsLoading(true);
+    setError(null);
 
+    try {
       if (!isParent()) {
-        if (isMounted) {
-          setStudentId(userId);
-          updateBookingData({ appointmentFor: userId });
-        }
+        setStudentId(userId);
+        updateBookingData({ appointmentFor: userId });
+      } else if (bookingData.childId) {
+        setStudentId(bookingData.childId);
+        updateBookingData({ appointmentFor: bookingData.childId });
       } else {
-        if (bookingData.childId && isMounted) {
-          setStudentId(bookingData.childId);
-          updateBookingData({ appointmentFor: bookingData.childId });
-        } else {
-          try {
-            const response = await axios.get(
-              `https://localhost:7192/api/relationships/parent/${userId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${authData.accessToken}`,
-                  "Content-Type": "application/json",
-                },
-              }
-            );
-            console.log("API Response for children:", response.data);
-            const result = response.data.result || response.data;
-            if (Array.isArray(result) && result.length > 0 && isMounted) {
-              const firstChildId = result[0].studentId;
-              setStudentId(firstChildId);
-              updateBookingData({
-                appointmentFor: firstChildId,
-                childId: firstChildId,
-              });
-            } else if (isMounted) {
-              console.warn("No children found for this parent.");
-            }
-          } catch (error) {
-            console.error("Error fetching children:", error.message);
+        const response = await axios.get(
+          `https://localhost:7192/api/relationships/parent/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authData.accessToken}`,
+              "Content-Type": "application/json",
+            },
           }
+        );
+        const result = response.data.result || response.data;
+        if (Array.isArray(result) && result.length > 0) {
+          const firstChildId = result[0].studentId;
+          setStudentId(firstChildId);
+          updateBookingData({
+            appointmentFor: firstChildId,
+            childId: firstChildId,
+          });
+        } else {
+          setError("No children found for this parent.");
         }
       }
-    };
+    } catch (error) {
+      setError("Failed to determine student ID: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    isParent,
+    userId,
+    bookingData.childId,
+    authData.accessToken,
+    updateBookingData,
+  ]);
 
+  useEffect(() => {
     determineStudentId();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isParent, userId]);
+  }, [determineStudentId]);
 
   useEffect(() => {
     setTotalSteps(isParent() ? 5 : 4);
   }, [isParent]);
 
-  const handleNext = () => {
-    setStep(step + 1);
-  };
-
   const handleBack = () => {
-    setStep(step - 1);
+    if (step > 1) {
+      setStep(step - 1);
+    }
   };
 
   const handleNextWithValidation = () => {
@@ -109,7 +108,9 @@ const BookingPageContent = () => {
         return;
       }
     }
-    handleNext();
+    if (step < totalSteps) {
+      setStep(step + 1);
+    }
   };
 
   const handleConfirm = async () => {
@@ -119,75 +120,50 @@ const BookingPageContent = () => {
       !bookingData.date ||
       !bookingData.slotId
     ) {
-      toast.error("Please complete all steps before confirming.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error("Please complete all steps before confirming.");
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(bookingData.date);
+    if (selectedDate < today) {
+      toast.error("Meeting date must be in the future.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const authData = getAuthDataFromLocalStorage();
       const appointmentData = {
         bookedBy: userId,
         appointmentFor: studentId,
         meetingWith: bookingData.consultantId,
-        date: bookingData.date,
+        date: bookingData.date, // "YYYY-MM-DD" từ DateTimeSelection
         slotId: bookingData.slotId,
         isOnline: bookingData.appointmentType === "Online",
       };
 
-      console.log("Submitting appointment data:", appointmentData);
+      const response = await apiService.bookAppointment(appointmentData);
 
-      const response = await axios.post(
-        "https://localhost:7192/api/appointments",
-        appointmentData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authData.accessToken}`,
-          },
-        }
-      );
-
-      if (!response.data.isSuccess || response.data.statusCode !== 200) {
-        throw new Error(response.data.message || "Failed to save appointment");
+      if (!response.isSuccess) {
+        throw new Error(response.message || "Failed to save appointment");
       }
 
-      console.log("Appointment saved successfully:", response.data);
-
-      toast.success("Booking registered successfully!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-
-      const schedulePath = isParent()
-        ? "/parent/schedule"
-        : "/student/schedule";
+      toast.success("Booking registered successfully!");
       setTimeout(() => {
         resetBookingData();
-        navigate(schedulePath);
+        navigate(isParent() ? "/parent/schedule" : "/student/schedule");
       }, 3000);
     } catch (error) {
-      console.error("Error confirming appointment:", error);
-      toast.error(
-        `Failed to register appointment: ${
-          error.response?.data?.message || error.message
-        }`,
-        {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        }
-      );
+      const errorMessage = error.message || "Failed to register appointment";
+      setError(`Failed to register appointment: ${errorMessage}`);
+      if (errorMessage.includes("Meeting date not valid")) {
+        toast.error(
+          "The selected date is not valid. Please choose a different date or check available slots."
+        );
+      } else {
+        toast.error(`Failed to register appointment: ${errorMessage}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -210,7 +186,6 @@ const BookingPageContent = () => {
           return null;
       }
     }
-
     switch (step) {
       case 1:
         return <ConsultantTypeSelection />;
@@ -225,9 +200,16 @@ const BookingPageContent = () => {
     }
   };
 
+  if (isLoading) {
+    return <div className="text-center">Loading student data...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center text-red-600">{error}</div>;
+  }
+
   return (
     <div className="w-[960px] mx-auto p-2 sm:p-4 md:p-6 bg-white min-h-screen flex flex-col overflow-x-hidden">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -253,13 +235,12 @@ const BookingPageContent = () => {
         </p>
       </motion.div>
 
-      {/* Step Content */}
       <div className="">{renderStepContent()}</div>
 
-      {/* Navigation Buttons */}
       <div className="bg-white p-2 sm:p-4 md:p-6 flex justify-between items-center w-full">
         <button
           onClick={handleBack}
+          disabled={step === 1 || isSubmitting}
           className={`font-inter px-4 sm:px-6 py-2 
           text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
           md:text-[clamp(0.85rem,3.5vw,1rem)] border border-blue-600 text-blue-600 rounded 
@@ -267,12 +248,12 @@ const BookingPageContent = () => {
           ${step > 1 ? "visible" : "invisible"} ${
             isSubmitting ? "opacity-50 cursor-not-allowed" : ""
           }`}
-          disabled={isSubmitting}
         >
           Back
         </button>
         <button
           onClick={step < totalSteps ? handleNextWithValidation : handleConfirm}
+          disabled={isSubmitting}
           className={`font-inter px-4 sm:px-6 py-2 
           text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
           md:text-[clamp(0.85rem,3.5vw,1rem)] rounded text-white 
@@ -284,7 +265,6 @@ const BookingPageContent = () => {
           transition-all duration-300 ${
             isSubmitting ? "opacity-50 cursor-not-allowed" : ""
           }`}
-          disabled={isSubmitting}
         >
           {isSubmitting ? (
             <CircularProgress size={20} color="inherit" />
@@ -300,7 +280,6 @@ const BookingPageContent = () => {
     </div>
   );
 };
-
 const BookingPage = () => {
   return (
     <BookingProvider>

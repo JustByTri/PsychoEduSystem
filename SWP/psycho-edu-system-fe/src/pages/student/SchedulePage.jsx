@@ -103,7 +103,7 @@ const SchedulePage = () => {
       setBookings(appointmentsData || []);
       setAppointmentViewKey((prev) => prev + 1);
     } catch (error) {
-      console.error("Failed to load appointments:", error);
+      // console.error("Failed to load appointments:", error);
       setBookings([]);
     } finally {
       setIsLoading(false);
