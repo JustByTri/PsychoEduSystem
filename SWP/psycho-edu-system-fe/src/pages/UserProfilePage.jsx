@@ -87,9 +87,8 @@ const UserProfilePage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Không cho phép thay đổi fullName
-    if (name === "fullName") return;
-    setFormData({ ...formData, [name]: value });
+    // Không khóa bất kỳ trường nào để cho phép chỉnh sửa
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEdit = (e) => {
@@ -110,36 +109,66 @@ const UserProfilePage = () => {
       return;
     }
 
+    if (!formData.phone || !/^\d{10}$/.test(formData.phone)) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+
+    let formattedBirthDay = null;
+    if (formData.birthDay) {
+      const [day, month, year] = formData.birthDay.split("/");
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(formData.birthDay)) {
+        toast.error("Please enter birth date in DD/MM/YYYY format");
+        return;
+      }
+      // Chuyển sang định dạng ISO 8601 giống yêu cầu API
+      formattedBirthDay = `${year}-${month.padStart(2, "0")}-${day.padStart(
+        2,
+        "0"
+      )}T00:00:00.000Z`;
+    }
+
     try {
       const payload = {
-        userId: authData.userId,
         firstName: formData.firstName || "",
         lastName: formData.lastName || "",
-        fullName: profile.fullName || "", // Giữ nguyên fullName từ profile gốc
         phone: formData.phone || "",
-        birthDay: formData.birthDay || "",
-        gender: formData.gender || "",
-        address: formData.address || "",
-        email: profile.email || "",
+        birthDay: formattedBirthDay,
+        gender: formData.gender || null,
+        address: formData.address || null,
       };
 
-      // Mock API update (demo)
-      const mockResponse = new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({ isSuccess: true, result: payload });
-        }, 500);
-      });
+      console.log("Payload gửi lên API:", payload);
 
-      const response = await mockResponse;
+      const response = await apiService.updateUserProfile(
+        authData.userId,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+          },
+        }
+      );
+
+      console.log("Response từ API:", response.result);
+
       if (response.isSuccess) {
-        setProfile(response.result);
+        setProfile({
+          ...response.result,
+          birthDay: formData.birthDay, // Giữ định dạng hiển thị
+        });
+        setFormData({
+          ...response.result,
+          birthDay: formData.birthDay, // Cập nhật formData
+        });
         setIsEditing(false);
-        toast.success("Profile updated successfully! (Demo)");
+        toast.success("Profile updated successfully!");
       } else {
-        throw new Error("Mock update failed");
+        throw new Error(response.message || "Update failed");
       }
     } catch (error) {
-      toast.error(error.message || "Error updating profile (Demo)");
+      console.error("API Error:", error);
+      toast.error(error.message || "Error updating profile");
     }
   };
 
@@ -185,7 +214,6 @@ const UserProfilePage = () => {
           <div className="md:w-1/3 bg-white p-6 border-r border-indigo-100">
             <div className="space-y-4">
               <SidebarField label="Email" value={profile.email || "N/A"} />
-              {/* Thay Role thành FullName */}
             </div>
             <div className="mt-6 space-y-2">
               {!isEditing ? (
@@ -257,11 +285,16 @@ const UserProfilePage = () => {
                 className="space-y-4"
               >
                 <EditField
-                  label="Full Name"
-                  name="fullName"
-                  value={formData.fullName || ""}
+                  label="First Name"
+                  name="firstName"
+                  value={formData.firstName || ""}
                   onChange={handleChange}
-                  disabled // Khóa trường FullName
+                />
+                <EditField
+                  label="Last Name"
+                  name="lastName"
+                  value={formData.lastName || ""}
+                  onChange={handleChange}
                 />
                 <EditField
                   label="Phone"

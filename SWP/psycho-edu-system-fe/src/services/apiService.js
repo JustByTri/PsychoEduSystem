@@ -37,6 +37,26 @@ const apiService = {
     }
   },
 
+  updateUserProfile: async (userId, data, config = {}) => {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/User/profile/${userId}`,
+        data,
+        {
+          ...config,
+          headers: {
+            "Content-Type": "application/json",
+            ...config.headers,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Failed to update profile"
+      );
+    }
+  },
   // Kiểm tra sự tồn tại của user (dùng cho email và studentEmail)
   checkUserExistence: async (email) => {
     try {
