@@ -401,53 +401,157 @@ namespace BLL.Service
         {
             try
             {
+                if (updateDto == null)
+                {
+                    return new ResponseDTO("Invalid profile data", 400, false, string.Empty);
+                }
+
                 var user = await _unitOfWork.User.GetByIdAsync(userId);
                 if (user == null)
                 {
                     return new ResponseDTO("User not found", 404, false, string.Empty);
                 }
 
-                if (!string.IsNullOrEmpty(updateDto.FirstName)) user.FirstName = updateDto.FirstName;
-                if (!string.IsNullOrEmpty(updateDto.LastName)) user.LastName = updateDto.LastName;
-                if (!string.IsNullOrEmpty(updateDto.Phone))
+                using (var transaction = _unitOfWork.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
                 {
-                    if (!System.Text.RegularExpressions.Regex.IsMatch(updateDto.Phone, @"^(?:\+84|0)[3|5|7|8|9]\d{8}$"))
+                    try
                     {
-                        return new ResponseDTO("Invalid phone number format", 400, false, string.Empty);
+                        // Xử lý cập nhật password nếu có
+                        if (!string.IsNullOrEmpty(updateDto.CurrentPassword) || !string.IsNullOrEmpty(updateDto.NewPassword))
+                        {
+                            // Cả hai trường phải được cung cấp nếu muốn đổi password
+                            if (string.IsNullOrEmpty(updateDto.CurrentPassword) || string.IsNullOrEmpty(updateDto.NewPassword))
+                            {
+                                return new ResponseDTO("Both current and new passwords are required to update password", 400, false, string.Empty);
+                            }
+
+                            // Xác minh mật khẩu hiện tại
+                            if (!VerifyPasswordHash(updateDto.CurrentPassword, user.PasswordHash, user.PasswordSalt))
+                            {
+                                return new ResponseDTO("Current password is incorrect", 400, false, string.Empty);
+                            }
+
+                            // Kiểm tra mật khẩu mới
+                            if (updateDto.NewPassword.Length < 6)
+                            {
+                                return new ResponseDTO("New password must be at least 6 characters long", 400, false, string.Empty);
+                            }
+
+                            // Tạo hash và salt mới
+                            byte[] newPasswordHash, newPasswordSalt;
+                            CreatePasswordHash(updateDto.NewPassword, out newPasswordHash, out newPasswordSalt);
+                            user.PasswordHash = newPasswordHash;
+                            user.PasswordSalt = newPasswordSalt;
+                        }
+
+                        // Cập nhật các thông tin profile khác
+                        if (!string.IsNullOrEmpty(updateDto.FirstName) && updateDto.FirstName.Length <= 30)
+                        {
+                            user.FirstName = updateDto.FirstName.Trim();
+                        }
+                        if (!string.IsNullOrEmpty(updateDto.LastName) && updateDto.LastName.Length <= 30)
+                        {
+                            user.LastName = updateDto.LastName.Trim();
+                        }
+
+                        if (!string.IsNullOrEmpty(updateDto.Phone))
+                        {
+                            if (!System.Text.RegularExpressions.Regex.IsMatch(updateDto.Phone, @"^(?:\+84|0)[3|5|7|8|9]\d{8}$"))
+                            {
+                                return new ResponseDTO("Invalid phone number format. Must be a valid Vietnamese phone number.", 400, false, string.Empty);
+                            }
+                            if (await _unitOfWork.User.AnyAsync(u => u.Phone == updateDto.Phone && u.UserId != userId))
+                            {
+                                return new ResponseDTO("Phone number already in use", 400, false, string.Empty);
+                            }
+                            user.Phone = updateDto.Phone;
+                        }
+
+                        if (updateDto.BirthDay.HasValue)
+                        {
+                            if (updateDto.BirthDay.Value > DateTime.UtcNow ||
+                                updateDto.BirthDay.Value < DateTime.UtcNow.AddYears(-150))
+                            {
+                                return new ResponseDTO("Invalid birth date", 400, false, string.Empty);
+                            }
+                            user.BirthDay = updateDto.BirthDay.Value;
+                        }
+
+                        if (!string.IsNullOrEmpty(updateDto.Gender))
+                        {
+                            string[] validGenders = { "Male", "Female", "Other" };
+                            if (!validGenders.Contains(updateDto.Gender))
+                            {
+                                return new ResponseDTO("Invalid gender value", 400, false, string.Empty);
+                            }
+                            user.Gender = updateDto.Gender;
+                        }
+
+                        if (!string.IsNullOrEmpty(updateDto.Address) && updateDto.Address.Length <= 200)
+                        {
+                            user.Address = updateDto.Address.Trim();
+                        }
+
+                        if (!string.IsNullOrEmpty(updateDto.FirstName) || !string.IsNullOrEmpty(updateDto.LastName))
+                        {
+                            user.FullName = $"{user.FirstName ?? ""} {user.LastName ?? ""}".Trim();
+                            if (user.FullName.Length > 30)
+                            {
+                                return new ResponseDTO("Full name exceeds maximum length of 30 characters", 400, false, string.Empty);
+                            }
+                        }
+
+                        await _unitOfWork.User.UpdateAsync(user);
+                        await _unitOfWork.SaveChangeAsync();
+                        transaction.Commit();
+
+                        var updatedProfile = new UserProfileDTO
+                        {
+                            FirstName = user.FirstName ?? "",
+                            LastName = user.LastName ?? "",
+                            FullName = user.FullName ?? "",
+                            BirthDay = user.BirthDay.ToString("d", new CultureInfo("vi-VN")),
+                            Gender = user.Gender,
+                            Address = user.Address,
+                            Email = user.Email,
+                            Phone = user.Phone
+                        };
+
+                        return new ResponseDTO("Profile updated successfully", 200, true, updatedProfile);
                     }
-                    user.Phone = updateDto.Phone;
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        return new ResponseDTO($"Error updating profile: {ex.Message}", 500, false, string.Empty);
+                    }
                 }
-                if (updateDto.BirthDay.HasValue) user.BirthDay = updateDto.BirthDay.Value;
-                if (!string.IsNullOrEmpty(updateDto.Gender)) user.Gender = updateDto.Gender;
-                if (!string.IsNullOrEmpty(updateDto.Address)) user.Address = updateDto.Address;
-
-          
-                if (!string.IsNullOrEmpty(updateDto.FirstName) || !string.IsNullOrEmpty(updateDto.LastName))
-                {
-                    user.FullName = $"{user.FirstName} {user.LastName}".Trim();
-                }
-
-                await _unitOfWork.User.UpdateAsync(user);
-                await _unitOfWork.SaveChangeAsync();
-
-                var updatedProfile = new UserProfileDTO
-                {
-                    FirstName = user.FirstName ?? "",
-                    LastName = user.LastName ?? "",
-                    FullName = user.FullName ?? "",
-                    BirthDay = user.BirthDay.ToString("d", new CultureInfo("vi-VN")),
-                    Gender = user.Gender,
-                    Address = user.Address,
-                    Email = user.Email,
-                    Phone = user.Phone
-                };
-
-                return new ResponseDTO("Profile updated successfully", 200, true, updatedProfile);
             }
             catch (Exception ex)
             {
                 return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
+
+        private bool VerifyPasswordHash(string password, byte[] storedHash, byte[] storedSalt)
+        {
+            if (string.IsNullOrEmpty(password) || storedHash == null || storedSalt == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                using (var hmac = new System.Security.Cryptography.HMACSHA512(storedSalt))
+                {
+                    var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                    return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(computedHash, storedHash);
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
-}
+    }
+
