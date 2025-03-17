@@ -87,7 +87,6 @@ const UserProfilePage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Không khóa bất kỳ trường nào để cho phép chỉnh sửa
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -121,7 +120,6 @@ const UserProfilePage = () => {
         toast.error("Please enter birth date in DD/MM/YYYY format");
         return;
       }
-      // Chuyển sang định dạng ISO 8601 giống yêu cầu API
       formattedBirthDay = `${year}-${month.padStart(2, "0")}-${day.padStart(
         2,
         "0"
@@ -132,6 +130,8 @@ const UserProfilePage = () => {
       const payload = {
         firstName: formData.firstName || "",
         lastName: formData.lastName || "",
+        currentPassword: formData.currentPassword || "", // Thêm trường mật khẩu
+        newPassword: formData.newPassword || "",
         phone: formData.phone || "",
         birthDay: formattedBirthDay,
         gender: formData.gender || null,
@@ -159,7 +159,9 @@ const UserProfilePage = () => {
         });
         setFormData({
           ...response.result,
-          birthDay: formData.birthDay, // Cập nhật formData
+          birthDay: formData.birthDay,
+          currentPassword: "", // Xóa mật khẩu sau khi update
+          newPassword: "",
         });
         setIsEditing(false);
         toast.success("Profile updated successfully!");
@@ -297,6 +299,20 @@ const UserProfilePage = () => {
                   onChange={handleChange}
                 />
                 <EditField
+                  label="Current Password"
+                  name="currentPassword"
+                  value={formData.currentPassword || ""}
+                  onChange={handleChange}
+                  type="password"
+                />
+                <EditField
+                  label="New Password"
+                  name="newPassword"
+                  value={formData.newPassword || ""}
+                  onChange={handleChange}
+                  type="password"
+                />
+                <EditField
                   label="Phone"
                   name="phone"
                   value={formData.phone || ""}
@@ -400,13 +416,14 @@ const EditField = ({
   onChange,
   disabled = false,
   placeholder,
+  type = "text",
 }) => (
   <div>
     <label className="block text-sm font-semibold text-gray-700 mb-1">
       {label}
     </label>
     <input
-      type="text"
+      type={type}
       name={name}
       value={value}
       onChange={onChange}
