@@ -236,15 +236,6 @@ const LoginModal = () => {
                 <span className="sr-only">Close modal</span>
               </button>
             </div>
-
-            <div className="mb-6 flex justify-center relative">
-              <img
-                src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcmJyMndqOG9sYjQ5ZmxiNW1uejhmbjdnNjg3eGg3MXl1eGx1M2xodiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JVmYAO3MkGNiM/giphy.gif"
-                alt="Welcome Animation"
-                className="w-full max-w-[400px] h-60 object-cover object-[30%_43%] transform transition-all duration-300"
-              />
-            </div>
-
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
                 <input

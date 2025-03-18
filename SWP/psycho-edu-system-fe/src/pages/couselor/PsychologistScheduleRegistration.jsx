@@ -17,6 +17,7 @@ import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Trash2 } from "lucide-react";
 import moment from "moment";
+import apiService from "../../services/apiService";
 
 const PsychologistScheduleRegistration = () => {
   const authData = getAuthDataFromLocalStorage();
