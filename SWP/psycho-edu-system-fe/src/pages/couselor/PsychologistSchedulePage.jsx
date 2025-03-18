@@ -144,40 +144,58 @@ const PsychologistSchedulePage = () => {
   const fetchSchedules = async (date) => {
     try {
       const selectedDateStr = moment(date).format("YYYY-MM-DD");
-      const schedules = await apiService.fetchUserSchedules(teacherId); // Sử dụng apiService
+
+      // Lấy danh sách slot đã đăng ký bởi psychologist
+      const schedules = await apiService.fetchUserSchedules(teacherId);
+      // Lấy danh sách appointment của psychologist trong ngày
+      const appointments = await apiService.fetchConsultantAppointments(
+        teacherId,
+        selectedDateStr
+      );
 
       if (!Array.isArray(schedules)) {
         setAvailableSlots([]);
-      } else {
-        const available = schedules
-          .filter((schedule) =>
-            moment(schedule.date).isSame(selectedDateStr, "day")
-          )
-          .map((schedule) => ({
-            id: schedule.scheduleId,
-            title: `Available Slot`,
-            start: moment(schedule.date)
-              .set({
-                hour: parseInt(schedule.slotName.split(":")[0], 10),
-                minute: 0,
-              })
-              .toDate(),
-            end: moment(schedule.date)
-              .set({
-                hour: parseInt(schedule.slotName.split(":")[0], 10) + 1,
-                minute: 0,
-              })
-              .toDate(),
-            details: {
-              slotId: schedule.slotId,
-              date: moment(schedule.date).format("YYYY-MM-DD"),
-              slotName: schedule.slotName,
-              createAt: schedule.createAt,
-            },
-          }));
-        setAvailableSlots(available);
+        return;
       }
+
+      // Lấy danh sách slotId đã book thành appointment trong ngày
+      const bookedSlotIds = appointments.map(
+        (appointment) => appointment.slotId
+      );
+
+      // Lọc các slot của psychologist trong ngày được chọn và chưa bị book
+      const psychologistAvailableSlots = schedules
+        .filter(
+          (schedule) =>
+            moment(schedule.date).isSame(selectedDateStr, "day") &&
+            !bookedSlotIds.includes(schedule.slotId)
+        )
+        .map((schedule) => ({
+          id: schedule.scheduleId, // Dùng scheduleId làm id để phân biệt
+          title: `Available Slot`,
+          start: moment(selectedDateStr)
+            .set({
+              hour: parseInt(schedule.slotName.split(":")[0], 10),
+              minute: 0,
+            })
+            .toDate(),
+          end: moment(selectedDateStr)
+            .set({
+              hour: parseInt(schedule.slotName.split(":")[0], 10) + 1,
+              minute: 0,
+            })
+            .toDate(),
+          details: {
+            slotId: schedule.slotId,
+            date: selectedDateStr,
+            slotName: schedule.slotName,
+            createAt: schedule.createAt,
+          },
+        }));
+
+      setAvailableSlots(psychologistAvailableSlots);
     } catch (error) {
+      console.error("Error fetching psychologist available slots:", error);
       setAvailableSlots([]);
     }
   };
