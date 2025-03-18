@@ -28,10 +28,8 @@ const Chat = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
-  const location = useLocation(); // Lấy state từ navigation
-  const googleMeetURL = location.state?.googleMeetURL || null; // Lấy googleMeetURL từ state
-
-  // Logic cũ của bạn
+  const location = useLocation();
+  const googleMeetURL = location.state?.googleMeetURL || null; 
   useEffect(() => {
     if (!token || !id) {
       console.error("🚨 Missing token or appointmentId");

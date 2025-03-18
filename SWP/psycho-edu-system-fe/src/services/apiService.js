@@ -368,13 +368,24 @@ const apiService = {
       );
 
       if (response.status === 200) {
-        return response.data;
+        // Backend trả về chuỗi "Slots booked successfully!" thay vì object
+        const bookedSlots = payload.bookingDetails.map((booking) => ({
+          bookingId: null, // Không có bookingId từ response, để null
+          slotId: booking.slotId,
+          date: booking.date,
+        }));
+
+        return {
+          isSuccess: true,
+          message: response.data || "Slots booked successfully!",
+          bookings: bookedSlots, // Tự tạo danh sách bookings dựa trên payload
+        };
       } else {
         throw new Error("Failed to book slots");
       }
     } catch (error) {
       console.error("Error booking slots:", error);
-      throw error;
+      throw new Error(error.response?.data?.message || "Failed to book slots");
     }
   },
 

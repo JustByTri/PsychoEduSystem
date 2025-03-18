@@ -170,44 +170,30 @@ const PsychologistScheduleRegistration = () => {
 
     try {
       setIsLoading(true);
-      const response = await axios.post(
-        "https://localhost:7192/api/Schedule/book-slots",
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiService.bookSlots(payload); // Gọi API đã có sẵn
 
-      if (response.status === 200 && response.data) {
-        const booked = response.data.bookings
-          ? response.data.bookings.map((booking) => ({
-              bookingId: booking.bookingId,
-              slotId: booking.slotId,
-              date: booking.date.split("T")[0],
-              time: timeSlots.find((slot) => slot.id === booking.slotId)?.time,
-            }))
-          : [];
+      if (response.isSuccess) {
+        const booked = response.bookings.map((booking) => ({
+          bookingId: booking.bookingId || null, // Có thể null nếu backend không trả về
+          slotId: booking.slotId,
+          date: booking.date,
+          time: timeSlots.find((slot) => slot.id === booking.slotId)?.time,
+        }));
         setBookedSlots((prev) => [...prev, ...booked]);
-        setSuccessMessage(
-          response.data.message || "Slots booked successfully!"
-        );
+        setSuccessMessage(response.message || "Slots booked successfully!");
         setIsSuccessModalOpen(true);
         setSelectedDates({});
       } else {
         throw new Error("Unexpected response format");
       }
     } catch (error) {
-      console.log("Error response:", error.response); // Debugging log
-      setErrorMessage(error.response?.data);
+      console.log("Error response:", error); // Debugging log
+      setErrorMessage(error.message || "Failed to book slots");
       setIsErrorModalOpen(true);
     } finally {
       setIsLoading(false);
     }
   };
-
   const closeSuccessModal = () => setIsSuccessModalOpen(false);
   const closeErrorModal = () => setIsErrorModalOpen(false);
 
