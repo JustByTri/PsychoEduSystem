@@ -237,21 +237,6 @@ const PsychologistAppointmentDetail = ({
                           {appointment.isOnline ? "Online" : "Offline"}
                         </p>
                       </div>
-                      {appointment.isOnline && appointment.googleMeetURL && (
-                        <div className="col-span-2">
-                          <p className="text-[clamp(12px,1.2vw,14px)] text-gray-500">
-                            Google Meet URL
-                          </p>
-                          <a
-                            href={appointment.googleMeetURL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-[clamp(14px,1.5vw,16px)] text-blue-600 hover:underline"
-                          >
-                            {appointment.googleMeetURL}
-                          </a>
-                        </div>
-                      )}
                       {appointment.notes && (
                         <div className="col-span-2">
                           <p className="text-[clamp(12px,1.2vw,14px)] text-gray-500">
