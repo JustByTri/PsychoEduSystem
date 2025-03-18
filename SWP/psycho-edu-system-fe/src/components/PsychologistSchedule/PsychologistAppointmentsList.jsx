@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CSpinner } from "@coreui/react";
-import AppointmentsCard from "./AppointmentCard";
+import PsychologistAppointmentCard from "./PsychologistAppointmentCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isValid } from "date-fns";
 import apiService from "../../services/apiService";
 
-const AppointmentsList = ({
+const PsychologistAppointmentsList = ({
   isLoading,
   filteredAppointments,
   handleViewDetail,
-  handleCancelAppointment,
   handleChat,
+  handleCancelAppointment, // Thêm prop handleCancelAppointment
   handleNavigate,
   selectedDate,
 }) => {
@@ -23,7 +23,6 @@ const AppointmentsList = ({
       "09:00",
       "10:00",
       "11:00",
-      "12:00",
       "13:00",
       "14:00",
       "15:00",
@@ -36,7 +35,7 @@ const AppointmentsList = ({
     const startTime = getTimeFromSlotId(slotId);
     if (startTime === "Unknown") return "Unknown";
     const [hours, minutes] = startTime.split(":").map(Number);
-    const endHours = hours + (minutes + 45 >= 60 ? 1 : 0); // 45 phút như student
+    const endHours = hours + (minutes + 45 >= 60 ? 1 : 0); // 45 phút
     const endMinutes = (minutes + 45) % 60;
     const endTime = `${endHours.toString().padStart(2, "0")}:${endMinutes
       .toString()
@@ -45,41 +44,43 @@ const AppointmentsList = ({
   };
 
   const fetchNamesForAppointment = async (appointment) => {
-    const isPsychologist = !!appointment.details; // Phân biệt student và psychologist
-    const details = isPsychologist ? appointment.details : appointment;
-
     try {
-      if (!details.studentId) {
-        // Available slot hoặc appointment không có student
+      if (appointment.status === "AVAILABLE") {
         return {
           ...appointment,
-          student: "N/A", // Không có student cho available slot
-          lesson: details.meetingWith || "Available Slot",
-          bookedBy: details.bookedBy || "N/A",
-          appointmentFor: details.appointmentFor || "N/A",
+          student: "N/A",
+          psychologist: appointment.details.meetingWith || "You",
+          bookedBy: "N/A",
+          appointmentFor: "N/A",
+          isOnline: null,
+          showParent: false,
         };
       }
-      let studentProfile = userProfileCache.current[details.studentId];
-      if (!studentProfile) {
-        studentProfile = await apiService.fetchUserProfile(details.studentId);
-        userProfileCache.current[details.studentId] = studentProfile;
-      }
+      const studentName =
+        appointment.details.appointmentFor || "Unknown Student";
+      const isParentBooking =
+        appointment.details.bookedBy &&
+        appointment.details.bookedBy.trim() !== "" &&
+        appointment.details.bookedBy !== appointment.details.appointmentFor;
       return {
         ...appointment,
-        student:
-          studentProfile.fullName || studentProfile.name || "Unknown Student",
-        lesson: details.meetingWith || "Unknown Psychologist",
-        bookedBy: details.bookedBy || "Unknown",
-        appointmentFor: details.appointmentFor || "Unknown",
+        student: studentName,
+        psychologist: appointment.details.meetingWith || "Unknown Psychologist",
+        bookedBy: appointment.details.bookedBy || "Unknown",
+        appointmentFor: appointment.details.appointmentFor || "Unknown",
+        isOnline: appointment.details.isOnline,
+        showParent: isParentBooking,
       };
     } catch (error) {
       console.error("Error fetching names:", error);
       return {
         ...appointment,
-        student: "Unknown Student",
-        lesson: details.meetingWith || "Unknown Psychologist",
-        bookedBy: details.bookedBy || "Unknown",
-        appointmentFor: details.appointmentFor || "Unknown",
+        student: appointment.details.appointmentFor || "Unknown Student",
+        psychologist: appointment.details.meetingWith || "Unknown Psychologist",
+        bookedBy: appointment.details.bookedBy || "Unknown",
+        appointmentFor: appointment.details.appointmentFor || "Unknown",
+        isOnline: appointment.details.isOnline,
+        showParent: false,
       };
     }
   };
@@ -109,40 +110,27 @@ const AppointmentsList = ({
             transition={{ duration: 0.3 }}
           >
             <AnimatePresence>
-              {appointmentsWithNames.map((appointment) => {
-                const isPsychologist = !!appointment.details;
-                const details = isPsychologist
-                  ? appointment.details
-                  : appointment;
-                return (
-                  <AppointmentsCard
-                    key={appointment.id}
-                    student={appointment.student}
-                    lesson={appointment.lesson}
-                    date={
-                      isValid(appointment.date)
-                        ? format(appointment.date, "EEE, dd-MM-yyyy")
-                        : "Invalid Date"
-                    }
-                    timeRange={
-                      calculateTimeRange(details.slot || details.slotId) ||
-                      details.time ||
-                      "Unknown"
-                    }
-                    status={appointment.status || details.status}
-                    type={details.type || "N/A"}
-                    bookedBy={appointment.bookedBy}
-                    appointmentFor={appointment.appointmentFor}
-                    onJoin={() => handleChat(appointment.id)}
-                    onCancel={() =>
-                      handleCancelAppointment(
-                        details.appointmentId || appointment.id
-                      )
-                    }
-                    onViewDetail={() => handleViewDetail(appointment)}
-                  />
-                );
-              })}
+              {appointmentsWithNames.map((appointment) => (
+                <PsychologistAppointmentCard
+                  key={appointment.id}
+                  student={appointment.student}
+                  psychologist={appointment.psychologist}
+                  date={
+                    isValid(appointment.date)
+                      ? format(appointment.date, "EEE, dd-MM-yyyy")
+                      : "Invalid Date"
+                  }
+                  timeRange={calculateTimeRange(appointment.details.slotId)}
+                  status={appointment.status}
+                  bookedBy={appointment.bookedBy}
+                  appointmentFor={appointment.appointmentFor}
+                  isOnline={appointment.isOnline}
+                  showParent={appointment.showParent}
+                  onViewDetail={() => handleViewDetail(appointment)}
+                  onChat={() => handleChat(appointment.id)}
+                  onCancel={() => handleCancelAppointment(appointment.id)} // Truyền handleCancelAppointment
+                />
+              ))}
             </AnimatePresence>
           </motion.div>
         ) : (
@@ -165,4 +153,4 @@ const AppointmentsList = ({
   );
 };
 
-export default AppointmentsList;
+export default PsychologistAppointmentsList;
