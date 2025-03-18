@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { format, startOfDay, parse } from "date-fns";
 import { motion } from "framer-motion";
 import FeedbackForm from "./FeedbackForm";
+import apiService from "../../services/apiService";
 
 const PsychologistAppointmentDetail = ({
   isOpen,
