@@ -14,8 +14,8 @@ const CalendarHeader = ({
   handleNext,
   handleSelectDate,
   getVisibleDays,
-  handleNextMonth, // Không cần nữa nhưng giữ prop cho tương thích
-  handlePrevMonth, // Không cần nữa nhưng giữ prop cho tương thích
+  handleNextMonth,
+  handlePrevMonth,
 }) => {
   const calendarContainerRef = useRef(null);
 
@@ -42,7 +42,6 @@ const CalendarHeader = ({
     }),
   };
 
-  // Danh sách 12 tháng
   const months = [
     "January",
     "February",
@@ -58,21 +57,18 @@ const CalendarHeader = ({
     "December",
   ];
 
-  // Xử lý khi chọn tháng
   const handleMonthChange = (e) => {
     const selectedMonthIndex = parseInt(e.target.value, 10);
-    const currentDate = new Date(); // Ngày hiện tại
+    const currentDate = new Date();
     let newDate;
 
-    // Nếu tháng được chọn là tháng hiện tại, đặt ngày thành hôm nay
     if (selectedMonthIndex === currentDate.getMonth()) {
       newDate = startOfDay(currentDate);
     } else {
-      // Nếu không, đặt ngày thành ngày đầu tháng được chọn
       newDate = setMonth(currentMonth, selectedMonthIndex);
     }
 
-    handleSelectDate(newDate); // Cập nhật selectedDate và gọi loadAppointments từ SchedulePage
+    handleSelectDate(newDate);
   };
 
   return (
@@ -104,9 +100,11 @@ const CalendarHeader = ({
               }}
             >
               <option value="All">All Statuses</option>
-              <option value="Scheduled">Scheduled</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
+              <option value="AVAILABLE">Available</option>{" "}
+              {/* Thêm filter Available */}
+              <option value="SCHEDULED">Scheduled</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
           </motion.div>
 
@@ -117,7 +115,6 @@ const CalendarHeader = ({
 
           {/* Nút ngày và dropdown tháng */}
           <div className="flex items-center space-x-2">
-            {/* Nút chuyển ngày trước */}
             <button
               className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white transition-colors duration-200 shadow-md"
               onClick={handlePrev}
@@ -136,14 +133,13 @@ const CalendarHeader = ({
               </svg>
             </button>
 
-            {/* Dropdown chọn tháng */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
               <select
-                value={currentMonth.getMonth()} // Giá trị là index của tháng (0-11)
+                value={currentMonth.getMonth()}
                 onChange={handleMonthChange}
                 className="bg-white text-blue-900 rounded-lg pl-4 pr-8 py-2 text-sm border border-blue-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition-all duration-300 hover:shadow-xl hover:border-blue-400 appearance-none cursor-pointer"
                 style={{
@@ -162,7 +158,6 @@ const CalendarHeader = ({
               </select>
             </motion.div>
 
-            {/* Nút chuyển ngày sau */}
             <button
               className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-800 flex items-center justify-center text-white transition-colors duration-200 shadow-md"
               onClick={handleNext}
