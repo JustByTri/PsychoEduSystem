@@ -17,11 +17,19 @@ import {
 import moment from "moment";
 import apiService from "../../services/apiService";
 import CalendarHeader from "../../components/Header/CalendarHeader";
-import PsychologistAppointmentDetail from "../../components/Modal/PsychologistAppointmentDetail"; // Sử dụng component mới
+import PsychologistAppointmentDetail from "../../components/Modal/PsychologistAppointmentDetail";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
 import PsychologistAppointmentsList from "../../components/PsychologistSchedule/PsychologistAppointmentsList";
 import { motion } from "framer-motion";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
+import {
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
+  CButton,
+} from "@coreui/react";
 
 const globalStyles = `
   :root {
@@ -40,6 +48,7 @@ const PsychologistSchedulePage = () => {
     return () => document.head.removeChild(styleSheet);
   }, []);
 
+  const [bookings, setBookings] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -53,6 +62,7 @@ const PsychologistSchedulePage = () => {
     isOpen: false,
     selectedSlot: null,
   });
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [animationDirection, setAnimationDirection] = useState("");
   const [visibleDaysCount, setVisibleDaysCount] = useState(15);
@@ -95,7 +105,70 @@ const PsychologistSchedulePage = () => {
     }
   };
 
-  const fetchSchedules = async (date) => {
+  const fetchAppointments = async (date) => {
+    try {
+      const selectedDateStr = moment(date).format("YYYY-MM-DD");
+      const appointments = await apiService.fetchConsultantAppointments(
+        teacherId,
+        selectedDateStr
+      );
+      const bookedSlots = appointments.map((appointment) => {
+        let parsedDate;
+        try {
+          parsedDate = parseISO(
+            appointment.date.split("/").reverse().join("-")
+          );
+          if (!isValid(parsedDate)) throw new Error("Invalid appointment date");
+        } catch (error) {
+          console.error("Invalid appointment date:", appointment.date, error);
+          parsedDate = startOfDay(new Date(selectedDateStr));
+        }
+        const localDate = startOfDay(parsedDate);
+        const startHour = parseInt(appointment.slotId, 10) + 7;
+        return {
+          id: appointment.appointmentId,
+          title: "Booked Appointment",
+          slot: appointment.slotId,
+          date: localDate,
+          start: moment(selectedDateStr)
+            .set({ hour: startHour, minute: 0 })
+            .toDate(),
+          end: moment(selectedDateStr)
+            .set({ hour: startHour + 1, minute: 0 })
+            .toDate(),
+          status: appointment.isCancelled
+            ? "CANCELLED"
+            : appointment.isCompleted
+            ? "COMPLETED"
+            : "SCHEDULED",
+          details: {
+            slotId: appointment.slotId,
+            date: localDate,
+            slotName: getTimeFromSlotId(appointment.slotId),
+            status: appointment.isCancelled
+              ? "CANCELLED"
+              : appointment.isCompleted
+              ? "COMPLETED"
+              : "SCHEDULED",
+            meetingWith: appointment.meetingWith || "You",
+            studentId: appointment.studentId || null,
+            appointmentId: appointment.appointmentId,
+            bookedBy: appointment.bookedBy || "Unknown",
+            appointmentFor: appointment.appointmentFor || "Unknown",
+            isOnline: appointment.isOnline,
+            googleMeetURL: appointment.googleMeetURL,
+            notes: appointment.notes, // Thêm notes để FeedbackForm sử dụng
+          },
+        };
+      });
+      setBookings(bookedSlots);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      setBookings([]);
+    }
+  };
+
+  const fetchAvailableSlots = async (date) => {
     setIsLoading(true);
     try {
       const selectedDateStr = moment(date).format("YYYY-MM-DD");
@@ -153,64 +226,15 @@ const PsychologistSchedulePage = () => {
               bookedBy: null,
               appointmentFor: null,
               isOnline: null,
+              notes: null, // Thêm notes mặc định là null cho slot trống
             },
           };
         });
 
-      const appointmentSlots = appointments.map((appointment) => {
-        let parsedDate;
-        try {
-          parsedDate = parseISO(
-            appointment.date.split("/").reverse().join("-")
-          );
-          if (!isValid(parsedDate)) throw new Error("Invalid appointment date");
-        } catch (error) {
-          console.error("Invalid appointment date:", appointment.date, error);
-          parsedDate = startOfDay(new Date(selectedDateStr));
-        }
-        const localDate = startOfDay(parsedDate);
-        const startHour = parseInt(appointment.slotId, 10) + 7;
-        return {
-          id: appointment.appointmentId,
-          title: "Booked Appointment",
-          slot: appointment.slotId,
-          date: localDate,
-          start: moment(selectedDateStr)
-            .set({ hour: startHour, minute: 0 })
-            .toDate(),
-          end: moment(selectedDateStr)
-            .set({ hour: startHour + 1, minute: 0 })
-            .toDate(),
-          status: appointment.isCancelled
-            ? "CANCELLED"
-            : appointment.isCompleted
-            ? "COMPLETED"
-            : "SCHEDULED",
-          details: {
-            slotId: appointment.slotId,
-            date: localDate,
-            slotName: getTimeFromSlotId(appointment.slotId),
-            status: appointment.isCancelled
-              ? "CANCELLED"
-              : appointment.isCompleted
-              ? "COMPLETED"
-              : "SCHEDULED",
-            meetingWith: appointment.meetingWith || "You",
-            studentId: appointment.studentId || null, // Có thể bỏ nếu không dùng
-            appointmentId: appointment.appointmentId,
-            bookedBy: appointment.bookedBy || "Unknown",
-            appointmentFor: appointment.appointmentFor || "Unknown",
-            isOnline: appointment.isOnline,
-            googleMeetURL: appointment.googleMeetURL,
-          },
-        };
-      });
-
-      setAvailableSlots([...psychologistAvailableSlots, ...appointmentSlots]);
+      setAvailableSlots(psychologistAvailableSlots);
       setSlotsViewKey((prev) => prev + 1);
     } catch (error) {
-      console.error("Error fetching psychologist available slots:", error);
-
+      console.error("Error fetching available slots:", error);
       setAvailableSlots([]);
     } finally {
       setIsLoading(false);
@@ -235,7 +259,9 @@ const PsychologistSchedulePage = () => {
     try {
       await apiService.cancelAppointment(appointmentId);
       setConfirmModalState({ visible: false, slotId: null });
-      fetchSchedules(selectedDate);
+      await fetchAppointments(selectedDate);
+      await fetchAvailableSlots(selectedDate);
+      setIsSuccessModalOpen(true);
     } catch (error) {
       console.error("Error cancelling appointment:", error);
       setErrorMessage("Failed to cancel appointment.");
@@ -250,7 +276,8 @@ const PsychologistSchedulePage = () => {
     const nextDay = addDays(selectedDate, 1);
     setAnimationDirection("next");
     setSelectedDate(nextDay);
-    fetchSchedules(nextDay);
+    fetchAppointments(nextDay);
+    fetchAvailableSlots(nextDay);
     if (nextDay.getMonth() !== currentMonth.getMonth()) {
       setCurrentMonth(addMonths(currentMonth, 1));
     }
@@ -269,7 +296,8 @@ const PsychologistSchedulePage = () => {
     const prevDay = addDays(selectedDate, -1);
     setAnimationDirection("prev");
     setSelectedDate(prevDay);
-    fetchSchedules(prevDay);
+    fetchAppointments(prevDay);
+    fetchAvailableSlots(prevDay);
     if (prevDay.getMonth() !== currentMonth.getMonth()) {
       setCurrentMonth(subMonths(currentMonth, 1));
     }
@@ -299,7 +327,8 @@ const PsychologistSchedulePage = () => {
   const handleSelectDate = (date) => {
     setAnimationDirection(date > selectedDate ? "next" : "prev");
     setSelectedDate(date);
-    fetchSchedules(date);
+    fetchAppointments(date);
+    fetchAvailableSlots(date);
     if (date.getMonth() !== currentMonth.getMonth()) {
       setCurrentMonth(startOfMonth(date));
     }
@@ -318,13 +347,15 @@ const PsychologistSchedulePage = () => {
   const handleNextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
     setSelectedDate(startOfMonth(addMonths(currentMonth, 1)));
-    fetchSchedules(startOfMonth(addMonths(currentMonth, 1)));
+    fetchAppointments(startOfMonth(addMonths(currentMonth, 1)));
+    fetchAvailableSlots(startOfMonth(addMonths(currentMonth, 1)));
   };
 
   const handlePrevMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
     setSelectedDate(startOfMonth(subMonths(currentMonth, 1)));
-    fetchSchedules(startOfMonth(subMonths(currentMonth, 1)));
+    fetchAppointments(startOfMonth(subMonths(currentMonth, 1)));
+    fetchAvailableSlots(startOfMonth(subMonths(currentMonth, 1)));
   };
 
   const handleViewDetail = (slot) => {
@@ -332,7 +363,7 @@ const PsychologistSchedulePage = () => {
   };
 
   const handleChat = (id) => {
-    const slot = availableSlots.find((s) => s.id === id);
+    const slot = [...bookings, ...availableSlots].find((s) => s.id === id);
     navigate(`/chat/${id}`, {
       state: { googleMeetURL: slot?.details?.googleMeetURL || null },
     });
@@ -357,7 +388,8 @@ const PsychologistSchedulePage = () => {
       try {
         await loadUserProfile();
         if (teacherId) {
-          await fetchSchedules(selectedDate);
+          await fetchAppointments(selectedDate);
+          await fetchAvailableSlots(selectedDate);
         }
       } catch (error) {
         setErrorMessage("Failed to initialize data.");
@@ -370,7 +402,8 @@ const PsychologistSchedulePage = () => {
 
   useEffect(() => {
     if (teacherId && userProfile) {
-      fetchSchedules(selectedDate);
+      fetchAppointments(selectedDate);
+      fetchAvailableSlots(selectedDate);
     }
   }, [selectedDate, userProfile, teacherId]);
 
@@ -383,7 +416,7 @@ const PsychologistSchedulePage = () => {
     >
       <CContainer
         fluid
-        className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr] p-4"
+        className="max-w-screen-xl min-h-[100vh] mx-auto grid grid-rows-[auto_1fr] p-4"
       >
         <div ref={calendarContainerRef} className="w-full">
           <CalendarHeader
@@ -426,12 +459,15 @@ const PsychologistSchedulePage = () => {
           >
             <PsychologistAppointmentsList
               isLoading={isLoading}
-              filteredAppointments={
+              filteredBookings={
+                filterStatus === "All"
+                  ? bookings
+                  : bookings.filter((b) => b.status === filterStatus)
+              }
+              filteredAvailableSlots={
                 filterStatus === "All"
                   ? availableSlots
-                  : availableSlots.filter(
-                      (slot) => slot.status === filterStatus
-                    )
+                  : availableSlots.filter((s) => s.status === filterStatus)
               }
               handleViewDetail={handleViewDetail}
               handleChat={handleChat}
@@ -458,6 +494,25 @@ const PsychologistSchedulePage = () => {
           handleChat={handleChat}
           handleCancelAppointment={handleCancelAppointment}
         />
+
+        <CModal
+          visible={isSuccessModalOpen}
+          onClose={() => setIsSuccessModalOpen(false)}
+          alignment="center"
+        >
+          <CModalHeader>
+            <CModalTitle>Success!</CModalTitle>
+          </CModalHeader>
+          <CModalBody>Appointment cancelled successfully!</CModalBody>
+          <CModalFooter>
+            <CButton
+              color="success"
+              onClick={() => setIsSuccessModalOpen(false)}
+            >
+              Close
+            </CButton>
+          </CModalFooter>
+        </CModal>
       </CContainer>
     </motion.div>
   );

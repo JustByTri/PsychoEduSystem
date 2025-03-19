@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { format, startOfDay, parse } from "date-fns";
 import { motion } from "framer-motion";
-import FeedbackForm from "./FeedbackForm";
 import apiService from "../../services/apiService";
+import { getAuthDataFromLocalStorage } from "../../utils/auth";
 
 const PsychologistAppointmentDetail = ({
   isOpen,
@@ -14,6 +14,12 @@ const PsychologistAppointmentDetail = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [notes, setNotes] = useState(""); // State cho FeedbackForm
+  const [feedbackLoading, setFeedbackLoading] = useState(false); // Loading riêng cho feedback
+  const [feedbackMessage, setFeedbackMessage] = useState(""); // Message riêng cho feedback
+
+  const authData = getAuthDataFromLocalStorage();
+  const role = authData?.role || "Unknown"; // Lấy role từ localStorage, mặc định là "Unknown" nếu không có
 
   const parseDate = (dateInput) => {
     if (typeof dateInput === "string") {
@@ -31,12 +37,23 @@ const PsychologistAppointmentDetail = ({
   const appointmentDate = appointment ? parseDate(appointment.date) : null;
   const isPastDay = appointmentDate && appointmentDate < currentDate;
 
-  // Không cần fetch studentDetails vì không có studentId
   useEffect(() => {
-    setLoading(false); // Không cần loading vì không fetch
-  }, [appointment, isOpen]);
+    setLoading(false);
+    if (appointment) {
+      setNotes(appointment.notes || ""); // Cập nhật notes khi appointment thay đổi
+    }
+    console.log("Current user role:", role); // Debug để kiểm tra role
+  }, [appointment, isOpen, role]);
 
-  if (!isOpen || !appointment) return null;
+  if (!isOpen || !appointment) {
+    console.log(
+      "Modal not rendered: isOpen =",
+      isOpen,
+      "appointment =",
+      appointment
+    );
+    return null; // Log để debug nếu modal không hiển thị
+  }
 
   const modalVariants = {
     hidden: { x: "100%", scale: 0.95 },
@@ -84,15 +101,53 @@ const PsychologistAppointmentDetail = ({
   const handleConfirmCancel = async () => {
     try {
       const appointmentId = appointment.appointmentId || appointment.id;
-      console.log("Cancelling appointment with ID:", appointmentId);
-      const message = await apiService.cancelAppointment(appointmentId);
-      console.log("Cancel response:", message);
+      await apiService.cancelAppointment(appointmentId);
       handleCancelAppointment(appointmentId);
       setIsCancelModalOpen(false);
       onClose();
     } catch (error) {
       console.error("Error cancelling appointment:", error.message);
       setIsCancelModalOpen(false);
+    }
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!notes.trim()) {
+      setFeedbackMessage("Feedback cannot be empty.");
+      return;
+    }
+
+    setFeedbackLoading(true);
+    setFeedbackMessage("");
+
+    try {
+      const response = await fetch(
+        `https://localhost:7192/api/appointments/${
+          appointment.appointmentId || appointment.id
+        }/feedback`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "*/*",
+            Authorization: `Bearer ${authData?.accessToken || ""}`,
+          },
+          body: JSON.stringify({ notes }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setFeedbackMessage("Feedback submitted successfully!");
+        appointment.notes = notes; // Cập nhật cục bộ (không đồng bộ server trừ khi fetch lại)
+      } else {
+        setFeedbackMessage(data.message || "Failed to submit feedback.");
+      }
+    } catch (error) {
+      setFeedbackMessage("An error occurred. Please try again.");
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -164,7 +219,7 @@ const PsychologistAppointmentDetail = ({
                 </div>
               ) : (
                 <>
-                  {/* Student Information (chỉ hiển thị nếu không phải AVAILABLE) */}
+                  {/* Student Information */}
                   {appointment.status !== "AVAILABLE" && (
                     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                       <h4 className="text-[clamp(14px,1.5vw,16px)] font-medium text-gray-700 mb-3">
@@ -172,8 +227,7 @@ const PsychologistAppointmentDetail = ({
                       </h4>
                       <div className="flex items-center space-x-4 mb-3">
                         <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center">
-                          <span className="text-blue-600 text-xl">👤</span>{" "}
-                          {/* Avatar mặc định */}
+                          <span className="text-blue-600 text-xl">👤</span>
                         </div>
                         <div>
                           <p className="text-[clamp(12px,1.2vw,14px)] text-gray-500">
@@ -249,11 +303,45 @@ const PsychologistAppointmentDetail = ({
                         </div>
                       )}
                     </div>
+                  </div>
 
-                    <FeedbackForm
-                      appointment={appointment}
-                      role="PSYCHOLOGIST"
-                    />
+                  {/* Feedback Form */}
+                  <div className="bg-white p-4 mt-4 rounded-lg border border-gray-200 shadow-sm">
+                    <p className="text-blue-700 font-bold text-2xl">Feedback</p>
+                    <textarea
+                      className="w-full p-2 border border-gray-300 rounded-lg text-gray-800 mt-2"
+                      placeholder="Write your feedback here..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows="3"
+                    ></textarea>
+                    {["Teacher", "Psychologist"].includes(role) ? (
+                      <motion.button
+                        variants={buttonVariants}
+                        whileHover="hover"
+                        whileTap="tap"
+                        onClick={handleSubmitFeedback}
+                        disabled={feedbackLoading}
+                        className="mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all"
+                      >
+                        {feedbackLoading ? "Submitting..." : "Submit"}
+                      </motion.button>
+                    ) : (
+                      <p className="mt-2 text-gray-500">
+                        Only Teachers and Psychologists can submit feedback.
+                      </p>
+                    )}
+                    {feedbackMessage && (
+                      <p
+                        className={`mt-2 ${
+                          feedbackMessage.includes("successfully")
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {feedbackMessage}
+                      </p>
+                    )}
                   </div>
                 </>
               )}
