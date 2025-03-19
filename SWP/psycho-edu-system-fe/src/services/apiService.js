@@ -413,5 +413,143 @@ const apiService = {
     }
   },
 };
+// Mock data for blogs
+const mockBlogs = [
+  {
+    id: 1,
+    title: "5 Ways to Reduce Exam Anxiety",
+    thumbnail:
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+    excerpt:
+      "Learn how to manage your emotions and prepare effectively for your exams.",
+    content: `
+        <h2>1. Create a Study Plan</h2>
+        <p>Break down your study material and review consistently each day...</p>
+        <h2>2. Practice Deep Breathing</h2>
+        <p>When feeling stressed, try deep breathing for 5 minutes...</p>
+      `,
+    category: "Emotional Health",
+    createdAt: "2025-03-15",
+  },
+  {
+    id: 2,
+    title: "How to Sleep Better?",
+    thumbnail:
+      "https://images.unsplash.com/photo-1506126613408-eca07ce68773?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+    excerpt:
+      "Sleep greatly impacts mental health. Find out how to improve yours!",
+    content: `
+        <h2>1. Stick to a Sleep Schedule</h2>
+        <p>Go to bed and wake up at the same time every day...</p>
+        <h2>2. Avoid Screens Before Bed</h2>
+        <p>Blue light from screens can disrupt your sleep cycle...</p>
+      `,
+    category: "Cognitive Health",
+    createdAt: "2025-03-10",
+  },
+  {
+    id: 3,
+    title: "Finding Joy in School Every Day",
+    thumbnail:
+      "https://images.pexels.com/photos/3184430/pexels-photo-3184430.jpeg?auto=compress&cs=tinysrgb&w=1920",
+    excerpt: "Discover happiness in learning and connecting with friends.",
+    content: `
+        <h2>1. Build Strong Friendships</h2>
+        <p>Be open and share with your friends...</p>
+        <h2>2. Join Extracurricular Activities</h2>
+        <p>Extracurricular activities help reduce stress and bring joy...</p>
+      `,
+    category: "Social Health",
+    createdAt: "2025-03-08",
+  },
+];
 
+// Thêm các hàm API mock cho blog
+apiService.blog = {
+  // Lấy danh sách bài viết
+  fetchBlogs: async () => {
+    try {
+      // Giả lập API call
+      return Promise.resolve({
+        isSuccess: true,
+        result: mockBlogs,
+      });
+    } catch (error) {
+      throw new Error("Failed to fetch blogs");
+    }
+  },
+
+  // Lấy chi tiết bài viết
+  fetchBlogById: async (id) => {
+    try {
+      const blog = mockBlogs.find((b) => b.id === parseInt(id));
+      if (blog) {
+        return Promise.resolve({
+          isSuccess: true,
+          result: blog,
+        });
+      } else {
+        throw new Error("Blog not found");
+      }
+    } catch (error) {
+      throw new Error("Failed to fetch blog");
+    }
+  },
+
+  // Tạo bài viết mới
+  createBlog: async (blogData) => {
+    try {
+      const newBlog = {
+        id: mockBlogs.length + 1,
+        ...blogData,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      mockBlogs.push(newBlog);
+      return Promise.resolve({
+        isSuccess: true,
+        message: "Blog created successfully",
+        result: newBlog,
+      });
+    } catch (error) {
+      throw new Error("Failed to create blog");
+    }
+  },
+
+  // Cập nhật bài viết
+  updateBlog: async (id, blogData) => {
+    try {
+      const index = mockBlogs.findIndex((b) => b.id === parseInt(id));
+      if (index !== -1) {
+        mockBlogs[index] = { ...mockBlogs[index], ...blogData };
+        return Promise.resolve({
+          isSuccess: true,
+          message: "Blog updated successfully",
+          result: mockBlogs[index],
+        });
+      } else {
+        throw new Error("Blog not found");
+      }
+    } catch (error) {
+      throw new Error("Failed to update blog");
+    }
+  },
+
+  // Xóa bài viết
+  deleteBlog: async (id) => {
+    try {
+      const index = mockBlogs.findIndex((b) => b.id === parseInt(id));
+      if (index !== -1) {
+        mockBlogs.splice(index, 1);
+        return Promise.resolve({
+          isSuccess: true,
+          message: "Blog deleted successfully",
+        });
+      } else {
+        throw new Error("Blog not found");
+      }
+    } catch (error) {
+      throw new Error("Failed to delete blog");
+    }
+  },
+};
 export default apiService;

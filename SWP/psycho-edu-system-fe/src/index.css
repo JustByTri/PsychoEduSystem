@@ -87,3 +87,29 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400;
 }
+
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Dancing Script", cursive;
+}
+
+/* Đảm bảo font áp dụng cho các phần tử prose */
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-family: "Dancing Script", cursive;
+}
+
+.prose p,
+.prose a,
+.prose li {
+  font-family: "Poppins", sans-serif;
+}

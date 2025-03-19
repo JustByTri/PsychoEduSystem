@@ -35,6 +35,8 @@ import TargetPrograms from "./pages/admin/TargetPrograms";
 import CreateUserPage from "./pages/admin/CreateUserPage";
 import AttendancePage from "./pages/counselor/AttendancePage";
 import UserProfilePage from "./pages/UserProfilePage";
+import BlogDetailPage from "./pages/BlogDetailPage"; // Thêm BlogDetailPage
+import BlogManagementPage from "./pages/admin/BlogManagementPage"; // Thêm BlogManagementPage
 
 function App() {
   return (
@@ -44,6 +46,8 @@ function App() {
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
+            <Route path="blog/:id" element={<BlogDetailPage />} />{" "}
+            {/* Thêm route cho BlogDetail */}
           </Route>
 
           {/* Student Routes */}
@@ -85,8 +89,9 @@ function App() {
               <Route path="survey" element={<SurveyList />} />
               <Route path="survey/:id" element={<SurveyDetail />} />
               <Route path="programs" element={<TargetPrograms />} />
-              <Route path="create-parent" element={<CreateUserPage />} />{" "}
-              {/* Thêm route */}
+              <Route path="create-parent" element={<CreateUserPage />} />
+              <Route path="blog" element={<BlogManagementPage />} />{" "}
+              {/* Thêm route cho BlogManagement */}
             </Route>
           </Route>
           <Route
@@ -150,3 +155,24 @@ function App() {
 }
 
 export default App;
+
+export const getAuthDataFromLocalStorage = () => {
+  const userData = localStorage.getItem("user");
+  if (!userData) return null;
+
+  try {
+    const parsedData = JSON.parse(userData);
+    const tokenPayload = JSON.parse(atob(parsedData.accessToken.split(".")[1]));
+
+    return {
+      accessToken: parsedData.accessToken,
+      role: parsedData.role,
+      userId: tokenPayload.userId,
+      email: tokenPayload.email,
+      username: tokenPayload.username,
+    };
+  } catch (error) {
+    console.error("Error parsing auth data:", error);
+    return null;
+  }
+};
