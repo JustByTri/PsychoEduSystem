@@ -6,7 +6,7 @@ const API_BASE_URL = "https://localhost:7192/api";
 const authData = getAuthDataFromLocalStorage();
 
 const apiService = {
-  // Lấy profile người dùng
+  // Các API khác giữ nguyên, chỉ cập nhật phần blog
   fetchUserProfile: async (userId) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -24,7 +24,7 @@ const apiService = {
       );
 
       if (profileResponse.data.isSuccess) {
-        console.log("User Profile Response:", profileResponse.data.result); // Log dữ liệu
+        console.log("User Profile Response:", profileResponse.data.result);
         return { ...profileResponse.data.result, userId };
       } else {
         throw new Error(
@@ -46,6 +46,7 @@ const apiService = {
           ...config,
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${authData.accessToken}`,
             ...config.headers,
           },
         }
@@ -57,7 +58,7 @@ const apiService = {
       );
     }
   },
-  // Kiểm tra sự tồn tại của user (dùng cho email và studentEmail)
+
   checkUserExistence: async (email) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -73,14 +74,13 @@ const apiService = {
           },
         }
       );
-      return response.data; // { message: "User does not exist" } hoặc khác
+      return response.data;
     } catch (error) {
       console.error("Error checking user existence:", error);
       throw error;
     }
   },
 
-  // Tạo tài khoản mới
   createUserAccount: async (userData) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -98,7 +98,7 @@ const apiService = {
         }
       );
       if (response.data.message) {
-        return response.data; // { message: "Account created successfully." }
+        return response.data;
       } else {
         throw new Error("Failed to create account");
       }
@@ -107,7 +107,7 @@ const apiService = {
       throw error;
     }
   },
-  // Lấy danh sách appointment của sinh viên
+
   fetchAppointments: async (userId, date) => {
     try {
       const formattedDate = format(new Date(date), "yyyy-MM-dd");
@@ -130,9 +130,9 @@ const apiService = {
           return {
             id: appointment.appointmentId,
             studentId: appointment.studentId || userId,
-            appointmentFor: appointment.appointmentFor, // Không gán mặc định
-            bookedBy: appointment.bookedBy, // Không gán mặc định
-            meetingWith: appointment.meetingWith, // Không gán mặc định
+            appointmentFor: appointment.appointmentFor,
+            bookedBy: appointment.bookedBy,
+            meetingWith: appointment.meetingWith,
             type: appointment.isOnline ? "Online" : "Offline",
             date: localDate,
             slot: appointment.slotId || 0,
@@ -156,7 +156,7 @@ const apiService = {
       throw error;
     }
   },
-  // Hủy appointment
+
   cancelAppointment: async (appointmentId) => {
     try {
       if (!appointmentId) {
@@ -186,7 +186,6 @@ const apiService = {
     }
   },
 
-  // Lấy danh sách slot khả dụng trong ngày
   fetchAvailableSlots: async (date) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -204,7 +203,7 @@ const apiService = {
       );
 
       if (response.status === 200 && Array.isArray(response.data)) {
-        return response.data; // [{ slotId, slotName, isAvailable }, ...]
+        return response.data;
       } else {
         throw new Error(
           "Failed to fetch available slots or invalid data format"
@@ -215,7 +214,6 @@ const apiService = {
     }
   },
 
-  // Lấy danh sách slot của consultant
   fetchConsultantSlots: async (consultantId, date) => {
     try {
       const response = await axios.get(
@@ -240,7 +238,6 @@ const apiService = {
     }
   },
 
-  // Lấy danh sách con của phụ huynh
   fetchParentChildren: async (parentId) => {
     try {
       const response = await axios.get(
@@ -259,7 +256,6 @@ const apiService = {
     }
   },
 
-  // Đặt lịch hẹn
   bookAppointment: async (appointmentData) => {
     try {
       const { bookedBy, appointmentFor, meetingWith, date, slotId, isOnline } =
@@ -277,7 +273,7 @@ const apiService = {
       }
 
       const payload = {
-        bookedBy: bookedBy, // Giữ nguyên ID của người book
+        bookedBy: bookedBy,
         appointmentFor: appointmentFor,
         meetingWith: meetingWith,
         date: formattedDate,
@@ -285,7 +281,7 @@ const apiService = {
         isOnline: Boolean(isOnline),
       };
 
-      console.log("Booking Payload:", payload); // Log payload gửi đi
+      console.log("Booking Payload:", payload);
 
       const response = await axios.post(
         `${API_BASE_URL}/appointments`,
@@ -302,7 +298,6 @@ const apiService = {
         throw new Error(response.data.message || "Failed to book appointment");
       }
 
-      // Trả về dữ liệu đầy đủ để lưu trữ
       return {
         isSuccess: true,
         message: response.data.message || "Booking successful",
@@ -330,7 +325,7 @@ const apiService = {
       };
     }
   },
-  // Lấy danh sách slot đã book của user
+
   fetchUserSchedules: async (userId) => {
     try {
       const response = await axios.get(
@@ -354,7 +349,6 @@ const apiService = {
     }
   },
 
-  // Book slots cho chuyên viên
   bookSlots: async (payload) => {
     try {
       const response = await axios.post(
@@ -369,9 +363,8 @@ const apiService = {
       );
 
       if (response.status === 200) {
-        // Backend trả về chuỗi "Slots booked successfully!" thay vì object
         const bookedSlots = payload.bookingDetails.map((booking) => ({
-          bookingId: null, // Không có bookingId từ response, để null
+          bookingId: null,
           slotId: booking.slotId,
           date: booking.date,
         }));
@@ -379,7 +372,7 @@ const apiService = {
         return {
           isSuccess: true,
           message: response.data || "Slots booked successfully!",
-          bookings: bookedSlots, // Tự tạo danh sách bookings dựa trên payload
+          bookings: bookedSlots,
         };
       } else {
         throw new Error("Failed to book slots");
@@ -390,7 +383,6 @@ const apiService = {
     }
   },
 
-  // Lấy danh sách appointment của chuyên viên
   fetchConsultantAppointments: async (teacherId, date) => {
     try {
       const response = await axios.get(
@@ -413,144 +405,213 @@ const apiService = {
       throw error;
     }
   },
+
+  // Cập nhật API cho Blog (không yêu cầu Authorization)
+  blog: {
+    // Lấy danh sách bài viết (phân trang)
+    fetchBlogs: async (pageNumber = 1, pageSize = 10) => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/BlogPost/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          const { blogs } = response.data;
+          return {
+            isSuccess: true,
+            result: blogs.map((blog) => ({
+              id: blog.blogId,
+              title: blog.title,
+              content: blog.content,
+              category: blog.dimensionName,
+              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
+              thumbnail: blog.thumbnail || "https://via.placeholder.com/150",
+              excerpt: blog.content.substring(0, 100) + "...",
+            })),
+            pagination: {
+              pageNumber: response.data.pageNumber,
+              pageSize: response.data.pageSize,
+              totalPages: response.data.totalPages,
+              totalRecords: response.data.totalRecords,
+            },
+          };
+        } else {
+          throw new Error("Failed to fetch blogs");
+        }
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch blogs"
+        );
+      }
+    },
+
+    // Lấy chi tiết bài viết
+    fetchBlogById: async (id) => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/BlogPost/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.status === 200) {
+          const blog = response.data;
+          return {
+            isSuccess: true,
+            result: {
+              id: blog.blogId,
+              title: blog.title,
+              content: blog.content,
+              category: blog.dimensionName,
+              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
+              thumbnail: blog.thumbnail || "https://via.placeholder.com/150",
+              excerpt: blog.content.substring(0, 100) + "...",
+            },
+          };
+        } else {
+          throw new Error("Blog not found");
+        }
+      } catch (error) {
+        console.error("Error fetching blog by ID:", error);
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch blog"
+        );
+      }
+    },
+
+    // Tạo bài viết mới (vẫn cần Authorization vì đây là hành động của admin)
+    createBlog: async (blogData) => {
+      try {
+        const payload = {
+          title: blogData.title,
+          content: blogData.content,
+          authorId: authData?.userId || 1,
+          dimensionId: mapCategoryToDimensionId(blogData.category),
+        };
+
+        const response = await axios.post(`${API_BASE_URL}/BlogPost`, payload, {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.status === 200) {
+          const blog = response.data;
+          return {
+            isSuccess: true,
+            message: "Blog created successfully",
+            result: {
+              id: blog.blogId,
+              title: blog.title,
+              content: blog.content,
+              category: blog.dimensionName,
+              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
+              thumbnail:
+                blogData.thumbnail || "https://via.placeholder.com/150",
+              excerpt: blog.content.substring(0, 100) + "...",
+            },
+          };
+        } else {
+          throw new Error("Failed to create blog");
+        }
+      } catch (error) {
+        console.error("Error creating blog:", error);
+        throw new Error(
+          error.response?.data?.message || "Failed to create blog"
+        );
+      }
+    },
+
+    // Cập nhật bài viết (vẫn cần Authorization vì đây là hành động của admin)
+    updateBlog: async (id, blogData) => {
+      try {
+        const payload = {
+          title: blogData.title,
+          content: blogData.content,
+          authorId: authData?.userId || 1,
+          dimensionId: mapCategoryToDimensionId(blogData.category),
+        };
+
+        const response = await axios.put(
+          `${API_BASE_URL}/BlogPost/${id}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${authData.accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          return {
+            isSuccess: true,
+            message: "Blog updated successfully",
+            result: {
+              id,
+              title: blogData.title,
+              content: blogData.content,
+              category: blogData.category,
+              createdAt: blogData.createdAt,
+              thumbnail:
+                blogData.thumbnail || "https://via.placeholder.com/150",
+              excerpt: blogData.content.substring(0, 100) + "...",
+            },
+          };
+        } else {
+          throw new Error("Blog not found");
+        }
+      } catch (error) {
+        console.error("Error updating blog:", error);
+        throw new Error(
+          error.response?.data?.message || "Failed to update blog"
+        );
+      }
+    },
+
+    // Xóa bài viết (vẫn cần Authorization vì đây là hành động của admin)
+    deleteBlog: async (id) => {
+      try {
+        const response = await axios.delete(`${API_BASE_URL}/BlogPost/${id}`, {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.status === 200) {
+          return {
+            isSuccess: true,
+            message: "Blog deleted successfully",
+          };
+        } else {
+          throw new Error("Blog not found");
+        }
+      } catch (error) {
+        console.error("Error deleting blog:", error);
+        throw new Error(
+          error.response?.data?.message || "Failed to delete blog"
+        );
+      }
+    },
+  },
 };
-// Mock data for blogs
-const mockBlogs = [
-  {
-    id: 1,
-    title: "5 Ways to Reduce Exam Anxiety",
-    thumbnail:
-      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
-    excerpt:
-      "Learn how to manage your emotions and prepare effectively for your exams.",
-    content: `
-        <h2>1. Create a Study Plan</h2>
-        <p>Break down your study material and review consistently each day...</p>
-        <h2>2. Practice Deep Breathing</h2>
-        <p>When feeling stressed, try deep breathing for 5 minutes...</p>
-      `,
-    category: "Emotional Health",
-    createdAt: "2025-03-15",
-  },
-  {
-    id: 2,
-    title: "How to Sleep Better?",
-    thumbnail:
-      "https://images.unsplash.com/photo-1506126613408-eca07ce68773?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
-    excerpt:
-      "Sleep greatly impacts mental health. Find out how to improve yours!",
-    content: `
-        <h2>1. Stick to a Sleep Schedule</h2>
-        <p>Go to bed and wake up at the same time every day...</p>
-        <h2>2. Avoid Screens Before Bed</h2>
-        <p>Blue light from screens can disrupt your sleep cycle...</p>
-      `,
-    category: "Cognitive Health",
-    createdAt: "2025-03-10",
-  },
-  {
-    id: 3,
-    title: "Finding Joy in School Every Day",
-    thumbnail:
-      "https://images.pexels.com/photos/3184430/pexels-photo-3184430.jpeg?auto=compress&cs=tinysrgb&w=1920",
-    excerpt: "Discover happiness in learning and connecting with friends.",
-    content: `
-        <h2>1. Build Strong Friendships</h2>
-        <p>Be open and share with your friends...</p>
-        <h2>2. Join Extracurricular Activities</h2>
-        <p>Extracurricular activities help reduce stress and bring joy...</p>
-      `,
-    category: "Social Health",
-    createdAt: "2025-03-08",
-  },
-];
 
-// Thêm các hàm API mock cho blog
-apiService.blog = {
-  // Lấy danh sách bài viết
-  fetchBlogs: async () => {
-    try {
-      // Giả lập API call
-      return Promise.resolve({
-        isSuccess: true,
-        result: mockBlogs,
-      });
-    } catch (error) {
-      throw new Error("Failed to fetch blogs");
-    }
-  },
-
-  // Lấy chi tiết bài viết
-  fetchBlogById: async (id) => {
-    try {
-      const blog = mockBlogs.find((b) => b.id === parseInt(id));
-      if (blog) {
-        return Promise.resolve({
-          isSuccess: true,
-          result: blog,
-        });
-      } else {
-        throw new Error("Blog not found");
-      }
-    } catch (error) {
-      throw new Error("Failed to fetch blog");
-    }
-  },
-
-  // Tạo bài viết mới
-  createBlog: async (blogData) => {
-    try {
-      const newBlog = {
-        id: mockBlogs.length + 1,
-        ...blogData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      mockBlogs.push(newBlog);
-      return Promise.resolve({
-        isSuccess: true,
-        message: "Blog created successfully",
-        result: newBlog,
-      });
-    } catch (error) {
-      throw new Error("Failed to create blog");
-    }
-  },
-
-  // Cập nhật bài viết
-  updateBlog: async (id, blogData) => {
-    try {
-      const index = mockBlogs.findIndex((b) => b.id === parseInt(id));
-      if (index !== -1) {
-        mockBlogs[index] = { ...mockBlogs[index], ...blogData };
-        return Promise.resolve({
-          isSuccess: true,
-          message: "Blog updated successfully",
-          result: mockBlogs[index],
-        });
-      } else {
-        throw new Error("Blog not found");
-      }
-    } catch (error) {
-      throw new Error("Failed to update blog");
-    }
-  },
-
-  // Xóa bài viết
-  deleteBlog: async (id) => {
-    try {
-      const index = mockBlogs.findIndex((b) => b.id === parseInt(id));
-      if (index !== -1) {
-        mockBlogs.splice(index, 1);
-        return Promise.resolve({
-          isSuccess: true,
-          message: "Blog deleted successfully",
-        });
-      } else {
-        throw new Error("Blog not found");
-      }
-    } catch (error) {
-      throw new Error("Failed to delete blog");
-    }
-  },
+// Hàm ánh xạ category sang dimensionId
+const mapCategoryToDimensionId = (category) => {
+  const dimensionMap = {
+    "Lo Âu": 1,
+    "Trầm Cảm": 2,
+    "Căng Thẳng": 3,
+  };
+  return dimensionMap[category] || 1;
 };
+
 export default apiService;

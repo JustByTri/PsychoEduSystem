@@ -61,7 +61,7 @@ const BlogDetailPage = () => {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
           className="relative rounded-lg overflow-hidden shadow-md border border-[#E5E7EB]"
-          style={{ boxShadow: "0px 4px 20px rgba(38, 166, 154, 0.2)" }} // Shadow Teal
+          style={{ boxShadow: "0px 4px 20px rgba(38, 166, 154, 0.2)" }}
         >
           <img
             src={blog.thumbnail}
@@ -71,7 +71,7 @@ const BlogDetailPage = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
           <div className="absolute bottom-6 left-6 right-6">
             <span className="inline-block bg-[#26A69A] text-white text-xs font-semibold px-3 py-1 rounded-full mb-3">
-              {blog.category} {/* Đổi màu category sang Coral */}
+              {blog.category}
             </span>
             <h1
               className="text-3xl md:text-4xl font-bold text-white leading-tight"

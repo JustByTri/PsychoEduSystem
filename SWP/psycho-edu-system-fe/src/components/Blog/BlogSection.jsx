@@ -11,7 +11,7 @@ const BlogSection = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await apiService.blog.fetchBlogs();
+        const response = await apiService.blog.fetchBlogs(1, 10); // Lấy trang 1, 10 bài viết
         if (response.isSuccess) setBlogs(response.result);
         else setError("Cannot load blog posts");
       } catch (err) {
@@ -67,10 +67,10 @@ const BlogSection = () => {
                 hidden: { opacity: 0, y: 20 },
                 visible: { opacity: 1, y: 0 },
               }}
-              whileHover={{ scale: 1 }} // Đồng bộ với Features
-              whileTap={{ scale: 1.05 }} // Đồng bộ với Features
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               style={{
-                transition: "all 0.3s ease", // Transition mượt mà
+                transition: "all 0.3s ease",
                 border: "1px solid transparent",
               }}
             >

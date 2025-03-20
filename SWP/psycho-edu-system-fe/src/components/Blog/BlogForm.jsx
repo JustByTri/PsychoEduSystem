@@ -155,6 +155,8 @@ const BlogForm = ({ blog, onSave, onCancel }) => {
             required
           >
             <option value="">Select a category</option>
+            <option value="Lo Âu">Lo Âu</option>
+            <option value="Trầm Cảm">Trầm Cảm</option>
             <option value="Cognitive Health">Cognitive Health</option>
             <option value="Emotional Health">Emotional Health</option>
             <option value="Social Health">Social Health</option>

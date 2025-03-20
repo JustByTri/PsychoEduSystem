@@ -22,17 +22,21 @@ const BlogManagementPage = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     fetchBlogs();
-  }, []);
+  }, [pageNumber]);
 
   const fetchBlogs = async () => {
     try {
-      const response = await apiService.blog.fetchBlogs();
+      const response = await apiService.blog.fetchBlogs(pageNumber, pageSize);
       if (response.isSuccess) {
         setBlogs(response.result);
         setFilteredBlogs(response.result);
+        setTotalPages(response.pagination.totalPages);
       } else {
         setError("Cannot load blog posts");
       }
@@ -145,6 +149,8 @@ const BlogManagementPage = () => {
             className="bg-white border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 text-gray-800"
           >
             <option value="">All Categories</option>
+            <option value="Lo Âu">Lo Âu</option>
+            <option value="Trầm Cảm">Trầm Cảm</option>
             <option value="Cognitive Health">Cognitive Health</option>
             <option value="Emotional Health">Emotional Health</option>
             <option value="Social Health">Social Health</option>
@@ -248,6 +254,29 @@ const BlogManagementPage = () => {
             </tbody>
           </table>
         </motion.div>
+
+        {/* Phân trang */}
+        <div className="mt-6 flex justify-center space-x-2">
+          <button
+            onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
+            disabled={pageNumber === 1}
+            className="px-4 py-2 bg-[#26A69A] text-white rounded-lg disabled:bg-gray-300"
+          >
+            Previous
+          </button>
+          <span className="px-4 py-2 text-[#374151]">
+            Page {pageNumber} of {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setPageNumber((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={pageNumber === totalPages}
+            className="px-4 py-2 bg-[#26A69A] text-white rounded-lg disabled:bg-gray-300"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </motion.div>
   );
