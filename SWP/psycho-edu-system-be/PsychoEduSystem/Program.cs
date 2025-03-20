@@ -71,6 +71,7 @@ namespace MIndAid
 
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+            builder.Services.AddScoped<IBlogPostService, BlogPostService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
@@ -131,7 +132,7 @@ namespace MIndAid
             app.UseAuthorization();
             app.MapHub<ChatHub>("/chatHub"); // chức năng chat
             app.UseHttpsRedirection();
-            
+
             app.MapControllers();
             app.UseCors("AllowFrontend");
             app.Run();

@@ -9,7 +9,10 @@ namespace DAL.Repositories.IRepositories
 {
     public interface IUserTargetProgramRepository : IGenericRepository<UserTargetProgram>
     {
+
         Task<UserTargetProgram> FindByUserAndProgramAsync(Guid userId, Guid programId);
+
+
 
     }
 }

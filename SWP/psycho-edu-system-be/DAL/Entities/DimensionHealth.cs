@@ -14,5 +14,7 @@ namespace DAL.Entities
         public string DimensionName { get; set; }
 
         public DateTime CreateAt { get; set; }
+
+        public virtual ICollection<BlogPost> BlogPosts { get; set; }
     }
 }

@@ -39,6 +39,8 @@ namespace DAL.UnitOfWork
 
         IScheduleRepository Schedule { get; }
 
+        IBlogPostRepository BlogPost { get; }
+
 
         IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel);
         // Dispose method để giải phóng tài nguyên
