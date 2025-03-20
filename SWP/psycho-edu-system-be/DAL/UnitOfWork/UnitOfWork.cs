@@ -38,8 +38,10 @@ namespace DAL.UnitOfWork
             Class = new ClassRepository(_context);
             TargetProgram = new TargetProgramRepository(_context);
             Schedule = new ScheduleRepository(_context);
-            UserTargetProgram = new UserTargetProgramRepository(_context);
+            ProgramEnrollment = new ProgramEnrollmentRepository(_context);
             BlogPost = new BlogPostRepository(_context);
+
+            UserTargetProgram = new UserTargetProgramRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
@@ -72,10 +74,12 @@ namespace DAL.UnitOfWork
 
         public IScheduleRepository Schedule { get; private set; }
 
-        public IUserTargetProgramRepository UserTargetProgram { get; private set; }
+        public IProgramEnrollmentRepository ProgramEnrollment { get; private set; }
 
         public IBlogPostRepository BlogPost { get; private set; }
 
+
+        public IUserTargetProgramRepository UserTargetProgram { get; private set; }
         public IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel)
         {
             return _context.Database.BeginTransaction(isolationLevel);

@@ -1,7 +1,18 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Bar } from "react-chartjs-2";
+import {
+  Typography,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
+import { DateRange, School } from "@mui/icons-material";
+import { SurveyService } from "../../api/services/surveyService";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,13 +21,16 @@ import {
   Title,
   Tooltip,
   Legend,
+  PointElement,
+  LineElement,
 } from "chart.js";
-import { SurveyService } from "../../api/services/surveyService";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   Title,
   Tooltip,
   Legend
@@ -69,13 +83,14 @@ const SurveyResult = () => {
         labels: surveyResult.dimensions.map((dim) => dim.dimensionName),
         datasets: [
           {
+            type: "bar",
             label: "DASS-21 Score",
             data: surveyResult.dimensions.map((dim) => dim.points),
             backgroundColor: surveyResult.dimensions.map((dim) =>
               getBarColor(dim.points)
             ),
-            borderColor: "#2C3E50",
-            borderWidth: 2,
+            borderRadius: 10,
+            order: 2,
           },
         ],
       }
@@ -89,14 +104,13 @@ const SurveyResult = () => {
       transition={{ duration: 0.8 }}
     >
       <button
-        onClick={() => navigate("/" + role)}
+        onClick={() => navigate(-1)}
         className="fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition-all duration-300"
       >
         Back
       </button>
       <motion.h1 className="text-4xl font-extrabold mb-6 text-center">
-        📊 Mental Health Assessment -{" "}
-        <span className="text-blue-500">DASS-21 Results</span>
+        📊 Mental Health Assessment
       </motion.h1>
 
       <motion.div className="text-lg flex justify-center gap-8 bg-gray-100 px-6 py-3 rounded-lg shadow-md mb-6">
@@ -107,31 +121,53 @@ const SurveyResult = () => {
       </motion.div>
 
       {/* Month & Year Selector */}
-      <motion.div className="flex gap-6 text-lg bg-gray-200 px-6 py-3 rounded-lg shadow-md">
-        <select
-          value={month}
-          onChange={(e) => setMonth(Number(e.target.value))}
-          className="px-4 py-2 rounded-md border border-gray-300 shadow-sm cursor-pointer text-xl"
-        >
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-            <option key={m} value={m}>
-              Month {m}
-            </option>
-          ))}
-        </select>
+      <Grid container spacing={2} justifyContent="center" sx={{ mb: 4 }}>
+        <Grid item>
+          <FormControl
+            sx={{
+              minWidth: 160,
+              backgroundColor: "white",
+              boxShadow: 2,
+              borderRadius: 2,
+            }}
+          >
+            <InputLabel>Month</InputLabel>
+            <Select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <MenuItem key={m} value={m}>
+                  <DateRange sx={{ mr: 1, color: "#1976D2" }} /> Month {m}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
 
-        <select
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          className="px-4 py-2 rounded-md border border-gray-300 shadow-sm cursor-pointer text-xl"
-        >
-          {Array.from({ length: 5 }, (_, i) => currentYear - i).map((y) => (
-            <option key={y} value={y}>
-              Year {y}
-            </option>
-          ))}
-        </select>
-      </motion.div>
+        <Grid item>
+          <FormControl
+            sx={{
+              minWidth: 160,
+              backgroundColor: "white",
+              boxShadow: 2,
+              borderRadius: 2,
+            }}
+          >
+            <InputLabel>Year</InputLabel>
+            <Select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+            >
+              {Array.from({ length: 5 }, (_, i) => currentYear - i).map((y) => (
+                <MenuItem key={y} value={y}>
+                  <School sx={{ mr: 1, color: "#1976D2" }} /> Year {y}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
 
       {loading ? (
         <motion.p className="text-2xl mt-8 text-gray-500">
@@ -164,19 +200,29 @@ const SurveyResult = () => {
             </motion.div>
           )}
           {/* Survey Info */}
-          <motion.div className="text-2xl">
-            <p>
-              <strong className="text-blue-500">📌 Name:</strong>{" "}
-              {surveyResult.studentName}
-            </p>
-            <p>
-              <strong className="text-green-500">📅 Date:</strong>{" "}
-              {new Date(surveyResult.surveyDate).toLocaleDateString()}
-            </p>
-            <p className="text-3xl font-bold">
-              <strong className="text-yellow-500">⭐ Total Score:</strong>{" "}
-              {surveyResult.totalPoints}
-            </p>
+          <motion.div className="flex flex-col items-center space-y-5 text-xl">
+            <Typography variant="h6" className="flex items-center gap-3">
+              <strong className="text-blue-500 text-2xl">📌 Name:</strong>
+              <span className="text-gray-900 font-medium">
+                {surveyResult.studentName}
+              </span>
+            </Typography>
+
+            <Typography variant="subtitle1" className="flex items-center gap-3">
+              <strong className="text-green-500 text-2xl">📅 Date:</strong>
+              <span className="text-gray-900 font-medium">
+                {new Date(surveyResult.surveyDate).toLocaleDateString()}
+              </span>
+            </Typography>
+
+            <Typography variant="h4" className="flex items-center gap-3">
+              <strong className="text-yellow-500 text-3xl">
+                ⭐ Total Score:
+              </strong>
+              <span className="text-gray-900 text-4xl font-bold">
+                {surveyResult.totalPoints}
+              </span>
+            </Typography>
           </motion.div>
         </motion.div>
       ) : (

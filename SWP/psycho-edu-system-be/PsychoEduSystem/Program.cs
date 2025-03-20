@@ -17,7 +17,9 @@ using Common.Constant;
 using System.Security.Claims;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using Swashbuckle.AspNetCore.Filters;
+using Microsoft.AspNetCore.SignalR;
 using BLL.Hubs;
+using BLL;
 
 namespace MIndAid
 {
@@ -42,7 +44,7 @@ namespace MIndAid
             ValidateAudience = true,
             ValidAudience = JwtSettingModel.Audience,
             ValidateLifetime = true,
-            RoleClaimType = ClaimTypes.Role
+            NameClaimType = "userId"
         };
     });
             // Add services to the container.
@@ -64,6 +66,8 @@ namespace MIndAid
             builder.Services.AddScoped<IRelationshipService, RelationshipService>();
 
             builder.Services.AddScoped<ITargetProgramService, TargetProgramService>();
+            builder.Services.AddScoped<AppointmentTimerService>();
+            builder.Services.AddScoped<ChatHub>();
 
             builder.Services.AddScoped<IMessageService, MessageService>();
             builder.Services.AddSignalR();
@@ -72,6 +76,7 @@ namespace MIndAid
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
             builder.Services.AddScoped<IBlogPostService, BlogPostService>();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
@@ -100,14 +105,13 @@ namespace MIndAid
             );
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowFrontend",
-                    policy =>
-                    {
-                        policy.WithOrigins("http://127.0.0.1:5500") // ⚡ Đổi thành URL FE của bạn
-                              .AllowAnyMethod()
-                              .AllowAnyHeader()
-                              .AllowCredentials(); // 👈 Quan trọng!
-                    });
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy.WithOrigins("https://localhost:5173")
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials();
+                });
             });
             builder.Services.AddAuthorization(options =>
             {
@@ -116,6 +120,9 @@ namespace MIndAid
                           .RequireAuthenticatedUser());
             });
             builder.Logging.AddConsole();
+            builder.Services.AddSignalR();
+
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -127,14 +134,14 @@ namespace MIndAid
                 });
                 app.UseSwagger();
             }
+
+            app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
-            app.MapHub<ChatHub>("/chatHub"); // chức năng chat
-            app.UseHttpsRedirection();
-
             app.MapControllers();
-            app.UseCors("AllowFrontend");
+            app.MapHub<ChatHub>("/chatHub").RequireCors("AllowFrontend"); ;
+
             app.Run();
         }
     }

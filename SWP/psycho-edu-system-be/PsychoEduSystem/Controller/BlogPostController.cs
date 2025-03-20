@@ -1,10 +1,9 @@
 ﻿using BLL.Interface;
-using BLL.Service;
 using Common.DTO;
-using DAL.Entities;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace PsychoEduSystem.Controller
@@ -27,21 +26,23 @@ namespace PsychoEduSystem.Controller
             return Ok(blogs);
         }
 
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetBlogById(int id)
         {
             var blog = await _blogPostService.GetBlogPostById(id);
             if (blog == null)
-                return NotFound("Blog post not found");
+                return NotFound(new { message = "Blog post not found" });
 
             return Ok(blog);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> CreateBlog([FromBody] BlogPostCreateDTO blogDTO)
         {
             if (blogDTO == null)
-                return BadRequest("Invalid blog data");
+                return BadRequest(new { message = "Invalid blog data" });
 
             var newBlog = await _blogPostService.AddBlog(blogDTO);
 
@@ -50,30 +51,32 @@ namespace PsychoEduSystem.Controller
 
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateBlog(int id, [FromBody] BlogPostUpdateDTO blog)
+        public async Task<IActionResult> UpdateBlog(int id, [FromBody] BlogPostUpdateDTO blogDTO)
         {
-            if (blog == null)
-                return BadRequest("Invalid data");
+            if (blogDTO == null)
+                return BadRequest(new { message = "Invalid data" });
 
-            await _blogPostService.UpdateBlog(id, blog);
+            await _blogPostService.UpdateBlog(id, blogDTO);
             return NoContent();
         }
+
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteBlog(int id)
         {
             var blog = await _blogPostService.GetBlogPostById(id);
             if (blog == null)
-                return NotFound("Blog post not found");
+                return NotFound(new { message = "Blog post not found" });
 
             await _blogPostService.DeleteBlog(id);
             return NoContent();
         }
 
+
         [HttpGet("paged")]
         public async Task<IActionResult> GetPagedBlogs(int pageNumber = 1, int pageSize = 10)
         {
-            (var blogs, var totalRecords) = await _blogPostService.GetPagedBlogPosts(pageNumber, pageSize);
+            var (blogs, totalRecords) = await _blogPostService.GetPagedBlogPosts(pageNumber, pageSize);
 
             var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
 
@@ -88,14 +91,12 @@ namespace PsychoEduSystem.Controller
                     blog.BlogId,
                     blog.Title,
                     blog.Content,
-                    blog.AuthorId,
-                    blog.CreatedAt,
-                    blog.DimensionName
+                    blog.DimensionName,
+                    blog.CreatedAt
                 })
             };
 
             return Ok(response);
         }
-
     }
 }

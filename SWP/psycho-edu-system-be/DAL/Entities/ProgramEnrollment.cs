@@ -11,10 +11,9 @@ namespace DAL.Entities
 
     public class ProgramEnrollment
     {
-  
         public Guid ProgramId { get; set; }
-
         public Guid StudentId { get; set; }
+        public string? Status { get; set; }
         public DateTime EnrolledAt { get; set; }
         public DateTime CreateAt { get; set; }
 

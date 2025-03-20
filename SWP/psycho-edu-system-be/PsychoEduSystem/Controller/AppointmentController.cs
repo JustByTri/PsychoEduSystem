@@ -55,12 +55,12 @@ namespace PsychoEduSystem.Controller
             }
         }
         [HttpGet("students/{studentId}/appointments")]
-        public async Task<IActionResult> GetAppointmentsForStudent(Guid studentId, [FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
+        public async Task<IActionResult> GetAppointmentsForStudent(Guid studentId, [FromQuery] DateOnly selectedDate)
         {
             if (studentId == Guid.Empty)
                 return BadRequest("Invalid student ID.");
 
-            var response = await _appointmentService.GetAppointmentFromRangeAsyncForStudent(studentId, startDate, endDate);
+            var response = await _appointmentService.GetAppointmentFromRangeAsyncForStudent(studentId, selectedDate);
 
             if (!response.IsSuccess)
                 return StatusCode(response.StatusCode, response.Message);
@@ -68,17 +68,34 @@ namespace PsychoEduSystem.Controller
             return Ok(response);
         }
         [HttpGet("consultants/{consultantId}/appointments")]
-        public async Task<IActionResult> GetAppointmentsForConsultant(Guid consultantId, [FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
+        public async Task<IActionResult> GetAppointmentsForConsultant(Guid consultantId, [FromQuery] DateOnly selectedDate)
         {
             if (consultantId == Guid.Empty)
                 return BadRequest("Invalid student ID.");
 
-            var response = await _appointmentService.GetAppointmentFromRangeAsyncForConsultant(consultantId, startDate, endDate);
+            var response = await _appointmentService.GetAppointmentFromRangeAsyncForConsultant(consultantId, selectedDate);
 
             if (!response.IsSuccess)
                 return StatusCode(response.StatusCode, response.Message);
 
             return Ok(response);
+        }
+        [HttpPost("{appointmentId}/feedback")]
+        public async Task<IActionResult> GiveFeedback(Guid appointmentId, [FromBody] FeedbackRequestDTO request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Notes))
+            {
+                return BadRequest(new ResponseDTO("Feedback notes cannot be empty", 400, false, string.Empty));
+            }
+
+            var result = await _appointmentService.GiveFeedbackAsync(appointmentId, request.Notes);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode, result);
+            }
+
+            return Ok(result);
         }
     }
 }

@@ -2,12 +2,35 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SurveyService } from "../../../api/services/surveyService";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputLabel,
+  FormControl,
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  TextField,
+  Select,
+  MenuItem,
+  Button,
+  Typography,
+} from "@mui/material";
+import { motion } from "framer-motion";
 const SurveyList = () => {
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
   const [formData, setFormData] = useState({
     description: "",
     target: "",
@@ -30,14 +53,18 @@ const SurveyList = () => {
   };
   const handleSaveSurvey = async (surveyId) => {
     const surveyToUpdate = surveys.find((s) => s.surveyId === surveyId);
-    if (!surveyToUpdate) return;
+    if (!surveyToUpdate) {
+      toast.error("Survey not found!", { autoClose: 3000 });
+      return;
+    }
 
     try {
       await SurveyService.updateSurveyProperty(surveyId, surveyToUpdate);
-      toast.success("Survey updated successfully!");
-      fetchSurveys();
+      toast.success("Survey updated successfully!", { autoClose: 2000 });
+
+      await fetchSurveys(); // Ensure the UI updates properly
     } catch (error) {
-      toast.error("Failed to update survey.");
+      toast.error("Failed to update survey.", { autoClose: 3000 });
     }
   };
 
@@ -46,18 +73,26 @@ const SurveyList = () => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
   };
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      setFileName(file.name); // Set the file name
+      setFile(file);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!file) {
-      alert("Please select a file to upload.");
+      toast.info("Please select a file to upload.");
       return;
     }
 
@@ -70,6 +105,13 @@ const SurveyList = () => {
     const success = await SurveyService.importSurvey(data);
     if (success) {
       toast.success("Survey imported successfully!");
+      setFile(null);
+      setFileName("");
+      setFormData({
+        description: "",
+        target: "",
+        title: "",
+      });
       setIsModalOpen(false);
       fetchSurveys();
     } else {
@@ -82,10 +124,17 @@ const SurveyList = () => {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen rounded-lg shadow-lg border border-gray-300">
-      <ToastContainer />
-      <h1 className="text-2xl font-bold mb-6 text-blue-700">
+      <Typography
+        variant="h5"
+        sx={{
+          mb: 3,
+          fontWeight: "bold",
+          textAlign: "center",
+          color: "#1976d2",
+        }}
+      >
         Survey Management
-      </h1>
+      </Typography>
       <button
         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 mb-6 rounded-full shadow-md transition duration-300 ease-in-out"
         onClick={() => setIsModalOpen(true)}
@@ -95,201 +144,287 @@ const SurveyList = () => {
       {loading ? (
         <p className="text-center text-gray-600">Loading surveys...</p>
       ) : surveys.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border text-left bg-white shadow-md rounded-lg">
-            <thead className="bg-gradient-to-r from-blue-400 to-blue-600 text-white">
-              <tr>
-                <th className="border p-3">Survey Name</th>
-                <th className="border p-3">Description</th>
-                <th className="border p-3">Public</th>
-                <th className="border p-3">Target</th>
-                <th className="border p-3">Create At</th>
-                <th className="border p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {surveys.map((survey) => (
-                <tr
-                  key={survey.surveyId}
-                  className="hover:bg-gray-100 transition duration-200"
-                >
-                  <td className="border p-3">
-                    <input
-                      type="text"
-                      value={survey.surveyName}
-                      onChange={(e) =>
-                        handleChangeSurvey(
-                          survey.surveyId,
-                          "surveyName",
-                          e.target.value
-                        )
-                      }
-                      className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
-                    />
-                  </td>
-                  <td className="border p-3">
-                    <input
-                      type="text"
-                      value={survey.description}
-                      onChange={(e) =>
-                        handleChangeSurvey(
-                          survey.surveyId,
-                          "description",
-                          e.target.value
-                        )
-                      }
-                      className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
-                    />
-                  </td>
-                  <td className="border p-3">
-                    <select
-                      value={survey.isPublic.toString()}
-                      onChange={(e) =>
-                        handleChangeSurvey(
-                          survey.surveyId,
-                          "isPublic",
-                          e.target.value === "true"
-                        )
-                      }
-                      className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="p-6"
+        >
+          <TableContainer
+            component={Paper}
+            elevation={6}
+            sx={{ borderRadius: 3, overflow: "hidden" }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#1565C0" }}>
+                  {[
+                    "Survey Name",
+                    "Description",
+                    "Target",
+                    "Created At",
+                    "Actions",
+                  ].map((header) => (
+                    <TableCell
+                      key={header}
+                      sx={{
+                        color: "white",
+                        fontWeight: "bold",
+                        textAlign: "center",
+                      }}
                     >
-                      <option value="true">True</option>
-                      <option value="false">False</option>
-                    </select>
-                  </td>
-                  <td className="border p-3">
-                    <select
-                      value={survey.surveyFor}
-                      onChange={(e) =>
-                        handleChangeSurvey(
-                          survey.surveyId,
-                          "surveyFor",
-                          e.target.value
-                        )
-                      }
-                      className="bg-gray-50 rounded-full px-3 py-2 shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+                      {header}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {surveys.map((survey) => (
+                  <motion.tr
+                    key={survey.surveyId}
+                    whileHover={{ opacity: 0.8 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ borderBottom: "1px solid #ddd" }}
+                  >
+                    <TableCell>
+                      <TextField
+                        variant="outlined"
+                        size="small"
+                        value={survey.surveyName}
+                        onChange={(e) =>
+                          handleChangeSurvey(
+                            survey.surveyId,
+                            "surveyName",
+                            e.target.value
+                          )
+                        }
+                        fullWidth
+                        sx={{ bgcolor: "#f9f9f9", borderRadius: 1 }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        variant="outlined"
+                        size="small"
+                        value={survey.description}
+                        onChange={(e) =>
+                          handleChangeSurvey(
+                            survey.surveyId,
+                            "description",
+                            e.target.value
+                          )
+                        }
+                        fullWidth
+                        sx={{ bgcolor: "#f9f9f9", borderRadius: 1 }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        readOnly
+                        value={survey.surveyFor}
+                        onChange={(e) =>
+                          handleChangeSurvey(
+                            survey.surveyId,
+                            "surveyFor",
+                            e.target.value
+                          )
+                        }
+                        fullWidth
+                        size="small"
+                        sx={{ bgcolor: "#f9f9f9", borderRadius: 1 }}
+                      >
+                        <MenuItem value="Student">Student</MenuItem>
+                        <MenuItem value="Parent">Parent</MenuItem>
+                        <MenuItem value="Teacher">Teacher</MenuItem>
+                      </Select>
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        color: "#424242",
+                      }}
                     >
-                      <option value="Student">Student</option>
-                      <option value="Parent">Parent</option>
-                      <option value="Teacher">Teacher</option>
-                    </select>
-                  </td>
-                  <td className="border p-3">
-                    <span>
                       {new Date(survey.createAt).toLocaleDateString("en-GB")}
-                    </span>
-                  </td>
-                  <td className="border p-3 flex justify-center space-x-4">
-                    <button
-                      onClick={() =>
-                        navigate(`/admin/survey/${survey.surveyId}`)
-                      }
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow-lg transition duration-300 ease-in-out"
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 1,
+                        textAlign: "center",
+                      }}
                     >
-                      View
-                    </button>
-                    <button
-                      onClick={() => handleSaveSurvey(survey.surveyId)}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-full shadow-lg transition duration-300 ease-in-out"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => deleteSurvey(survey.surveyId)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full shadow-lg transition duration-300 ease-in-out"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() =>
+                          navigate(`/admin/survey/${survey.surveyId}`)
+                        }
+                        sx={{ borderRadius: 2 }}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="warning"
+                        onClick={() => handleSaveSurvey(survey.surveyId)}
+                        sx={{ borderRadius: 2 }}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => deleteSurvey(survey.surveyId)}
+                        sx={{ borderRadius: 2 }}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </motion.div>
       ) : (
         <p className="text-center text-gray-600">No surveys available.</p>
       )}
 
       {isModalOpen && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-md"
-          onClick={() => setIsModalOpen(false)} // Close when clicking outside
-        >
-          <div
-            className="relative bg-gradient-to-br from-white to-gray-100 p-8 rounded-2xl shadow-2xl transform transition-transform hover:scale-[1.02] w-full max-w-lg border border-gray-300"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        <div>
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            variant="contained"
+            color="primary"
           >
-            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-2 rounded-full shadow-md">
-              Import Survey
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 font-semibold">Title</label>
-                <input
-                  type="text"
+            Open Modal
+          </Button>
+
+          {/* Modal with MUI Dialog and Framer Motion */}
+          <Dialog
+            open={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            maxWidth="sm"
+            fullWidth
+            scroll="body"
+            PaperComponent={motion.div}
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.3 }}
+            sx={{
+              backdropFilter: "blur(5px)", // Add backdrop blur effect
+              backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+            }}
+          >
+            <DialogTitle
+              sx={{
+                backgroundColor: "#ffffff",
+                textAlign: "center",
+                fontWeight: "bold",
+                color: "#000",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "inline-block",
+                  padding: "10px",
+                  color: "blue",
+                }}
+              >
+                Survey Information
+              </Box>
+            </DialogTitle>
+
+            <DialogContent sx={{ backgroundColor: "#ffffff", padding: "20px" }}>
+              <form onSubmit={handleSubmit}>
+                {/* Title Input */}
+                <TextField
+                  label="Title"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
                   required
                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 font-semibold">
-                  Description
-                </label>
-                <input
-                  type="text"
+
+                {/* Description Input */}
+                <TextField
+                  label="Description"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
                   required
                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 font-semibold">Target</label>
-                <select
-                  name="target"
-                  value={formData.target}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition bg-white"
-                  required
+
+                {/* Target Selection */}
+                <FormControl fullWidth margin="normal" required>
+                  <InputLabel>Target</InputLabel>
+                  <Select
+                    label="Target"
+                    name="target"
+                    value={formData.target}
+                    onChange={handleChange}
+                  >
+                    <MenuItem value="">Select Target</MenuItem>
+                    <MenuItem value="Student">Student</MenuItem>
+                    <MenuItem value="Parent">Parent</MenuItem>
+                    <MenuItem value="Teacher">Teacher</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* File Upload */}
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  margin="normal"
+                  component="label"
+                  className="cursor-pointer py-3"
                 >
-                  <option value="" disabled>
-                    Select Target
-                  </option>
-                  <option value="Student">Student</option>
-                  <option value="Parent">Parent</option>
-                  <option value="Teacher">Teacher</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-gray-700 font-semibold">
                   Upload File (xlsx)
-                </label>
-                <input
-                  type="file"
-                  accept=".xlsx"
-                  onChange={handleFileChange}
-                  className="w-full px-4 py-3 border rounded-lg shadow-sm bg-gray-50 focus:ring-2 focus:ring-blue-400 focus:outline-none transition cursor-pointer"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transform transition-all duration-200 hover:shadow-lg"
+                  <input
+                    type="file"
+                    accept=".xlsx"
+                    onChange={handleFileChange}
+                    hidden
+                  />
+                </Button>
+                {fileName && (
+                  <p className="mt-2 text-gray-700 font-semibold">
+                    Selected File: {fileName}
+                  </p>
+                )}
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  sx={{ marginTop: "20px" }}
+                >
+                  Import Survey
+                </Button>
+              </form>
+            </DialogContent>
+
+            <DialogActions sx={{ backgroundColor: "#ffffff" }}>
+              <Button
+                onClick={() => setIsModalOpen(false)}
+                color="secondary"
+                fullWidth
               >
-                Import Survey
-              </button>
-            </form>
-            <button
-              className="mt-6 w-full px-4 py-3 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transform transition-all duration-200 hover:shadow-lg"
-              onClick={() => setIsModalOpen(false)}
-            >
-              Close
-            </button>
-          </div>
+                Close
+              </Button>
+            </DialogActions>
+          </Dialog>
         </div>
       )}
     </div>

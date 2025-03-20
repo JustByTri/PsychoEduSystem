@@ -60,21 +60,30 @@ namespace BLL.Service
             {
                 // Nếu đã có refresh token, đánh dấu token cũ là đã bị thu hồi
                 existingRefreshToken.IsRevoked = true;
-                await _unitOfWork.RefreshToken.UpdateAsync(existingRefreshToken); // Cập nhật token cũ
+                await _unitOfWork.RefreshToken.UpdateAsync(existingRefreshToken);
             }
 
             // Khởi tạo danh sách claims
             var claims = new List<Claim>();
 
             // Thêm vai trò vào claims
-            var Role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
-            claims.Add(new Claim(ClaimTypes.Role, Role?.RoleName ?? "User"));
+            var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+            if (role == null)
+            {
+                Console.WriteLine($"Role {user.RoleId} not found for user {user.UserId}. Defaulting to 'User'.");
+                claims.Add(new Claim(ClaimTypes.Role, "User"));
+            }
+            else
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role.RoleName));
+            }
+
             // Thêm email vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
 
             // Thêm UserId vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, user.FullName.ToString()));
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString())); // Sửa: Gán UserId vào NameIdentifier
 
             // Thêm UserName vào claims
             claims.Add(new Claim(JwtConstant.KeyClaim.Username, user.UserName));
@@ -84,17 +93,16 @@ namespace BLL.Service
             claims.Add(new Claim(JwtConstant.KeyClaim.fullName, fullName));
 
             // Tạo refresh token mới
-            var refreshTokenKey = _jwtProvider.GenerateRefreshToken(claims); // Sử dụng _jwtProvider
-                                                                             // Tạo access token
-            var accessTokenKey = _jwtProvider.GenerateAccessToken(claims); // Sử dụng _jwtProvider
+            var refreshTokenKey = _jwtProvider.GenerateRefreshToken(claims);
+            var accessTokenKey = _jwtProvider.GenerateAccessToken(claims);
 
             var refreshToken = new RefreshToken
             {
                 RefreshTokenId = Guid.NewGuid(),
                 UserId = user.UserId,
                 RefreshTokenKey = refreshTokenKey,
-                IsRevoked = false, // Đảm bảo rằng token mới không bị thu hồi
-                CreatedAt = DateTime.UtcNow // Lưu thời gian tạo
+                IsRevoked = false,
+                CreatedAt = DateTime.UtcNow
             };
 
             _unitOfWork.RefreshToken.Add(refreshToken);
@@ -111,7 +119,7 @@ namespace BLL.Service
             {
                 AccessToken = accessTokenKey,
                 RefreshToken = refreshToken.RefreshTokenKey,
-                Role = Role?.RoleName // Trả về tất cả vai trò
+                Role = role?.RoleName
             });
         }
 
@@ -159,7 +167,7 @@ namespace BLL.Service
             claims.Add(new Claim(JwtConstant.KeyClaim.userId, user.UserId.ToString()));
 
             // Tạo access token mới
-            var newAccessToken = _jwtProvider.GenerateAccessToken(claims); // Sử dụng _jwtProvider
+            var newAccessToken = _jwtProvider.GenerateAccessToken(claims);
 
             // Lưu refresh token mới vào database
             var newRefreshToken = new RefreshToken

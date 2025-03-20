@@ -76,7 +76,27 @@ namespace PsychoEduSystem.Controller
             }
         }
 
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetUserProfile(Guid userId)
+        {
+            if (Guid.Empty == userId) return BadRequest("User ID is required.");
 
+            try
+            {
+                var response = await _userService.GetUserProfile(userId);
+
+                if (response.IsSuccess && response.Result != null)
+                {
+                    return Ok(response);
+                }
+
+                return NotFound(response.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while fetching user profile.", Error = ex.Message });
+            }
+        }
 
 
 
@@ -98,22 +118,24 @@ namespace PsychoEduSystem.Controller
                 return StatusCode(500, new { Message = "An error occurred while checking user existence.", Error = ex.Message });
             }
         }
-        [HttpPost("create-parent-account")]
-        public async Task<IActionResult> CreateParentAccount([FromBody] CreateParentAccountDTO parentAccountDTO)
+        [HttpPost("create-account")]
+        public async Task<IActionResult> CreateParentAccount([FromBody] CreateAccountDTO accountDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var result = await _userService.CreateParentAccountAsync(parentAccountDTO);
-            if (!result)
+            var (success, errors) = await _userService.CreateAccountAsync(accountDTO);
+
+            if (!success)
             {
-                return BadRequest("Failed to create parent account. Please check the student emails or parent email.");
+                return BadRequest(new { Message = "Failed to create account.", Errors = errors });
             }
 
-            return Ok("Parent account and relationships created successfully.");
+            return Ok(new { Message = "Account created successfully." });
         }
+
         [HttpGet("{studentId}/class")]
         public async Task<IActionResult> RetrieveUserClassInfo(Guid studentId)
         {
@@ -139,6 +161,31 @@ namespace PsychoEduSystem.Controller
                 return NotFound(response.Message);
 
             return Ok(response);
+        }
+        [HttpPut("profile/{userId}")]
+        public async Task<IActionResult> UpdateUserProfile(Guid userId, [FromBody] UpdateUserProfileDTO updateDto)
+        {
+            if (userId == Guid.Empty)
+                return BadRequest("User ID is required.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var response = await _userService.UpdateUserProfileAsync(userId, updateDto);
+
+                if (response.IsSuccess)
+                {
+                    return Ok(response);
+                }
+
+                return StatusCode(response.StatusCode, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while updating user profile.", Error = ex.Message });
+            }
         }
     }
 }

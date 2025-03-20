@@ -8,6 +8,7 @@ using Google.Apis.Auth;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using static Google.Apis.Auth.GoogleJsonWebSignature;
@@ -66,6 +67,7 @@ namespace BLL.Services
                 Email = payload.Email,
                 IsEmailConfirmed = true,
                 CreateAt = DateTime.UtcNow,
+                ClassId = 1,
                 RoleId = 3 
             };
 
@@ -81,12 +83,21 @@ namespace BLL.Services
             var claims = new List<Claim>
     {
         new Claim(JwtClaimTypes.UserId, user.UserId.ToString()),
-        new Claim(JwtClaimTypes.Email, user.Email),
-        new Claim(JwtClaimTypes.Username, user.UserName),
-         new Claim(JwtClaimTypes.RoleId, user.RoleId.ToString())
+        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+        new Claim(JwtClaimTypes.Username, user.UserName)
     };
-
-          
+            var role = await _unitOfWork.Role.GetByIdInt(user.RoleId);
+            if (role == null)
+            {
+                Console.WriteLine($"Role {user.RoleId} not found for user {user.UserId}. Defaulting to 'User'.");
+                claims.Add(new Claim(ClaimTypes.Role, "User"));
+            }
+            else
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role.RoleName));
+            }
+            claims.Add(new Claim(JwtConstant.KeyClaim.fullName, user.FullName));
+            claims.Add(new Claim(JwtConstant.KeyClaim.Email, user.Email));
             var accessToken = _jwtProvider.GenerateAccessToken(claims);
             var refreshToken = _jwtProvider.GenerateRefreshToken(claims);
 

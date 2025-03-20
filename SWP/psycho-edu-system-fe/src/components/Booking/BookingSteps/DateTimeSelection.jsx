@@ -1,178 +1,159 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useBooking } from "../../../context/BookingContext";
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
-import { Calendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import { motion } from "framer-motion"; // Thêm framer-motion
-import axios from "axios"; // Thêm axios
-import { toast } from "react-toastify"; // Thêm toast từ react-toastify
-import "react-toastify/dist/ReactToastify.css"; // Đảm bảo import CSS của toast
-
-// Thiết lập localizer cho react-big-calendar
-const localizer = momentLocalizer(moment);
+import { motion, AnimatePresence } from "framer-motion";
+import axios from "axios";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  getDay,
+  isBefore,
+  startOfDay,
+} from "date-fns";
+import { Box, Typography, Button } from "@mui/material";
 
 export const DateTimeSelection = () => {
   const { updateBookingData, bookingData } = useBooking();
-  const [selectedDate, setSelectedDate] = useState(new Date()); // Ngày được chọn từ lịch
-  const [slots, setSlots] = useState([]); // Tất cả các slot cứng từ 1 đến 8
-  const [availableSlots, setAvailableSlots] = useState([]); // Slots có sẵn từ API
-  const [appointmentType, setAppointmentType] = useState("online"); // Mặc định online
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [slots] = useState([
+    { id: 1, time: "8:00" },
+    { id: 2, time: "9:00" },
+    { id: 3, time: "10:00" },
+    { id: 4, time: "11:00" },
+    { id: 5, time: "13:00" },
+    { id: 6, time: "14:00" },
+    { id: 7, time: "15:00" },
+    { id: 8, time: "16:00" },
+  ]);
+  const [availableSlotsCache, setAvailableSlotsCache] = useState({});
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [appointmentType, setAppointmentType] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
 
-  // Dữ liệu cứng cho các slot (1-8 tương ứng với thời gian)
-  useEffect(() => {
-    const slotTimes = [
-      { id: 1, time: "8:00" },
-      { id: 2, time: "9:00" },
-      { id: 3, time: "10:00" },
-      { id: 4, time: "11:00" },
-      { id: 5, time: "13:00" },
-      { id: 6, time: "14:00" },
-      { id: 7, time: "15:00" },
-      { id: 8, time: "16:00" },
-    ];
-    setSlots(slotTimes);
-  }, []);
+  const fetchAvailableSlots = useCallback(
+    async (date, consultantId) => {
+      const dateKey = format(date, "yyyy-MM-dd");
+      if (availableSlotsCache[dateKey]) {
+        setAvailableSlots(availableSlotsCache[dateKey]);
+        return availableSlotsCache[dateKey];
+      }
 
-  const fetchAvailableSlots = async (date, consultantId) => {
-    try {
       setIsLoading(true);
-      const authData = getAuthDataFromLocalStorage();
-      const formattedDate = moment(date).format("YYYY-MM-DD"); // Sử dụng ngày được chọn
-      const response = await axios.get(
-        `https://localhost:7192/api/User/${consultantId}/slots?selectedDate=${formattedDate}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        const slotsData = response.data.result || response.data || [];
-        // Chuyển đổi mảng slotId hoặc dữ liệu slots thành định dạng { slotId, slotName, isAvailable }
-        if (Array.isArray(slotsData)) {
-          const slotTimes = [
-            { slotId: 1, slotName: "8:00", isAvailable: slotsData.includes(1) },
-            { slotId: 2, slotName: "9:00", isAvailable: slotsData.includes(2) },
-            {
-              slotId: 3,
-              slotName: "10:00",
-              isAvailable: slotsData.includes(3),
+      try {
+        const authData = getAuthDataFromLocalStorage();
+        const response = await axios.get(
+          `https://localhost:7192/api/User/${consultantId}/slots?selectedDate=${dateKey}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authData.accessToken}`,
+              "Content-Type": "application/json",
             },
-            {
-              slotId: 4,
-              slotName: "11:00",
-              isAvailable: slotsData.includes(4),
-            },
-            {
-              slotId: 5,
-              slotName: "13:00",
-              isAvailable: slotsData.includes(5),
-            },
-            {
-              slotId: 6,
-              slotName: "14:00",
-              isAvailable: slotsData.includes(6),
-            },
-            {
-              slotId: 7,
-              slotName: "15:00",
-              isAvailable: slotsData.includes(7),
-            },
-            {
-              slotId: 8,
-              slotName: "16:00",
-              isAvailable: slotsData.includes(8),
-            },
-          ];
-          const filteredSlots = slotTimes
-            .filter((slot) => slot.isAvailable)
-            .map((slot) => slot.slotId);
-          setAvailableSlots(filteredSlots);
-          if (filteredSlots.length === 0) {
-            toast.warn("No available slots for the consultant on this date.", {
-              position: "top-right",
-              autoClose: 3000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-            });
           }
-        } else {
-          setAvailableSlots([]);
-          toast.warn("No available slots for the consultant on this date.", {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
+        );
+
+        const slotsData = (response.data.result || response.data).filter(
+          (id) => id >= 1 && id <= 8
+        );
+        setAvailableSlotsCache((prev) => ({ ...prev, [dateKey]: slotsData }));
+        setAvailableSlots(slotsData);
+        if (!slotsData.length) {
+          setErrorModal({
+            open: true,
+            message: "No available slots for this date.",
           });
         }
-      } else if (response.status === 404) {
-        // Xử lý 404 như trường hợp không có slot
+        return slotsData;
+      } catch (error) {
         setAvailableSlots([]);
-        toast.warn("No available slots for the consultant on this date.", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
+        setErrorModal({
+          open: true,
+          message:
+            error.response?.data?.message ||
+            "Failed to fetch available slots. Please try again.",
         });
-      } else {
-        console.warn(
-          "Unexpected API response:",
-          response.status,
-          response.data
-        );
-        setAvailableSlots([]);
-        toast.error("Unexpected error while fetching slots.", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
+        return [];
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      setAvailableSlots([]);
-      toast.error("No avaiable slots in this date", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [availableSlotsCache]
+  );
 
-  const handleSelectDate = (date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset giờ để so sánh ngày
-    if (date < today) {
-      return; // Không cho chọn ngày đã qua
+  useEffect(() => {
+    if (bookingData.consultantId && selectedDate) {
+      fetchAvailableSlots(selectedDate, bookingData.consultantId);
     }
-    setSelectedDate(date);
-    updateBookingData({ date: moment(date).format("YYYY-MM-DD") }); // Cập nhật date vào bookingData
-    if (bookingData.consultantId) {
-      fetchAvailableSlots(date, bookingData.consultantId); // Fetch slots khi chọn ngày
+  }, [bookingData.consultantId, selectedDate, fetchAvailableSlots]);
+
+  const daysInMonth = useCallback(() => {
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    const days = eachDayOfInterval({ start, end });
+    const firstDayOfWeek = getDay(start);
+    const result = [];
+
+    // Thêm các ô trống trước ngày đầu tiên của tháng
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      result.push(null);
     }
-  };
+
+    // Thêm các ngày trong tháng
+    days.forEach((day) => {
+      result.push({
+        day: format(day, "d"),
+        weekday: format(day, "EEE")[0], // Lấy chữ cái đầu của thứ (S, M, T, ...)
+        fullDate: day,
+      });
+    });
+
+    // Điền các ô trống để đủ 42 slot (6 tuần)
+    while (result.length < 42) {
+      result.push(null);
+    }
+
+    return result;
+  }, [currentMonth]);
+
+  const days = daysInMonth();
+  const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
+
+  const handleDayClick = useCallback(
+    async (fullDate) => {
+      const today = startOfDay(new Date());
+      if (isBefore(fullDate, today)) return;
+
+      setSelectedDate(fullDate);
+      const dateStr = format(fullDate, "yyyy-MM-dd");
+      updateBookingData({
+        date: dateStr,
+        time: null,
+        slotId: null,
+        appointmentType: null,
+      });
+
+      if (bookingData.consultantId) {
+        await fetchAvailableSlots(fullDate, bookingData.consultantId);
+      }
+    },
+    [bookingData.consultantId, updateBookingData, fetchAvailableSlots]
+  );
+
+  const handleNextMonth = () =>
+    setCurrentMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1)
+    );
+  const handlePrevMonth = () =>
+    setCurrentMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1)
+    );
 
   const handleSelectSlot = (slot) => {
     if (availableSlots.includes(slot.id)) {
       updateBookingData({
-        date: moment(selectedDate).format("YYYY-MM-DD"),
         time: slot.time,
         slotId: slot.id,
       });
@@ -181,231 +162,296 @@ export const DateTimeSelection = () => {
 
   const handleSelectAppointmentType = (type) => {
     setAppointmentType(type);
-    updateBookingData({ appointmentType: type }); // Lưu loại appointment vào bookingData
+    updateBookingData({ appointmentType: type });
   };
 
-  // Hiển thị các bước dựa trên điều kiện
-  const showSlots =
-    selectedDate && bookingData.consultantId && availableSlots.length > 0;
-  const showAppointmentType = showSlots && bookingData.slotId;
+  const closeErrorModal = () => setErrorModal({ open: false, message: "" });
 
-  if (isLoading)
+  if (isLoading) {
     return (
-      <motion.div className="text-center text-gray-600">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center text-gray-600"
+      >
         Loading available slots...
       </motion.div>
     );
-  if (error)
-    return (
-      <motion.div className="text-center text-red-600">
-        Error: {error}
-      </motion.div>
-    );
+  }
 
   return (
-    <div className="py-6">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+    <Box className="py-6">
+      <Typography
+        variant="h5"
+        sx={{
+          fontFamily: "Inter, sans-serif",
+          fontWeight: 600,
+          color: "#333",
+          mb: 4,
+          textAlign: "center",
+        }}
+      >
         Select Date, Time, and Appointment Type
-      </h2>
+      </Typography>
 
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="bg-orange-100 p-6 rounded-2xl shadow-xl mb-8"
+      >
+        <Box className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <Button
+            onClick={handlePrevMonth}
+            variant="contained"
+            sx={{
+              backgroundColor: "#1e88e5",
+              "&:hover": { backgroundColor: "#1565c0" },
+              textTransform: "none",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Back
+          </Button>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              color: "#333",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            {format(currentMonth, "MMMM yyyy")}
+          </Typography>
+          <Button
+            onClick={handleNextMonth}
+            variant="contained"
+            sx={{
+              backgroundColor: "#1e88e5",
+              "&:hover": { backgroundColor: "#1565c0" },
+              textTransform: "none",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Next
+          </Button>
+        </Box>
+        <Typography
+          sx={{
+            fontFamily: "Inter, sans-serif",
+            fontSize: "1rem",
+            color: "#555",
+            textAlign: "center",
+            mb: 4,
+          }}
+        >
+          Selected: {format(selectedDate, "eeee, dd/MM/yyyy")}
+        </Typography>
+        <div className="grid grid-cols-7 gap-2">
+          {weekdays.map((weekday, index) => (
+            <Typography
+              key={`weekday-${index}`}
+              sx={{
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 600,
+                color: "#666",
+                textAlign: "center",
+              }}
+            >
+              {weekday}
+            </Typography>
+          ))}
+        </div>
+        <motion.div
+          className="grid grid-cols-7 gap-2 mt-4"
+          key={format(currentMonth, "yyyy-MM")}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {days.map((d, index) =>
+            d ? (
+              <motion.button
+                key={`${format(currentMonth, "yyyy-MM")}-${index}`}
+                className={`w-full h-12 flex items-center justify-center rounded-xl font-medium transition-all duration-300 shadow-md ${
+                  format(d.fullDate, "yyyy-MM-dd") ===
+                  format(selectedDate, "yyyy-MM-dd")
+                    ? "bg-green-500 text-white"
+                    : isBefore(d.fullDate, startOfDay(new Date()))
+                    ? "bg-gray-200 cursor-not-allowed opacity-50"
+                    : "bg-blue-200 hover:bg-blue-300"
+                }`}
+                onClick={() => handleDayClick(d.fullDate)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={isBefore(d.fullDate, startOfDay(new Date()))}
+              >
+                <Typography
+                  sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+                >
+                  {d.day}
+                </Typography>
+              </motion.button>
+            ) : (
+              <div
+                key={`${format(currentMonth, "yyyy-MM")}-${index}`}
+                className="w-full h-12 bg-gray-100 rounded-xl"
+              />
+            )
+          )}
+        </motion.div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="space-y-6"
+        className="grid grid-cols-1 gap-6"
       >
-        {/* Lịch lớn với hiệu ứng motion, ngày được chọn nổi bật */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
-        >
-          <Calendar
-            localizer={localizer}
-            events={[]}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: 400 }}
-            defaultView="month"
-            views={["month", "week"]}
-            onSelectSlot={(slotInfo) => handleSelectDate(slotInfo.start)}
-            selectable
-            date={selectedDate}
-            onNavigate={(newDate) => setSelectedDate(newDate)}
-            slotPropGetter={(date) => {
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              if (date < today) {
-                return {
-                  className: "rbc-past-date",
-                  style: { backgroundColor: "#e5e7eb", cursor: "not-allowed" },
-                };
-              } else if (moment(date).isSame(selectedDate, "day")) {
-                return {
-                  className: "rbc-selected-date",
-                  style: {
-                    backgroundColor: "#e0f7fa",
-                    border: "2px solid #3b82f6",
-                    cursor: "pointer",
-                  },
-                }; // Ngày đã chọn nổi bật
-              }
-              return {
-                className: "rbc-hoverable",
-                style: { cursor: "pointer" },
-              };
+        <Box className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+          <Typography
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontWeight: 600,
+              fontSize: "1.25rem",
+              color: "#333",
+              mb: 2,
             }}
-            components={{
-              dateCellWrapper: (props) => {
-                const isHovered = props.isHovered;
-                const defaultStyle = props.style || {};
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                if (moment(props.value).isSame(selectedDate, "day")) {
-                  return (
-                    <div
-                      {...props}
-                      style={{
-                        ...defaultStyle,
-                        backgroundColor: "#e0f7fa",
-                        border: "2px solid #3b82f6",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {props.children}
-                    </div>
-                  ); // Ngày được chọn sáng lên
-                }
-                if (props.value < today) {
-                  return (
-                    <div
-                      {...props}
-                      style={{
-                        ...defaultStyle,
-                        backgroundColor: "#e5e7eb",
-                        cursor: "not-allowed",
-                        opacity: 0.5,
-                      }}
-                    >
-                      {props.children}
-                    </div>
-                  );
-                }
-                return (
-                  <div
-                    {...props}
-                    style={{
-                      ...defaultStyle,
-                      backgroundColor:
-                        isHovered && moment(props.value).isAfter(today, "day")
-                          ? "#f5f5f5"
-                          : defaultStyle.backgroundColor || "transparent",
-                      border:
-                        isHovered && moment(props.value).isAfter(today, "day")
-                          ? "2px solid #3b82f6"
-                          : "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {props.children}
-                  </div>
-                );
-              },
-            }}
-          />
-        </motion.div>
-
-        {/* Danh sách slots chỉ hiển thị khi có ngày và slot khả dụng */}
-        {selectedDate &&
-          bookingData.consultantId &&
-          availableSlots.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
-            >
-              <h3 className="text-lg font-medium mb-2 text-gray-800">
-                Available Time Slots
-              </h3>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {slots.map((slot, index) => (
-                  <motion.div
-                    key={slot.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
-                    className={`p-4 border rounded-md cursor-pointer transition-colors
-                    ${
-                      bookingData.time === slot.time
-                        ? "border-blue-500 bg-blue-50"
-                        : availableSlots.includes(slot.id)
-                        ? "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
-                        : "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
-                    }`}
-                    onClick={() =>
-                      availableSlots.includes(slot.id) && handleSelectSlot(slot)
-                    }
-                  >
-                    <p className="text-center font-medium text-gray-800">
-                      {slot.time}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-        {/* Chọn loại appointment chỉ hiển thị khi slot đã được chọn */}
-        {selectedDate && bookingData.consultantId && bookingData.slotId && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
           >
-            <h3 className="text-lg font-medium mb-2 text-gray-800">
-              Select Appointment Type
-            </h3>
-            <div className="space-y-3">
+            Available Time Slots
+          </Typography>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {slots.map((slot, index) => (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
+                key={slot.id}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className={`p-4 border rounded-md cursor-pointer transition-colors ${
+                  bookingData.time === slot.time &&
+                  availableSlots.includes(slot.id)
+                    ? "border-green-500 bg-green-50"
+                    : availableSlots.includes(slot.id)
+                    ? "border-gray-200 hover:border-green-300 hover:bg-green-50"
+                    : "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
+                }`}
+                onClick={() => handleSelectSlot(slot)}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 500,
+                    textAlign: "center",
+                    color: "#333",
+                  }}
+                >
+                  {slot.time}
+                </Typography>
+              </motion.div>
+            ))}
+          </div>
+        </Box>
+
+        <Box className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+          <Typography
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              fontWeight: 600,
+              fontSize: "1.25rem",
+              color: "#333",
+              mb: 2,
+            }}
+          >
+            Select Appointment Type
+          </Typography>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {["Online", "Offline"].map((type, index) => (
+              <motion.div
+                key={type}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => handleSelectAppointmentType("online")}
-                className={`p-4 border rounded-md cursor-pointer transition-colors
-                  ${
-                    appointmentType === "online"
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-200 hover:border-green-300 hover:bg-green-50"
-                  }`}
+                className={`p-4 border rounded-md cursor-pointer transition-colors ${
+                  appointmentType === type
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200 hover:border-green-300 hover:bg-green-50"
+                }`}
+                onClick={() => handleSelectAppointmentType(type)}
               >
-                <p className="text-center font-medium text-gray-800">Online</p>
+                <Typography
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 500,
+                    textAlign: "center",
+                    color: "#333",
+                  }}
+                >
+                  {type}
+                </Typography>
               </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleSelectAppointmentType("offline")}
-                className={`p-4 border rounded-md cursor-pointer transition-colors
-                  ${
-                    appointmentType === "offline"
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-200 hover:border-green-300 hover:bg-green-50"
-                  }`}
+            ))}
+          </div>
+        </Box>
+      </motion.div>
+
+      <AnimatePresence>
+        {errorModal.open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg"
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 700,
+                  color: "#ef5350",
+                  mb: 2,
+                  textAlign: "center",
+                }}
               >
-                <p className="text-center font-medium text-gray-800">Offline</p>
-              </motion.div>
-            </div>
+                Notification
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  color: "#333",
+                  textAlign: "center",
+                  mb: 4,
+                }}
+              >
+                {errorModal.message}
+              </Typography>
+              <Box className="flex justify-center">
+                <Button
+                  onClick={closeErrorModal}
+                  variant="contained"
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    backgroundColor: "#ef5350",
+                    "&:hover": { backgroundColor: "#d32f2f" },
+                    textTransform: "none",
+                    px: 4,
+                  }}
+                >
+                  Close
+                </Button>
+              </Box>
+            </motion.div>
           </motion.div>
         )}
-      </motion.div>
-    </div>
+      </AnimatePresence>
+    </Box>
   );
 };

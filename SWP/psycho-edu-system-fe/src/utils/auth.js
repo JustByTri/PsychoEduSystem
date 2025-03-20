@@ -4,7 +4,6 @@ export const getAuthDataFromLocalStorage = () => {
 
   try {
     const parsedData = JSON.parse(userData);
-    // Decode JWT token để lấy thông tin
     const tokenPayload = JSON.parse(atob(parsedData.accessToken.split(".")[1]));
 
     return {

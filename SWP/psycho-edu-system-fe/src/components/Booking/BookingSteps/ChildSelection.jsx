@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useBooking } from "../../../context/BookingContext";
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
-import { motion } from "framer-motion"; // Thêm framer-motion
-import axios from "axios"; // Thêm axios
+import { motion } from "framer-motion";
+import axios from "axios";
+import { Card, CardContent, Typography, Box } from "@mui/material";
 
 export const ChildSelection = () => {
   const { updateBookingData, bookingData, isParent } = useBooking();
@@ -10,9 +11,8 @@ export const ChildSelection = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Lấy userId (parentId) từ token
   const authData = getAuthDataFromLocalStorage();
-  const parentId = authData?.userId; // Giả định userId là parentId
+  const parentId = authData?.userId;
 
   useEffect(() => {
     const fetchChildren = async () => {
@@ -26,8 +26,9 @@ export const ChildSelection = () => {
           return;
         }
 
-        const response = await axios.get(
-          `https://localhost:7192/api/relationships/parent/${parentId}`, // API để lấy danh sách children của parent
+        // Lấy danh sách relationship
+        const relationshipResponse = await axios.get(
+          `https://localhost:7192/api/relationships/parent/${parentId}`,
           {
             headers: {
               Authorization: `Bearer ${authData.accessToken}`,
@@ -36,53 +37,67 @@ export const ChildSelection = () => {
           }
         );
 
-        if (response.status === 200) {
-          const result = response.data.result || response.data; // Xử lý nếu result không tồn tại hoặc là data trực tiếp
-          if (!Array.isArray(result)) {
-            setError("Invalid data format: expected an array of relationships");
-            setIsLoading(false);
-            return;
-          }
+        if (relationshipResponse.status !== 200) {
+          throw new Error("Failed to fetch relationships");
+        }
 
-          const uniqueStudents = {};
-          const formattedChildren = result
-            .filter((relationship) => relationship && relationship.studentId) // Kiểm tra relationship và studentId không undefined
-            .map((relationship) => {
-              const studentId = relationship.studentId;
-              if (!uniqueStudents[studentId]) {
-                uniqueStudents[studentId] = true;
+        const relationships =
+          relationshipResponse.data.result || relationshipResponse.data;
+        if (!Array.isArray(relationships)) {
+          setError("Invalid data format: expected an array of relationships");
+          setIsLoading(false);
+          return;
+        }
+
+        // Lấy thông tin profile của từng student
+        const uniqueStudents = {};
+        const formattedChildrenPromises = relationships
+          .filter((rel) => rel && rel.studentId)
+          .map(async (relationship) => {
+            const studentId = relationship.studentId;
+            if (!uniqueStudents[studentId]) {
+              uniqueStudents[studentId] = true;
+
+              const profileResponse = await axios.get(
+                `https://localhost:7192/api/User/profile?userId=${studentId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${authData.accessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+
+              if (
+                profileResponse.data.isSuccess &&
+                profileResponse.data.statusCode === 200
+              ) {
+                const profile = profileResponse.data.result;
                 return {
-                  id: studentId, // Chỉ dùng studentId làm id (GUID)
-                  name:
-                    relationship.relationshipName ||
-                    `Student ${studentId.slice(0, 8)}`, // Tạo name từ relationshipName hoặc studentId
-                  role: "Student", // Đặt role cố định là "Student"
+                  id: studentId,
+                  fullName:
+                    profile.fullName || `Student ${studentId.slice(0, 8)}`, // Lấy fullName từ profile
+                  relationshipName: relationship.relationshipName || "Child", // Lấy relationshipName từ relationship
                 };
               }
-              return null; // Bỏ qua nếu đã xử lý studentId này
-            })
-            .filter(Boolean); // Loại bỏ các null
+              return null;
+            }
+            return null;
+          });
 
-          setChildren(formattedChildren);
-        } else {
-          throw new Error(
-            response.data?.message || `API error: Status ${response.status}`
-          );
-        }
+        const formattedChildren = (
+          await Promise.all(formattedChildrenPromises)
+        ).filter(Boolean);
+        setChildren(formattedChildren);
       } catch (error) {
-        console.error(
-          "Error fetching children:",
-          error.response ? error.response.data : error.message
-        );
         setError(error.message || "Failed to fetch children");
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (isParent()) {
-      fetchChildren();
-    } else {
+    if (isParent()) fetchChildren();
+    else {
       setIsLoading(false);
       setError("Only parents can select a child");
     }
@@ -90,66 +105,108 @@ export const ChildSelection = () => {
 
   const handleSelectChild = (child) => {
     updateBookingData({
-      childId: child.id, // Lưu studentId làm childId
-      childName: child.name || "Unknown Student", // Đảm bảo name có giá trị mặc định
+      childId: child.id,
+      childName: child.fullName, // Lưu fullName vào bookingData
+      relationshipName: child.relationshipName, // Lưu relationshipName nếu cần dùng sau này
     });
   };
 
   if (isLoading)
     return (
-      <motion.div className="text-center text-gray-600">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center text-gray-600"
+      >
         Loading children...
       </motion.div>
     );
   if (error)
     return (
-      <motion.div className="text-center text-red-600">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center text-red-600"
+      >
         Error: {error}
       </motion.div>
     );
 
   return (
-    <div className="py-6">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+    <Box className="py-6">
+      <Typography
+        variant="h5"
+        sx={{
+          fontFamily: "Inter, sans-serif",
+          fontWeight: 600,
+          color: "#333",
+          mb: 4,
+          textAlign: "center",
+        }}
+      >
         Select Student
-      </h2>
+      </Typography>
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="space-y-3"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
       >
         {children.map((child, index) => (
           <motion.div
             key={child.id}
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            onClick={() => handleSelectChild(child)}
-            className={`p-4 border rounded-md cursor-pointer transition-colors
-              ${
+            transition={{ duration: 0.4, delay: index * 0.1 }}
+          >
+            <Card
+              className={`rounded-xl shadow-lg border transition-shadow duration-300 cursor-pointer ${
                 bookingData.childId === child.id
                   ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-blue-300"
+                  : "border-gray-200 hover:shadow-xl hover:border-blue-300"
               }`}
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                {child.name ? child.name.charAt(0) || "S" : "S"}{" "}
-                {/* Kiểm tra name trước khi dùng charAt, dùng "S" làm mặc định */}
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-800">
-                  {child.name || "Unknown Student"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {child.role || "Student"}
-                </p>
-              </div>
-            </div>
+              sx={{ minWidth: 200, maxWidth: 300 }}
+              onClick={() => handleSelectChild(child)}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box className="flex items-center">
+                  <Box
+                    className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
+                    sx={{ mr: 2 }}
+                  >
+                    <Typography
+                      sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+                    >
+                      {child.fullName ? child.fullName.charAt(0) : "S"}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 600,
+                        fontSize: "1rem",
+                        color: "#333",
+                      }}
+                    >
+                      {child.fullName} {/* Hiển thị fullName */}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: "0.9rem",
+                        color: "#666",
+                      }}
+                    >
+                      {child.relationshipName} {/* Hiển thị relationshipName */}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
           </motion.div>
         ))}
       </motion.div>
-    </div>
+    </Box>
   );
 };

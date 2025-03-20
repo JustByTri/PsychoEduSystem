@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useBooking } from "../../../context/BookingContext";
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
-import { motion } from "framer-motion"; // Thêm framer-motion
-import axios from "axios"; // Thêm axios
+import { motion } from "framer-motion";
+import axios from "axios";
+import { Card, CardContent } from "@mui/material";
 
 export const ConsultantSelection = () => {
   const { updateBookingData, bookingData, isParent } = useBooking();
@@ -10,222 +11,305 @@ export const ConsultantSelection = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const fetchHomeroomTeacher = async (studentId) => {
+    const authData = getAuthDataFromLocalStorage();
+    try {
+      const classResponse = await axios.get(
+        `https://localhost:7192/api/User/${studentId}/class`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const teacherId = classResponse.data.result.teacherId;
+      const className = classResponse.data.result.className || "Unknown Class";
+
+      const profileResponse = await axios.get(
+        `https://localhost:7192/api/User/profile?userId=${teacherId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const teacherProfile = profileResponse.data.result;
+      const age = teacherProfile.birthDay
+        ? 2025 - parseInt(teacherProfile.birthDay.split("/")[2], 10)
+        : "N/A";
+
+      return [
+        {
+          id: teacherId,
+          name: teacherProfile.fullName || "Unknown Teacher",
+          phone: teacherProfile.phone || "N/A",
+          email: teacherProfile.email || "N/A",
+          birthDay: teacherProfile.birthDay || "N/A",
+          age,
+          role: "Homeroom Teacher",
+          className,
+          availableSlots: [],
+        },
+      ];
+    } catch (error) {
+      setError("Failed to fetch homeroom teacher: " + error.message);
+      return [];
+    }
+  };
+
+  const fetchCounselors = async () => {
+    const authData = getAuthDataFromLocalStorage();
+    try {
+      const response = await axios.get(
+        `https://localhost:7192/api/psychologists`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data.result.map((psychologist) => {
+        const age = psychologist.birthDay
+          ? 2025 - new Date(psychologist.birthDay).getFullYear()
+          : "N/A";
+        return {
+          id: psychologist.userId,
+          name:
+            psychologist.fullName ||
+            `Counselor ${psychologist.userId.slice(0, 8)}`,
+          phone: psychologist.phoneNumber || "N/A",
+          email: psychologist.email || "N/A",
+          birthDay: psychologist.birthDay || "N/A",
+          age,
+          role: "Counselor",
+          availableSlots: [],
+        };
+      });
+    } catch (error) {
+      setError("Failed to fetch counselors: " + error.message);
+      return [];
+    }
+  };
+
   useEffect(() => {
     const fetchConsultants = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        const authData = getAuthDataFromLocalStorage();
         if (!bookingData.consultantType) {
-          setError("No consultant type selected. Please select a type first.");
-          setIsLoading(false);
+          setError("Please select a consultant type first.");
           return;
         }
 
-        let consultantList = [];
-        if (bookingData.consultantType === "homeroom") {
-          let studentId;
-          if (!isParent()) {
-            // Student: Lấy studentId từ userId trong token
-            studentId = bookingData.userId || authData.userId; // Ưu tiên từ bookingData, nếu không dùng authData
-            if (!studentId) {
-              setError(
-                "No valid student ID available. Please check your authentication."
-              );
-              setIsLoading(false);
-              return;
-            }
-          } else {
-            // Parent: Yêu cầu childId đã được chọn từ ChildSelection
-            studentId = bookingData.childId;
-            if (!studentId) {
-              setError(
-                "No valid student ID available. Please select a child first."
-              );
-              setIsLoading(false);
-              return;
-            }
-          }
+        const studentId = !isParent()
+          ? bookingData.userId
+          : bookingData.childId;
+        const consultantList =
+          bookingData.consultantType === "homeroom"
+            ? await fetchHomeroomTeacher(studentId)
+            : await fetchCounselors();
 
-          const response = await axios.get(
-            `https://localhost:7192/api/User/${studentId}/class`, // Truyền studentId để lấy teacherId
-            {
-              headers: {
-                Authorization: `Bearer ${authData.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          console.log("API Response for homeroom teacher:", response.data);
-          if (response.status === 200) {
-            const teacherData = response.data.result || response.data;
-            if (!teacherData || typeof teacherData !== "object") {
-              throw new Error(
-                "Invalid data format: teacher data is not an object"
-              );
-            }
-            const teacherId = teacherData.teacherId;
-            consultantList = [
-              {
-                id: teacherId || "unknown-id",
-                name: `Teacher ${teacherId?.slice(0, 8) || "unknown"}`, // Sử dụng ID thay vì tên
-                role: "Homeroom Teacher",
-                availableSlots: [], // Sẽ fetch trong DateTimeSelection
-              },
-            ];
-          } else {
-            throw new Error(`API error: Status ${response.status}`);
-          }
-        } else if (bookingData.consultantType === "counselor") {
-          const response = await axios.get(
-            `https://localhost:7192/api/psychologists`,
-            {
-              headers: {
-                Authorization: `Bearer ${authData.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (response.status === 200) {
-            let data = response.data;
-            // Xử lý định dạng response
-            if (Array.isArray(data)) {
-              data = data;
-            } else if (data.data && Array.isArray(data.data)) {
-              data = data.data;
-            } else if (data.result && Array.isArray(data.result)) {
-              data = data.result;
-            } else if (data && typeof data === "object") {
-              data = [data];
-            } else {
-              throw new Error(
-                "Invalid data format: response data is not an array or object"
-              );
-            }
-
-            if (!Array.isArray(data)) {
-              throw new Error(
-                "Invalid data format: processed data is not an array"
-              );
-            }
-
-            const formattedConsultants = data.map((psychologist) => ({
-              id: psychologist.userId || "unknown-id",
-              name:
-                psychologist.fullName ||
-                `Counselor ${psychologist.userId?.slice(0, 8) || "unknown"}`,
-              role: "Counselor",
-              availableSlots: [], // Sẽ fetch trong DateTimeSelection
-            }));
-            consultantList = formattedConsultants;
-          } else {
-            throw new Error(`API error: Status ${response.status}`);
-          }
-        }
-
-        if (consultantList.length === 0) {
-          setError("No consultants available.");
-        } else {
-          setConsultants(consultantList);
-        }
+        setConsultants(consultantList.length ? consultantList : []);
+        if (!consultantList.length) setError("No consultants available.");
       } catch (error) {
-        console.error(
-          "Error fetching consultants:",
-          error.response ? error.response.data : error.message
-        );
         setError(error.message || "Failed to fetch consultants");
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (bookingData.consultantType) {
-      fetchConsultants();
-    } else {
-      setIsLoading(false);
-      setError("No consultant type selected");
-    }
+    fetchConsultants();
   }, [
     bookingData.consultantType,
-    bookingData.isParent,
     bookingData.userId,
     bookingData.childId,
-    isParent, // Thêm isParent từ useBooking để kiểm tra vai trò
+    isParent,
   ]);
 
-  const handleSelectConsultant = (consultant) => {
-    if (!consultant) {
-      console.error("Consultant is undefined");
-      return;
-    }
-    console.log("Selected consultant:", consultant);
-    updateBookingData({
-      consultantId: consultant.id,
-      consultantName: consultant.name,
-      availableSlots: consultant.availableSlots, // Sẽ cập nhật trong DateTimeSelection
-    });
-  };
+  // Khôi phục hàm handleSelectConsultant
+  const handleSelectConsultant = useCallback(
+    (consultant) => {
+      updateBookingData({
+        consultantId: consultant.id,
+        consultantName: consultant.name,
+        consultantDetails: {
+          phone: consultant.phone,
+          email: consultant.email,
+          age: consultant.age,
+          ...(consultant.className && { className: consultant.className }),
+        },
+        availableSlots: consultant.availableSlots,
+      });
+    },
+    [updateBookingData]
+  );
 
   if (isLoading)
-    return (
-      <motion.div className="text-center text-gray-600">
-        Loading consultants...
-      </motion.div>
-    );
-  if (error)
-    return (
-      <motion.div className="text-center text-red-600">
-        Error: {error}
-      </motion.div>
-    );
+    return <div className="text-center">Loading consultants...</div>;
+  if (error) return <div className="text-center text-red-600">{error}</div>;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="py-6"
-    >
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-        Select Consultant
-      </h2>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className="space-y-3"
-      >
-        {consultants.map((consultant, index) => (
+    <div className="py-6 px-4 sm:px-6 lg:px-8 flex justify-center">
+      <div className="w-full max-w-3xl">
+        <h5 className="font-inter font-semibold text-xl sm:text-2xl text-gray-800 mb-6 text-center">
+          Select Counselor
+        </h5>
+        {bookingData.consultantType === "homeroom" && consultants.length > 0 ? (
+          <div className="w-full max-w-[90%] sm:max-w-md md:max-w-lg mx-auto">
+            <h5 className="font-inter font-semibold text-xl sm:text-2xl text-gray-800 mb-4 text-center">
+              Your Homeroom Teacher
+            </h5>
+            <Card
+              className="rounded-xl bg-gray-50 border border-gray-300 w-full hover:shadow-lg transition-shadow duration-300"
+              style={{ minWidth: "180px" }}
+            >
+              <CardContent className="p-3 sm:p-4 flex flex-col items-center">
+                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full justify-center">
+                  <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="font-inter font-semibold text-2xl sm:text-3xl text-gray-800">
+                      {consultants[0].name?.charAt(0) || "T"}
+                    </span>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="font-inter font-bold text-lg sm:text-xl text-gray-800">
+                      {consultants[0].name}
+                    </p>
+                    <p className="font-inter font-medium text-base sm:text-lg text-gray-600">
+                      {consultants[0].role}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 sm:mt-4 w-full flex justify-center">
+                  <div className="text-left w-full max-w-[240px] sm:max-w-xs space-y-1">
+                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
+                      <strong className="inline-block w-20 sm:w-24">
+                        Phone:
+                      </strong>{" "}
+                      {consultants[0].phone}
+                    </p>
+                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
+                      <strong className="inline-block w-20 sm:w-24">
+                        Email:
+                      </strong>{" "}
+                      {consultants[0].email}
+                    </p>
+                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
+                      <strong className="inline-block w-20 sm:w-24">
+                        Age:
+                      </strong>{" "}
+                      {consultants[0].age}
+                    </p>
+                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
+                      <strong className="inline-block w-20 sm:w-24">
+                        Class:
+                      </strong>{" "}
+                      {consultants[0].className}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
           <motion.div
-            key={consultant.id}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            className={`p-4 border rounded-md cursor-pointer transition-colors
-              ${
-                bookingData.consultantId === consultant.id
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-blue-300"
-              }`}
-            onClick={() => handleSelectConsultant(consultant)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
           >
-            <div className="flex items-center">
-              <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                {consultant.name?.charAt(0) || "C"}
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-800">
-                  {consultant.name || "Unknown Consultant"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {consultant.role || "Counselor"}
-                </p>
-              </div>
-            </div>
+            {consultants.map((consultant) => (
+              <Card
+                key={consultant.id}
+                component={motion.div}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                className={`rounded-xl bg-gray-50 border ${
+                  bookingData.consultantId === consultant.id
+                    ? "border-blue-500"
+                    : "border-gray-300"
+                } w-full hover:shadow-lg transition-all duration-300`}
+                style={{ minWidth: "180px" }}
+                onClick={() => handleSelectConsultant(consultant)} // Sử dụng hàm đã định nghĩa
+              >
+                <CardContent className="p-3 sm:p-4 flex flex-col items-center">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full justify-center">
+                    <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="font-inter font-semibold text-2xl sm:text-3xl text-gray-800">
+                        {consultant.name?.charAt(0) || "C"}
+                      </span>
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <p
+                        className={`font-inter font-bold text-lg sm:text-xl ${
+                          bookingData.consultantId === consultant.id
+                            ? "text-blue-700"
+                            : "text-gray-800"
+                        }`}
+                      >
+                        {consultant.name}
+                      </p>
+                      <p
+                        className={`font-inter font-medium text-base sm:text-lg ${
+                          bookingData.consultantId === consultant.id
+                            ? "text-blue-600"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        {consultant.role}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 sm:mt-4 w-full flex justify-center">
+                    <div className="text-left w-full max-w-[240px] sm:max-w-xs space-y-1">
+                      <p
+                        className={`font-inter text-sm sm:text-base ${
+                          bookingData.consultantId === consultant.id
+                            ? "text-blue-600"
+                            : "text-gray-600"
+                        } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
+                      >
+                        <strong className="inline-block w-20 sm:w-24">
+                          Phone:
+                        </strong>{" "}
+                        {consultant.phone}
+                      </p>
+                      <p
+                        className={`font-inter text-sm sm:text-base ${
+                          bookingData.consultantId === consultant.id
+                            ? "text-blue-600"
+                            : "text-gray-600"
+                        } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
+                      >
+                        <strong className="inline-block w-20 sm:w-24">
+                          Email:
+                        </strong>{" "}
+                        {consultant.email}
+                      </p>
+                      <p
+                        className={`font-inter text-sm sm:text-base ${
+                          bookingData.consultantId === consultant.id
+                            ? "text-blue-600"
+                            : "text-gray-600"
+                        } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
+                      >
+                        <strong className="inline-block w-20 sm:w-24">
+                          Age:
+                        </strong>{" "}
+                        {consultant.age}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </motion.div>
-        ))}
-      </motion.div>
-    </motion.div>
+        )}
+      </div>
+    </div>
   );
 };

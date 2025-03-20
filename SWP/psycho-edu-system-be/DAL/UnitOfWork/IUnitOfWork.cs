@@ -18,7 +18,7 @@ namespace DAL.UnitOfWork
         ISlotRepository Slot { get; }
         IUserRepository User { get; }
 
-
+        IProgramEnrollmentRepository ProgramEnrollment { get; }
         IUserTokenRepository UserToken { get; }
 
         IAnswerRepository Answer { get; }
@@ -31,25 +31,15 @@ namespace DAL.UnitOfWork
         IRelationshipRepository Relationship { get; }
         IClassRepository Class { get; }
         ITargetProgramRepository TargetProgram { get; }
-
         IUserTargetProgramRepository UserTargetProgram { get; }
-
-
-
-
         IScheduleRepository Schedule { get; }
 
         IBlogPostRepository BlogPost { get; }
 
 
         IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel);
-        // Dispose method để giải phóng tài nguyên
         void Dispose();
-
-        // Phương thức lưu thay đổi bất đồng bộ
         Task<bool> SaveChangeAsync();
-
-        // Phương thức lưu thay đổi đồng bộ
         bool SaveChange();
     }
 }

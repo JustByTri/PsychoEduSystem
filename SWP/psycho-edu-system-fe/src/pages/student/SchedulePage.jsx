@@ -1,335 +1,358 @@
-import { useState, useEffect } from "react";
-import { Calendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
-import "react-big-calendar/lib/css/react-big-calendar.css";
+import React, { useState, useEffect, useRef } from "react";
+import { CContainer } from "@coreui/react";
+import "@coreui/coreui/dist/css/coreui.min.css";
+import { useNavigate } from "react-router-dom";
+import {
+  format,
+  addDays,
+  getDaysInMonth,
+  startOfMonth,
+  isSameDay,
+  startOfDay,
+  addMonths,
+  subMonths,
+} from "date-fns";
+import apiService from "../../services/apiService";
+import CalendarHeader from "../../components/Header/CalendarHeader";
+import AppointmentDetailModal from "../../components/Modal/AppointmentDetailModal";
+import ConfirmModal from "../../components/Modal/ConfirmModal";
+import AppointmentsList from "../../components/StudentSchedule/AppointmentsList";
 import { motion } from "framer-motion";
-import axios from "axios";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-const localizer = momentLocalizer(moment);
+const globalStyles = `
+  :root {
+    font-size: 14px;
+  }
+  * {
+    box-sizing: border-box;
+  }
+`;
 
 const SchedulePage = () => {
-  const [bookings, setBookings] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const authData = getAuthDataFromLocalStorage();
-  const userId = authData?.userId;
-
   useEffect(() => {
-    if (!userId) {
-      setError("User ID not found in token. Please log in again.");
-      setIsLoading(false);
-      return;
-    }
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = globalStyles;
+    document.head.appendChild(styleSheet);
+    return () => document.head.removeChild(styleSheet);
+  }, []);
 
-    const fetchBookings = async () => {
-      try {
-        setIsLoading(true);
-        const startDate = moment().startOf("month").format("YYYY-MM-DD");
-        const endDate = moment()
-          .endOf("month")
-          .add(1, "month")
-          .format("YYYY-MM-DD");
+  const [bookings, setBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [confirmModalState, setConfirmModalState] = useState({
+    visible: false,
+    appointmentId: null,
+  });
+  const [detailModalState, setDetailModalState] = useState({
+    isOpen: false,
+    selectedAppointment: null,
+  });
+  const [currentPage, setCurrentPage] = useState(0);
+  const [animationDirection, setAnimationDirection] = useState("");
+  const [visibleDaysCount, setVisibleDaysCount] = useState(15);
+  const [appointmentViewKey, setAppointmentViewKey] = useState(0);
+  const calendarContainerRef = useRef(null);
+  const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
 
-        const response = await axios.get(
-          `https://localhost:7192/api/appointments/students/${userId}/appointments?startDate=${startDate}&endDate=${endDate}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authData.accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+  const navigate = useNavigate();
 
-        console.log("API Response for bookings:", response.data);
-
-        if (response.status === 200) {
-          const appointments = response.data.result || [];
-          if (!Array.isArray(appointments)) {
-            setError("Invalid data format: expected an array of appointments");
-            setIsLoading(false);
-            return;
-          }
-
-          if (appointments.length === 0) {
-            setBookings([]);
-          } else {
-            const events = appointments.map((appointment) => {
-              const startDateTime = moment(
-                `${appointment.date} ${getTimeFromSlotId(appointment.slotId)}`,
-                "YYYY-MM-DD HH:mm"
-              ).toDate();
-              const endDateTime = moment(startDateTime)
-                .add(60, "minutes")
-                .toDate();
-
-              let title = `Meeting with ${appointment.meetingWith}`;
-              if (appointment.role === "Counselor") {
-                title = "Meeting with Counselor";
-              } else if (appointment.role === "Teacher") {
-                title = "Meeting with Teacher";
-              }
-
-              return {
-                id: appointment.appointmentId,
-                title: `${title} - ${
-                  appointment.isOnline ? "Online" : "In-person"
-                }`,
-                start: startDateTime,
-                end: endDateTime,
-                details: {
-                  studentId: appointment.appointmentFor || userId,
-                  consultantId: appointment.meetingWith,
-                  date: appointment.date,
-                  slotId: appointment.slotId,
-                  meetingType: appointment.isOnline ? "online" : "in-person",
-                  isCompleted: appointment.isCompleted,
-                  isCancelled: appointment.isCancelled,
-                },
-              };
-            });
-            setBookings(events);
-          }
-        } else if (response.status === 404) {
-          setBookings([]);
-          setIsLoading(false);
-        } else {
-          throw new Error(
-            response.data?.message || `API error: Status ${response.status}`
-          );
-        }
-      } catch (error) {
-        setError(error.message || "Failed to fetch appointments");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBookings();
-  }, [userId, authData.accessToken]);
-
-  const getTimeFromSlotId = (slotId) => {
-    const times = [
-      "08:00",
-      "09:00",
-      "10:00",
-      "11:00",
-      "12:00",
-      "13:00",
-      "14:00",
-      "15:00",
-      "16:00",
-    ];
-    return times[slotId - 1] || "Unknown";
+  const generateMonthDays = () => {
+    const monthStart = startOfMonth(currentMonth);
+    const totalDays = getDaysInMonth(currentMonth);
+    return Array.from({ length: totalDays }, (_, i) => {
+      const currentDay = startOfDay(addDays(monthStart, i));
+      return {
+        day: currentDay.getDate(),
+        weekday: format(currentDay, "E")[0],
+        fullDate: currentDay,
+        isToday: isSameDay(currentDay, new Date()),
+        dayOfWeek: format(currentDay, "E")[0],
+      };
+    });
   };
 
-  const handleSelectEvent = (event) => {
-    setSelectedEvent(event);
-  };
+  const allDays = generateMonthDays();
 
-  const closeModal = () => {
-    setSelectedEvent(null);
-  };
-
-  const handleCancelAppointment = async () => {
-    if (!selectedEvent) return;
-
+  const loadUserProfile = async () => {
     try {
-      setIsLoading(true);
       const authData = getAuthDataFromLocalStorage();
-      const response = await axios.get(
-        `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      console.log("API Response for cancellation:", response.data);
-
-      if (response.data.isSuccess && response.data.statusCode === 200) {
-        setBookings((prevBookings) =>
-          prevBookings.map((booking) =>
-            booking.id === selectedEvent.id
-              ? {
-                  ...booking,
-                  details: { ...booking.details, isCancelled: true },
-                }
-              : booking
-          )
-        );
-        setSelectedEvent((prevEvent) => ({
-          ...prevEvent,
-          details: { ...prevEvent.details, isCancelled: true },
-        }));
-        toast.success("Appointment cancelled successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      } else {
-        throw new Error(
-          response.data.message || "Failed to cancel appointment"
-        );
+      if (!authData || !authData.userId) {
+        throw new Error("Authentication data not found. Please log in.");
       }
+      const profile = await apiService.fetchUserProfile(authData.userId);
+      setUserProfile(profile);
     } catch (error) {
-      console.error("Error cancelling appointment:", error);
-      toast.error(
-        `Failed to cancel appointment: ${
-          error.response?.data?.message || error.message
-        }`,
-        {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        }
+      console.error("Failed to load user:", error);
+      setErrorMessage("Failed to load user profile.");
+    }
+  };
+
+  const loadAppointments = async (date) => {
+    if (!userProfile?.userId) return;
+    setIsLoading(true);
+    try {
+      const appointmentsData = await apiService.fetchAppointments(
+        userProfile.userId,
+        date
       );
+      setBookings(appointmentsData || []);
+      setAppointmentViewKey((prev) => prev + 1);
+    } catch (error) {
+      // console.error("Failed to load appointments:", error);
+      setBookings([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading)
-    return <div className="text-center text-gray-600">Loading schedule...</div>;
-  if (error)
-    return <div className="text-center text-red-600">Error: {error}</div>;
+  const handleCancelAppointmentApi = async (appointmentId) => {
+    try {
+      await apiService.cancelAppointment(appointmentId);
+      setBookings((prevAppointments) =>
+        prevAppointments.map((appointment) =>
+          appointment.appointmentId === appointmentId
+            ? { ...appointment, isCancelled: true, status: "Cancelled" }
+            : appointment
+        )
+      );
+    } catch (error) {
+      setErrorMessage("Không thể hủy cuộc hẹn: " + error.message);
+    }
+  };
+
+  const handleViewDetail = (appointment) => {
+    setDetailModalState({ isOpen: true, selectedAppointment: appointment });
+  };
+
+  const handleNext = () => {
+    const nextDay = addDays(selectedDate, 1);
+    setAnimationDirection("next");
+    setSelectedDate(nextDay);
+    if (userProfile?.userId) loadAppointments(nextDay);
+    if (nextDay.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(addMonths(currentMonth, 1));
+    }
+    const nextDayIndex = allDays.findIndex((day) =>
+      isSameDay(day.fullDate, nextDay)
+    );
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((nextDayIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
+  };
+
+  const handlePrev = () => {
+    const prevDay = addDays(selectedDate, -1);
+    setAnimationDirection("prev");
+    setSelectedDate(prevDay);
+    if (userProfile?.userId) loadAppointments(prevDay);
+    if (prevDay.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(subMonths(currentMonth, 1));
+    }
+    const prevDayIndex = allDays.findIndex((day) =>
+      isSameDay(day.fullDate, prevDay)
+    );
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((prevDayIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
+  };
+
+  const getVisibleDays = () => {
+    const selectedDayIndex = allDays.findIndex((day) =>
+      isSameDay(day.fullDate, selectedDate)
+    );
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    let startIndex = Math.max(0, selectedDayIndex - halfCount);
+    if (startIndex + visibleDaysCount > allDays.length) {
+      startIndex = Math.max(0, allDays.length - visibleDaysCount);
+    }
+    return allDays.slice(startIndex, startIndex + visibleDaysCount);
+  };
+
+  const handleSelectDate = (date) => {
+    setAnimationDirection(date > selectedDate ? "next" : "prev");
+    setSelectedDate(date);
+    if (date.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(startOfMonth(date));
+    }
+    const dateIndex = allDays.findIndex((day) => isSameDay(day.fullDate, date));
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((dateIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
+    if (userProfile?.userId) loadAppointments(date);
+  };
+
+  const handleCancelAppointment = (appointmentId) => {
+    setConfirmModalState({ visible: true, appointmentId });
+  };
+
+  const handleNavigate = () => navigate("/student/booking");
+  const handleChat = (id) => {
+    const appointment = bookings.find(
+      (appt) => appt.id === id || appt.appointmentId === id
+    );
+    navigate(`/chat/${id}`, {
+      state: { googleMeetURL: appointment?.googleMeetURL || null },
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1));
+    setSelectedDate(startOfMonth(addMonths(currentMonth, 1)));
+    if (userProfile?.userId)
+      loadAppointments(startOfMonth(addMonths(currentMonth, 1)));
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(subMonths(currentMonth, 1));
+    setSelectedDate(startOfMonth(subMonths(currentMonth, 1)));
+    if (userProfile?.userId)
+      loadAppointments(startOfMonth(subMonths(currentMonth, 1)));
+  };
+
+  useEffect(() => {
+    const updateVisibleDaysCount = () => {
+      if (calendarContainerRef.current) {
+        const containerWidth = calendarContainerRef.current.offsetWidth;
+        const possibleDaysToShow = Math.floor(containerWidth / 70);
+        setVisibleDaysCount(Math.max(5, possibleDaysToShow));
+      }
+    };
+    updateVisibleDaysCount();
+    window.addEventListener("resize", updateVisibleDaysCount);
+    return () => window.removeEventListener("resize", updateVisibleDaysCount);
+  }, []);
+
+  useEffect(() => {
+    const initializeData = async () => {
+      setIsLoading(true);
+      try {
+        await loadUserProfile();
+      } catch (error) {
+        console.error("Failed to initialize data:", error);
+        setErrorMessage("Failed to load user profile. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initializeData();
+  }, []);
+
+  useEffect(() => {
+    if (userProfile?.userId) {
+      loadAppointments(selectedDate);
+    }
+  }, [userProfile, selectedDate]);
 
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8">
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-3xl font-bold text-gray-900 mb-6"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="w-full min-h-screen bg-gray-50 flex items-center justify-center" // Sửa nền thành bg-gray-50
+    >
+      <CContainer
+        fluid
+        className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr] p-4" // Thêm padding p-4
       >
-        Your Schedule
-      </motion.h1>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="bg-white p-6 rounded-lg shadow-md border border-gray-200"
-      >
-        <Calendar
-          localizer={localizer}
-          events={bookings}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 600 }}
-          defaultView="month"
-          views={["month", "week"]}
-          onSelectEvent={handleSelectEvent}
-          eventPropGetter={(event) => ({
-            style: {
-              backgroundColor:
-                event.details.meetingType === "online" ? "#3B82F6" : "#10B981",
-              color: "white",
-              borderRadius: "0.5rem",
-              border: "none",
-              padding: "0.25rem 0.5rem",
-              fontSize: "0.875rem",
-            },
-          })}
-          components={{
-            event: (props) => (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="rbc-event-content"
-                style={props.style}
-              >
-                {props.title}
-              </motion.div>
-            ),
-          }}
-        />
-      </motion.div>
-      {selectedEvent && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        >
+        <div ref={calendarContainerRef} className="w-full">
+          <CalendarHeader
+            currentMonth={currentMonth}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            allDays={allDays}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            animationDirection={animationDirection}
+            setAnimationDirection={setAnimationDirection}
+            visibleDaysCount={visibleDaysCount}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            handlePrev={handlePrev}
+            handleNext={handleNext}
+            handleSelectDate={handleSelectDate}
+            getVisibleDays={getVisibleDays}
+            handleNextMonth={handleNextMonth}
+            handlePrevMonth={handlePrevMonth}
+          />
+        </div>
+
+        <div className="w-full flex-1 flex flex-col">
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-500 text-white rounded-lg mb-4 p-4 shadow-md" // Cập nhật màu đỏ đồng bộ với Cancel
+            >
+              <p>{errorMessage}</p>
+            </motion.div>
+          )}
           <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -20, opacity: 0 }}
+            key={appointmentViewKey}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg"
+            className="flex-1"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Booking Details
-            </h2>
-            <div className="space-y-4">
-              <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Student:</span>{" "}
-                {selectedEvent.details.studentId}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Consultant:</span>{" "}
-                {selectedEvent.details.consultantId}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Date:</span>{" "}
-                {moment(selectedEvent.details.date).format("YYYY-MM-DD")}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Time:</span>{" "}
-                {getTimeFromSlotId(selectedEvent.details.slotId)}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Meeting Type:</span>{" "}
-                {selectedEvent.details.meetingType}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Completed:</span>{" "}
-                {selectedEvent.details.isCompleted ? "Yes" : "No"}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-medium text-gray-900">Cancelled:</span>{" "}
-                {selectedEvent.details.isCancelled ? "Yes" : "No"}
-              </p>
-            </div>
-            <div className="mt-6 flex justify-end space-x-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={closeModal}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Close
-              </motion.button>
-              {!selectedEvent.details.isCancelled && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleCancelAppointment}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Cancel
-                </motion.button>
-              )}
-            </div>
+            <AppointmentsList
+              isLoading={isLoading}
+              filteredAppointments={
+                filterStatus === "All"
+                  ? bookings
+                  : bookings.filter(
+                      (booking) => booking.status === filterStatus
+                    )
+              }
+              handleViewDetail={handleViewDetail}
+              handleCancelAppointment={handleCancelAppointment}
+              handleChat={handleChat}
+              handleNavigate={handleNavigate}
+              selectedDate={selectedDate}
+            />
           </motion.div>
-        </motion.div>
-      )}
-      <ToastContainer />
-    </div>
+        </div>
+
+        <ConfirmModal
+          visible={confirmModalState.visible}
+          onClose={() =>
+            setConfirmModalState({ visible: false, appointmentId: null })
+          }
+          onConfirm={() => {
+            if (confirmModalState.appointmentId) {
+              handleCancelAppointmentApi(confirmModalState.appointmentId);
+            }
+            setConfirmModalState({ visible: false, appointmentId: null });
+          }}
+          appointmentId={confirmModalState.appointmentId} // Truyền appointmentId
+        />
+
+        <AppointmentDetailModal
+          isOpen={detailModalState.isOpen}
+          handleChat={handleChat}
+          onClose={() =>
+            setDetailModalState((prev) => ({
+              ...prev,
+              isOpen: false,
+              selectedAppointment: null,
+            }))
+          }
+          appointment={detailModalState.selectedAppointment}
+        />
+      </CContainer>
+    </motion.div>
   );
 };
 

@@ -194,7 +194,11 @@ namespace DAL.Data
                 .WithMany(c => c.Students)
                 .HasForeignKey(u => u.ClassId)
                 .OnDelete(DeleteBehavior.NoAction);
-
+            modelBuilder.Entity<TargetProgram>()
+            .HasOne(tp => tp.Counselor)
+            .WithMany()
+            .HasForeignKey(tp => tp.CounselorId)
+            .OnDelete(DeleteBehavior.Restrict);
             var teacherPassword = "teacher123";
             byte[] passwordHash, passwordSalt;
             CreatePasswordHash(teacherPassword, out passwordHash, out passwordSalt);
@@ -208,6 +212,7 @@ namespace DAL.Data
                 Phone = "0987654321",
                 Email = "teacher1@fpt.edu.vn",
                 FullName = "Nguyễn Văn A",
+                GoogleMeetURL = "https://meet.google.com/zoh-keva-bzz",
                 BirthDay = new DateTime(1985, 5, 15),
                 Gender = "Male",
                 Address = "Ha Noi",
@@ -226,6 +231,7 @@ namespace DAL.Data
                 Phone = "0987654322",
                 Email = "teacher2@fpt.edu.vn",
                 FullName = "Trần Thị B",
+                GoogleMeetURL = "https://meet.google.com/zoh-keva-bzz",
                 BirthDay = new DateTime(1988, 8, 20),
                 Gender = "Female",
                 Address = "Ho Chi Minh",
@@ -435,6 +441,7 @@ namespace DAL.Data
                 Phone = "0987654323",
                 Email = "psychologist1@fpt.edu.vn",
                 FullName = "Nguyễn Thị G",
+                GoogleMeetURL = "https://meet.google.com/zoh-keva-bzz",
                 BirthDay = new DateTime(1980, 10, 10),
                 Gender = "Female",
                 Address = "Hà Nội",
@@ -453,6 +460,7 @@ namespace DAL.Data
                 Phone = "0987654324",
                 Email = "psychologist2@fpt.edu.vn",
                 FullName = "Trần Văn H",
+                GoogleMeetURL = "https://meet.google.com/zoh-keva-bzz",
                 BirthDay = new DateTime(1985, 12, 15),
                 Gender = "Male",
                 Address = "Hồ Chí Minh",

@@ -1,37 +1,58 @@
-// context/BookingContext.jsx
-import { createContext, useContext, useState } from "react";
-import { getAuthDataFromLocalStorage } from "../utils/auth"; // Đảm bảo import
+import { createContext, useContext, useState, useEffect } from "react";
+import { getAuthDataFromLocalStorage } from "../utils/auth";
 
 const BookingContext = createContext();
 
 export const BookingProvider = ({ children }) => {
   const [bookingData, setBookingData] = useState({
     userId: "",
-    childId: "", // Thêm field để lưu ID của child được chọn
+    userRole: "",
+    childId: "",
+    children: [],
     consultantType: "",
     consultantId: "",
     consultantName: "",
     date: "",
     time: "",
     slotId: 0,
-    appointmentType: "online",
+    appointmentType: "Online",
     userName: "",
     phone: "",
     email: "",
     isHomeroomTeacher: false,
   });
+  const [isLoading, setIsLoading] = useState(true); // Trạng thái tải dữ liệu ban đầu
+
+  // Khởi tạo dữ liệu từ authData khi component mount
+  useEffect(() => {
+    const initializeBookingData = () => {
+      const authData = getAuthDataFromLocalStorage();
+      if (authData) {
+        setBookingData((prev) => ({
+          ...prev,
+          userId: authData.userId || "",
+          userRole: authData.role || "Student", // Mặc định Student nếu không có role
+        }));
+      }
+      setIsLoading(false);
+    };
+    initializeBookingData();
+  }, []);
 
   const resetBookingData = () => {
+    const authData = getAuthDataFromLocalStorage();
     setBookingData({
-      userId: "",
+      userId: authData?.userId || "",
+      userRole: authData?.role || "Student",
       childId: "",
+      children: [],
       consultantType: "",
       consultantId: "",
       consultantName: "",
       date: "",
       time: "",
       slotId: 0,
-      appointmentType: "online",
+      appointmentType: "Online",
       userName: "",
       phone: "",
       email: "",
@@ -45,7 +66,7 @@ export const BookingProvider = ({ children }) => {
 
   const isParent = () => {
     const authData = getAuthDataFromLocalStorage();
-    return authData?.role === "Parent"; // Giả định role trong authData, bạn có thể điều chỉnh logic
+    return authData?.role === "Parent";
   };
 
   const value = {
@@ -53,6 +74,7 @@ export const BookingProvider = ({ children }) => {
     updateBookingData,
     resetBookingData,
     isParent,
+    isLoading,
   };
 
   return (
