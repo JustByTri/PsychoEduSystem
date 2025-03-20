@@ -172,64 +172,71 @@ const PsychologistSchedulePage = () => {
     setIsLoading(true);
     try {
       const selectedDateStr = moment(date).format("YYYY-MM-DD");
-      const schedules = await apiService.fetchUserSchedules(teacherId);
-      const appointments = await apiService.fetchConsultantAppointments(
+      const today = startOfDay(new Date());
+
+      // // Không hiển thị slot cho ngày trong quá khứ
+      // if (moment(date).isBefore(today, "day")) {
+      //   setAvailableSlots([]);
+      //   setIsLoading(false);
+      //   return;
+      // }
+
+      // Gọi API fetchConsultantSlots với teacherId và ngày được chọn
+      const availableSlotIds = await apiService.fetchConsultantSlots(
         teacherId,
         selectedDateStr
       );
 
-      if (!Array.isArray(schedules)) {
-        setAvailableSlots([]);
-        return;
-      }
+      // Ánh xạ slotId với thời gian
+      const slotMap = {
+        1: { slotName: "08:00", startHour: 8 },
+        2: { slotName: "09:00", startHour: 9 },
+        3: { slotName: "10:00", startHour: 10 },
+        4: { slotName: "11:00", startHour: 11 },
+        5: { slotName: "13:00", startHour: 13 },
+        6: { slotName: "14:00", startHour: 14 },
+        7: { slotName: "15:00", startHour: 15 },
+        8: { slotName: "16:00", startHour: 16 },
+      };
 
-      const bookedSlotIds = appointments.map(
-        (appointment) => appointment.slotId
-      );
-
-      const psychologistAvailableSlots = schedules
-        .filter(
-          (schedule) =>
-            moment(schedule.date).isSame(selectedDateStr, "day") &&
-            !bookedSlotIds.includes(schedule.slotId)
-        )
-        .map((schedule) => {
-          let parsedDate;
-          try {
-            parsedDate = parseISO(schedule.date);
-            if (!isValid(parsedDate)) throw new Error("Invalid schedule date");
-          } catch (error) {
-            console.error("Invalid schedule date:", schedule.date, error);
-            parsedDate = startOfDay(new Date(selectedDateStr));
+      // Chuyển đổi danh sách slotId thành danh sách slot khả dụng
+      const psychologistAvailableSlots = availableSlotIds
+        .map((slotId) => {
+          const slotInfo = slotMap[slotId];
+          if (!slotInfo) {
+            console.warn(`Invalid slotId from API: ${slotId}`);
+            return null; // Bỏ qua slotId không hợp lệ
           }
-          const startHour = parseInt(schedule.slotName.split(":")[0], 10);
+
+          const parsedDate = startOfDay(new Date(selectedDateStr));
           return {
-            id: schedule.scheduleId,
+            id: `${selectedDateStr}-${slotId}`, // ID tạm thời
             title: "Available Slot",
-            slot: schedule.slotId,
+            slot: slotId,
             date: parsedDate,
             start: moment(selectedDateStr)
-              .set({ hour: startHour, minute: 0 })
+              .set({ hour: slotInfo.startHour, minute: 0 })
               .toDate(),
             end: moment(selectedDateStr)
-              .set({ hour: startHour + 1, minute: 0 })
+              .set({ hour: slotInfo.startHour + 1, minute: 0 })
               .toDate(),
             status: "AVAILABLE",
             details: {
-              slotId: schedule.slotId,
+              slotId: slotId,
               date: parsedDate,
-              slotName: schedule.slotName,
-              createAt: schedule.createAt,
+              slotName: slotInfo.slotName,
+              createAt: new Date().toISOString(), // Thời gian tạo giả lập
               status: "AVAILABLE",
               studentId: null,
               meetingWith: userProfile?.fullName || "You",
               bookedBy: null,
               appointmentFor: null,
               isOnline: null,
-              notes: null, // Thêm notes mặc định là null cho slot trống
+              notes: null,
             },
           };
-        });
+        })
+        .filter((slot) => slot !== null); // Loại bỏ slot không hợp lệ
 
       setAvailableSlots(psychologistAvailableSlots);
       setSlotsViewKey((prev) => prev + 1);

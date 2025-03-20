@@ -227,6 +227,7 @@ const apiService = {
           },
         }
       );
+      console.log(response.data.result);
 
       if (response.status === 200) {
         return response.data.result || response.data || [];

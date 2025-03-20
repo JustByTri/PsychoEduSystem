@@ -46,12 +46,6 @@ const PsychologistAppointmentDetail = ({
   }, [appointment, isOpen, role]);
 
   if (!isOpen || !appointment) {
-    console.log(
-      "Modal not rendered: isOpen =",
-      isOpen,
-      "appointment =",
-      appointment
-    );
     return null; // Log để debug nếu modal không hiển thị
   }
 
