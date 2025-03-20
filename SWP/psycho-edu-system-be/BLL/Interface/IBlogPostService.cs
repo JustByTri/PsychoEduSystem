@@ -11,7 +11,7 @@ namespace BLL.Interface
     public interface IBlogPostService
     {
         Task<IEnumerable<BlogPostResponseDTO>> GetAllBlog();
-        Task<BlogPostResponseDTO> GetBlogPostById(int id);
+        Task<BlogPostDTO> GetBlogPostById(int id);
 
         Task<BlogPostResponseDTO> AddBlog(BlogPostCreateDTO blogDTO);
         Task UpdateBlog(int id, BlogPostUpdateDTO blogDTO);

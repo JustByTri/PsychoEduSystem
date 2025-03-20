@@ -36,22 +36,21 @@ namespace BLL.Service
 
 
 
-        public async Task<BlogPostResponseDTO> GetBlogPostById(int id)
+        public async Task<BlogPostDTO> GetBlogPostById(int id)
         {
-            var blog = await _unitOfWork.BlogPost.GetByIdAsync(id);
+            var blog = await _unitOfWork.BlogPost.GetByIdWithDimensionAsync(id);
             if (blog == null) return null;
 
-            return new BlogPostResponseDTO
+            // Chuyển từ Entity sang DTO
+            return new BlogPostDTO
             {
                 BlogId = blog.BlogId,
                 Title = blog.Title,
                 Content = blog.Content,
-                //AuthorId = blog.AuthorId,
-                DimensionName = blog.Dimension?.DimensionName,
+                DimensionName = blog.Dimension?.DimensionName,  // Tránh lỗi null
                 CreatedAt = blog.CreatedAt
             };
         }
-
 
         public async Task<BlogPostResponseDTO> AddBlog(BlogPostCreateDTO blogDTO)
         {
