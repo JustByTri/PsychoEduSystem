@@ -22,15 +22,7 @@ const BlogForm = ({ blog, onSave, onCancel }) => {
   });
 
   useEffect(() => {
-    if (blog) {
-      setFormData({
-        title: blog.title,
-        thumbnail: blog.thumbnail,
-        excerpt: blog.excerpt,
-        content: blog.content,
-        category: blog.category,
-      });
-    }
+    if (blog) setFormData(blog);
   }, [blog]);
 
   const handleChange = (e) => {
@@ -78,135 +70,118 @@ const BlogForm = ({ blog, onSave, onCancel }) => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-2xl mx-auto border-t-4 border-navy-blue-900"
+      className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto border border-[#E5E7EB]"
     >
-      <div className="relative z-10">
-        <h3 className="text-2xl font-bold text-navy-blue-900 mb-6">
-          {blog ? "Edit Blog Post" : "Create New Blog Post"}
-        </h3>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <FontAwesomeIcon
-                icon={faHeading}
-                className="mr-2 text-navy-blue-900"
-              />
-              Title
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Enter the blog title..."
-              className="block w-full border border-gray-200 rounded-lg p-4 bg-gray-50 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 shadow-sm hover:shadow-md"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <FontAwesomeIcon
-                icon={faImage}
-                className="mr-2 text-navy-blue-900"
-              />
-              Image (URL)
-            </label>
-            <input
-              type="text"
-              name="thumbnail"
-              value={formData.thumbnail}
-              onChange={handleChange}
-              placeholder="Paste the image URL..."
-              className="block w-full border border-gray-200 rounded-lg p-4 bg-gray-50 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 shadow-sm hover:shadow-md"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <FontAwesomeIcon
-                icon={faFileAlt}
-                className="mr-2 text-navy-blue-900"
-              />
-              Excerpt
-            </label>
-            <textarea
-              name="excerpt"
-              value={formData.excerpt}
-              onChange={handleChange}
-              placeholder="Enter a short excerpt (2-3 sentences)..."
-              className="block w-full border border-gray-200 rounded-lg p-4 bg-gray-50 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 shadow-sm hover:shadow-md"
-              rows="3"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <FontAwesomeIcon
-                icon={faFileAlt}
-                className="mr-2 text-navy-blue-900"
-              />
-              Content
-            </label>
-            <ReactQuill
-              value={formData.content}
-              onChange={handleContentChange}
-              className="bg-gray-50 rounded-lg shadow-sm"
-              theme="snow"
-              modules={{
-                toolbar: [
-                  [{ header: [1, 2, false] }],
-                  ["bold", "italic", "underline"],
-                  ["link", "image"],
-                  [{ list: "ordered" }, { list: "bullet" }],
-                  ["clean"],
-                ],
-              }}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <FontAwesomeIcon
-                icon={faList}
-                className="mr-2 text-navy-blue-900"
-              />
-              Category
-            </label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="block w-full border border-gray-200 rounded-lg p-4 bg-gray-50 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 shadow-sm hover:shadow-md"
-              required
-            >
-              <option value="">Select a category</option>
-              <option value="Cognitive Health">Cognitive Health</option>
-              <option value="Emotional Health">Emotional Health</option>
-              <option value="Social Health">Social Health</option>
-              <option value="Physical Health">Physical Health</option>
-              <option value="School Stories">School Stories</option>
-            </select>
-          </div>
-          <div className="flex space-x-4 pt-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              type="submit"
-              className="bg-navy-blue-900 text-white px-6 py-3 rounded-lg hover:bg-navy-blue-800 transition-all duration-300 shadow-lg"
-            >
-              {blog ? "Update" : "Create"}
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              type="button"
-              onClick={onCancel}
-              className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-all duration-300 shadow-lg"
-            >
-              Cancel
-            </motion.button>
-          </div>
-        </form>
-      </div>
+      <h3 className="text-2xl font-bold text-[#26A69A] mb-6">
+        {blog ? "Edit Blog Post" : "Create New Blog Post"}
+      </h3>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-[#374151] mb-2">
+            <FontAwesomeIcon icon={faHeading} className="mr-2 text-[#26A69A]" />
+            Title
+          </label>
+          <input
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="Enter the blog title..."
+            className="block w-full border border-[#E5E7EB] rounded-lg p-3 focus:ring-2 focus:ring-[#26A69A] focus:border-[#26A69A] transition-all duration-300 shadow-sm"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[#374151] mb-2">
+            <FontAwesomeIcon icon={faImage} className="mr-2 text-[#26A69A]" />
+            Image (URL)
+          </label>
+          <input
+            type="text"
+            name="thumbnail"
+            value={formData.thumbnail}
+            onChange={handleChange}
+            placeholder="Paste the image URL..."
+            className="block w-full border border-[#E5E7EB] rounded-lg p-3 focus:ring-2 focus:ring-[#26A69A] focus:border-[#26A69A] transition-all duration-300 shadow-sm"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[#374151] mb-2">
+            <FontAwesomeIcon icon={faFileAlt} className="mr-2 text-[#26A69A]" />
+            Excerpt
+          </label>
+          <textarea
+            name="excerpt"
+            value={formData.excerpt}
+            onChange={handleChange}
+            placeholder="Enter a short excerpt (2-3 sentences)..."
+            className="block w-full border border-[#E5E7EB] rounded-lg p-3 focus:ring-2 focus:ring-[#26A69A] focus:border-[#26A69A] transition-all duration-300 shadow-sm"
+            rows="3"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[#374151] mb-2">
+            <FontAwesomeIcon icon={faFileAlt} className="mr-2 text-[#26A69A]" />
+            Content
+          </label>
+          <ReactQuill
+            value={formData.content}
+            onChange={handleContentChange}
+            className="bg-white rounded-lg shadow-sm"
+            theme="snow"
+            modules={{
+              toolbar: [
+                [{ header: [1, 2, false] }],
+                ["bold", "italic", "underline"],
+                ["link", "image"],
+                [{ list: "ordered" }, { list: "bullet" }],
+                ["clean"],
+              ],
+            }}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[#374151] mb-2">
+            <FontAwesomeIcon icon={faList} className="mr-2 text-[#26A69A]" />
+            Category
+          </label>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className="block w-full border border-[#E5E7EB] rounded-lg p-3 focus:ring-2 focus:ring-[#26A69A] focus:border-[#26A69A] transition-all duration-300 shadow-sm"
+            required
+          >
+            <option value="">Select a category</option>
+            <option value="Cognitive Health">Cognitive Health</option>
+            <option value="Emotional Health">Emotional Health</option>
+            <option value="Social Health">Social Health</option>
+            <option value="Physical Health">Physical Health</option>
+            <option value="School Stories">School Stories</option>
+          </select>
+        </div>
+        <div className="flex space-x-4 pt-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            type="submit"
+            className="bg-[#26A69A] text-white px-6 py-2 rounded-lg hover:bg-[#4DB6AC] transition-all duration-300 shadow-md"
+          >
+            {blog ? "Update" : "Create"}
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            onClick={onCancel}
+            className="bg-[#FF6F61] text-white px-6 py-2 rounded-lg hover:bg-[#FF8A80] transition-all duration-300 shadow-md"
+          >
+            Cancel
+          </motion.button>
+        </div>
+      </form>
     </motion.div>
   );
 };

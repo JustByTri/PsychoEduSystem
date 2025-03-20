@@ -4,18 +4,16 @@ import { motion } from "framer-motion";
 
 const BlogCard = ({ blog, index }) => {
   const tiltVariants = {
-    hidden: { opacity: 0, rotateY: 30, y: 50 },
+    hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
-      rotateY: 0,
       y: 0,
       transition: { duration: 0.6, ease: "easeOut" },
     },
     hover: {
-      rotateY: 10,
       scale: 1.05,
-      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.3)",
-      transition: { duration: 0.2, ease: "easeInOut" }, // Giảm thời gian transition
+      boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.15)",
+      transition: { duration: 0.3, ease: "easeInOut" },
     },
   };
 
@@ -25,33 +23,31 @@ const BlogCard = ({ blog, index }) => {
       initial="hidden"
       animate="visible"
       whileHover="hover"
-      className={`relative bg-white rounded-2xl overflow-hidden shadow-xl transform transition-all duration-200 ease-in-out ${
-        index % 2 === 0 ? "rotate-2" : "-rotate-2"
-      }`} // Giảm duration và thêm ease-in-out
+      className="bg-white rounded-lg overflow-hidden shadow-md border border-[#E5E7EB] transition-all duration-300"
     >
       <div className="relative">
         <img
           src={blog.thumbnail}
           alt={blog.title}
-          className="w-full h-64 object-cover"
+          className="w-full h-48 object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        <div className="absolute top-4 left-4 bg-navy-blue-900 text-white text-xs font-semibold px-4 py-1 rounded-full">
+        <div className="absolute top-3 left-3 bg-[#26A69A] text-white text-xs font-semibold px-3 py-1 rounded-full">
           {blog.category}
         </div>
       </div>
-      <div className="p-6">
-        <h3 className="text-xl font-bold text-navy-blue-900 line-clamp-2 leading-tight">
+      <div className="p-5">
+        <h3 className="text-lg font-semibold text-[#26A69A] line-clamp-2 leading-tight">
           {blog.title}
         </h3>
-        <p className="mt-3 text-gray-600 line-clamp-3 text-sm">
+        <p className="mt-2 text-[#374151] line-clamp-2 text-sm">
           {blog.excerpt}
         </p>
         <div className="mt-4 flex justify-between items-center">
-          <span className="text-sm text-gray-500">{blog.createdAt}</span>
+          <span className="text-sm text-[#666]">{blog.createdAt}</span> 
           <Link
             to={`/blog/${blog.id}`}
-            className="text-green-600 font-semibold hover:text-green-500 transition-colors duration-200"
+            className="text-[#FF6F61] font-semibold hover:text-[#fe0000] transition-colors duration-300 no-underline"
           >
             Explore →
           </Link>

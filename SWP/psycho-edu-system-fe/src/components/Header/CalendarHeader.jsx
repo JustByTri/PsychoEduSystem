@@ -79,7 +79,7 @@ const CalendarHeader = ({
       className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-4 mb-6"
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-4 md:space-y-0">
-        <h1 className="text-white text-2xl font-medium">Your Schedule</h1>
+        <h1 className="text-white text-4xl font-medium">Your Schedule</h1>
         <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-3">
           {/* Dropdown filter status */}
           <motion.div
@@ -100,8 +100,6 @@ const CalendarHeader = ({
               }}
             >
               <option value="All">All Statuses</option>
-              <option value="AVAILABLE">Available</option>{" "}
-              {/* Thêm filter Available */}
               <option value="SCHEDULED">Scheduled</option>
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>

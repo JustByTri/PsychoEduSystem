@@ -348,8 +348,7 @@ const PsychologistSchedulePage = () => {
     setCurrentPage(newPage);
   };
 
-  const handleNavigateToRegistration = () =>
-    navigate("/psychologist/schedule-registration");
+  const handleNavigateToRegistration = () => navigate("/psychologist/slot");
 
   const handleNextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));

@@ -1,7 +1,7 @@
-import { motion } from "framer-motion"; // Importing Framer Motion for animations
-import Banner from "../../components/Banners/Banner"; // Your Banner Component
-import BlogSection from "../../components/Blog/BlogSection"; // Import BlogSection
-import { Box, Typography, Container, Button } from "@mui/material"; // Import MUI components
+import { motion } from "framer-motion";
+import Banner from "../../components/Banners/Banner";
+import BlogSection from "../../components/Blog/BlogSection";
+import { Box, Typography, Container, Button } from "@mui/material";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBrain,
@@ -9,24 +9,48 @@ import {
   faUsers,
   faRunning,
 } from "@fortawesome/free-solid-svg-icons";
+import { useEffect } from "react";
+
+// Thêm CSS inline để đảm bảo body và html không có padding/margin ảnh hưởng
+const globalStyles = `
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+  *, *:before, *:after {
+    box-sizing: inherit;
+  }
+`;
 
 const HomePage = () => {
+  // Thêm global styles khi component mount
+  useEffect(() => {
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = globalStyles;
+    document.head.appendChild(styleSheet);
+
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
-      style={{ backgroundColor: "#F7FAFC" }} // Xám nhạt làm nền chính
+      style={{ backgroundColor: "#F7FAFC", margin: 0, padding: 0 }}
     >
-      {/* The Banner component will be placed here */}
+      {/* Banner */}
       <Banner />
 
       {/* Additional Content Section */}
-      <Box
-        sx={{
-          paddingY: "50px", // Tăng padding để tạo không gian thoáng
-        }}
-      >
+      <Box sx={{ paddingY: "50px" }}>
         <Container maxWidth="lg">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -39,8 +63,9 @@ const HomePage = () => {
               sx={{
                 marginBottom: "20px",
                 fontWeight: 700,
-                color: "#1E3A8A", // Navy blue cho tiêu đề
-                fontSize: { xs: "2rem", md: "2.5rem" }, // Responsive font size
+                color: "#26A69A", // Teal
+                fontSize: { xs: "2rem", md: "2.5rem" },
+                textShadow: "1px 1px 3px rgba(0, 0, 0, 0.1)", // Thêm shadow cho tiêu đề
               }}
             >
               Start Your Learning Journey with FPTU
@@ -50,11 +75,11 @@ const HomePage = () => {
               align="center"
               sx={{
                 marginBottom: "40px",
-                color: "#666",
+                color: "#374151", // Dark Gray
                 fontSize: "1.1rem",
                 lineHeight: "1.8",
                 maxWidth: "800px",
-                mx: "auto", // Căn giữa
+                mx: "auto",
               }}
             >
               At FPT University, we equip students with the skills, knowledge,
@@ -70,18 +95,19 @@ const HomePage = () => {
                 <Button
                   variant="contained"
                   sx={{
-                    backgroundColor: "#1E3A8A", // Navy blue cho button
+                    backgroundColor: "#26A69A", // Teal
                     color: "#FFFFFF",
                     padding: "12px 40px",
                     fontSize: "1rem",
                     fontWeight: 600,
                     borderRadius: "25px",
-                    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
+                    boxShadow: "0px 4px 12px rgba(38, 166, 154, 0.3)", // Shadow Teal
                     "&:hover": {
-                      backgroundColor: "#2B4A9B", // Navy blue đậm hơn khi hover
-                      boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.2)",
+                      backgroundColor: "#4DB6AC", // Teal nhạt hơn
+                      boxShadow: "0px 6px 16px rgba(38, 166, 154, 0.5)", // Shadow đậm hơn
+                      border: "1px solid #FF6F61", // Viền Coral khi hover
                     },
-                    textTransform: "none", // Không viết hoa chữ
+                    textTransform: "none",
                   }}
                 >
                   Explore Programs
@@ -96,7 +122,9 @@ const HomePage = () => {
       <Box
         sx={{
           paddingY: "50px",
-          backgroundColor: "#1E3A8A", // Navy blue làm nền cho section này
+          backgroundColor: "#26A69A", // Teal
+          margin: 0,
+          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)", // Shadow cho section
         }}
       >
         <Container maxWidth="lg">
@@ -111,8 +139,9 @@ const HomePage = () => {
               sx={{
                 marginBottom: "60px",
                 fontWeight: 700,
-                color: "#FFFFFF", // Trắng cho tiêu đề trên nền navy blue
+                color: "#FFFFFF",
                 fontSize: { xs: "2rem", md: "2.5rem" },
+                textShadow: "2px 2px 4px rgba(0, 0, 0, 0.2)", // Shadow cho tiêu đề
               }}
             >
               Why Choose FPTU?
@@ -124,28 +153,32 @@ const HomePage = () => {
                   xs: "1fr",
                   sm: "1fr 1fr",
                   lg: "1fr 1fr 1fr 1fr",
-                }, // Responsive grid
+                },
                 gap: "30px",
               }}
             >
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.1)", // Nền trong suốt với kính mờ
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
                   backdropFilter: "blur(10px)",
                   borderRadius: "16px",
                   padding: "30px",
                   textAlign: "center",
                   boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                  transition: "all 0.3s ease", // Transition mượt mà
+                  border: "1px solid transparent",
                 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <FontAwesomeIcon
                   icon={faBrain}
                   style={{
                     fontSize: "48px",
-                    color: "#FBBF24",
+                    color: "#FBBF24", // Gold
                     marginBottom: "20px",
-                  }} // Vàng nhạt cho icon
+                    filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))", // Shadow cho icon
+                  }}
                 />
                 <Typography
                   variant="h6"
@@ -171,14 +204,18 @@ const HomePage = () => {
                   padding: "30px",
                   textAlign: "center",
                   boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                  transition: "all 0.3s ease",
+                  border: "1px solid transparent",
                 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <FontAwesomeIcon
                   icon={faHeart}
                   style={{
                     fontSize: "48px",
-                    color: "#FBBF24",
+                    color: "#FF6F61", // Coral để làm nổi bật
                     marginBottom: "20px",
+                    filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))",
                   }}
                 />
                 <Typography
@@ -205,14 +242,18 @@ const HomePage = () => {
                   padding: "30px",
                   textAlign: "center",
                   boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                  transition: "all 0.3s ease",
+                  border: "1px solid transparent",
                 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <FontAwesomeIcon
                   icon={faUsers}
                   style={{
                     fontSize: "48px",
-                    color: "#FBBF24",
+                    color: "#FBBF24", // Gold
                     marginBottom: "20px",
+                    filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))",
                   }}
                 />
                 <Typography
@@ -239,14 +280,18 @@ const HomePage = () => {
                   padding: "30px",
                   textAlign: "center",
                   boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+                  transition: "all 0.3s ease",
+                  border: "1px solid transparent",
                 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <FontAwesomeIcon
                   icon={faRunning}
                   style={{
                     fontSize: "48px",
-                    color: "#FBBF24",
+                    color: "#FF6F61", // Coral để làm nổi bật
                     marginBottom: "20px",
+                    filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))",
                   }}
                 />
                 <Typography
@@ -269,12 +314,7 @@ const HomePage = () => {
       </Box>
 
       {/* Blog Section */}
-      <Box
-        sx={{
-          paddingY: "0px",
-          backgroundColor: "#F7FAFC", // Nền xám nhạt đồng bộ với trang
-        }}
-      >
+      <Box sx={{ paddingY: "0px", backgroundColor: "#F7FAFC", margin: 0 }}>
         <Container maxWidth="lg">
           <motion.div
             initial={{ opacity: 0 }}
@@ -291,10 +331,12 @@ const HomePage = () => {
       {/* Footer Section */}
       <Box
         sx={{
-          backgroundColor: "#1E3A8A", // Navy blue cho footer
+          backgroundColor: "#26A69A",
           color: "#FFFFFF",
           paddingY: "20px",
           marginTop: "20px",
+          margin: 0,
+          boxShadow: "0px -4px 20px rgba(0, 0, 0, 0.1)", // Shadow cho footer
         }}
       >
         <Container maxWidth="lg">
@@ -302,7 +344,7 @@ const HomePage = () => {
             sx={{
               display: "flex",
               justifyContent: "space-between",
-              flexDirection: { xs: "column", md: "row" }, // Stack in small screens
+              flexDirection: { xs: "column", md: "row" },
               alignItems: "center",
               textAlign: { xs: "center", md: "left" },
             }}
@@ -317,9 +359,9 @@ const HomePage = () => {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#FBBF24", // Vàng nhạt cho link
+                  color: "#FBBF24",
                   cursor: "pointer",
-                  "&:hover": { color: "#FFFFFF", transition: "color 0.3s" },
+                  "&:hover": { color: "#FFD700", transition: "color 0.3s" },
                 }}
               >
                 Privacy Policy
@@ -329,7 +371,7 @@ const HomePage = () => {
                 sx={{
                   color: "#FBBF24",
                   cursor: "pointer",
-                  "&:hover": { color: "#FFFFFF", transition: "color 0.3s" },
+                  "&:hover": { color: "#FFD700", transition: "color 0.3s" },
                 }}
               >
                 Terms of Service
@@ -339,7 +381,7 @@ const HomePage = () => {
                 sx={{
                   color: "#FBBF24",
                   cursor: "pointer",
-                  "&:hover": { color: "#FFFFFF", transition: "color 0.3s" },
+                  "&:hover": { color: "#FFD700", transition: "color 0.3s" },
                 }}
               >
                 Contact Us
