@@ -18,21 +18,20 @@ import HomeIcon from "@mui/icons-material/Home";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import MailIcon from "@mui/icons-material/Mail";
 import PersonIcon from "@mui/icons-material/Person";
-import SettingsIcon from "@mui/icons-material/Settings";
 import Swal from "sweetalert2";
 import AuthContext from "../../context/auth/AuthContext";
 import LogoHeader from "../../assets/logo-header.png";
-import AvatarImg from "../../assets/avatar.png";
 import DecodeJWT from "../../utils/decodeJwt";
 
 const Header = () => {
   const { logout } = useContext(AuthContext) || {};
-
   const [anchorEl, setAnchorEl] = useState(null);
   const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
+
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
+
   const handleLogout = () => {
     Swal.fire({
       title: "Are you sure?",
@@ -41,8 +40,8 @@ const Header = () => {
       showCancelButton: true,
       confirmButtonText: "Yes",
       cancelButtonText: "No",
-      confirmButtonColor: "#D32F2F",
-      cancelButtonColor: "#1976D2",
+      confirmButtonColor: "#FF6F61", // Coral
+      cancelButtonColor: "#26A69A", // Teal
       reverseButtons: false,
       focusCancel: true,
     }).then((result) => {
@@ -60,44 +59,56 @@ const Header = () => {
     });
     handleMenuClose();
   };
+
   useEffect(() => {
     const token = localStorage.getItem("user");
-
     if (token) {
       try {
         const formattedToken = JSON.parse(token);
-
         const accessToken = formattedToken?.accessToken;
         if (accessToken && typeof accessToken === "string") {
-          console.log("Decoding token...");
           const userData = DecodeJWT(accessToken);
           if (userData) {
             setProfile(userData);
-          } else {
-            console.error("Failed to decode JWT");
           }
-        } else {
-          console.error("Invalid access token format");
         }
       } catch (error) {
         console.error("Error decoding token:", error);
       }
-    } else {
-      console.log("No token found in localStorage");
     }
   }, []);
+
+  const avatarMap = {
+    Admin: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
+    Student: "https://cdn-icons-png.flaticon.com/512/3048/3048122.png",
+    Teacher: "https://cdn-icons-png.flaticon.com/512/3048/3048127.png",
+    Psychologist: "https://cdn-icons-png.flaticon.com/512/2921/2921838.png",
+    Parent: "https://cdn-icons-png.flaticon.com/512/1460/1460669.png",
+  };
+
+  const getAvatar = (role) =>
+    avatarMap[role] || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
   if (!profile) {
-    return <div>Loading...</div>;
+    return <div className="text-center text-gray-500 py-4">Loading...</div>;
   }
+
   return (
     <AppBar
       position="sticky"
-      sx={{ backgroundColor: "white", boxShadow: 3, px: 2 }}
+      sx={{
+        backgroundColor: "#26A69A", // Teal
+        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+        px: 2,
+      }}
     >
       <Toolbar
-        sx={{ display: "flex", justifyContent: "space-between", py: 0.2 }}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          py: 1,
+        }}
       >
-        {/* Logo */}
         <Box display="flex" alignItems="center">
           <img
             src={LogoHeader}
@@ -105,36 +116,45 @@ const Header = () => {
             style={{ width: 130, height: "auto" }}
           />
         </Box>
-
-        {/* Profile Avatar */}
         <Box display="flex" alignItems="center">
           <IconButton
             onClick={handleMenuOpen}
-            sx={{ display: "flex", alignItems: "center", color: "#333" }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: "#F7FAFC",
+              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+            }}
           >
             <Avatar
-              src={AvatarImg}
+              src={getAvatar(profile.role)}
               alt="Profile"
               sx={{
                 width: 44,
                 height: 44,
-                boxShadow: 3,
+                border: "2px solid #F9E79F", // Soft Yellow
                 transition: "0.3s",
-                "&:hover": { transform: "scale(1.1)", boxShadow: 6 },
+                "&:hover": {
+                  transform: "scale(1.05)",
+                  boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.15)",
+                },
               }}
             />
             <Typography
-              sx={{ ml: 1, fontWeight: 500, fontSize: "1rem", color: "#333" }}
+              sx={{
+                ml: 1,
+                fontWeight: 500,
+                fontSize: "1rem",
+                color: "#F7FAFC",
+              }}
             >
               {profile && profile.fullName
                 ? profile.fullName
-                : profile?.Username || "Loading..."}
+                : profile?.Username || "User"}
             </Typography>
-            <ArrowDropDownIcon sx={{ color: "#555" }} />
+            <ArrowDropDownIcon sx={{ color: "#FBBF24" }} />
           </IconButton>
         </Box>
-
-        {/* Dropdown Menu */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -142,33 +162,43 @@ const Header = () => {
           TransitionComponent={Fade}
           sx={{ mt: 1 }}
           PaperProps={{
-            elevation: 4,
+            elevation: 0,
             sx: {
-              borderRadius: 3,
+              borderRadius: 2,
               minWidth: 250,
-              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+              backgroundColor: "#FFFFFF", // White
               p: 1,
-              backgroundColor: "#fff",
+              border: "1px solid #E5E7EB",
             },
           }}
         >
-          {/* User Info */}
           <Box display="flex" alignItems="center" px={2} py={1}>
             <Avatar
-              src={AvatarImg}
-              sx={{ width: 50, height: 50, boxShadow: 2, mr: 1 }}
+              src={getAvatar(profile.role)}
+              sx={{
+                width: 50,
+                height: 50,
+                border: "2px solid #F9E79F", // Soft Yellow
+                mr: 1,
+              }}
             />
             <Box>
-              <Typography variant="subtitle1" fontWeight={600}></Typography>
-              <Typography variant="body2" color="text.secondary">
-                <MailIcon fontSize="small" sx={{ mr: 0.5, color: "#1976D2" }} />
+              <Typography variant="subtitle1" fontWeight={600} color="#26A69A">
+                {profile.fullName || profile.Username || "User"}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="#666"
+                display="flex"
+                alignItems="center"
+              >
+                <MailIcon fontSize="small" sx={{ mr: 0.5, color: "#FBBF24" }} />
                 {profile.Email}
               </Typography>
             </Box>
           </Box>
-
-          <Divider sx={{ my: 1 }} />
-
+          <Divider sx={{ my: 1, borderColor: "#E5E7EB" }} />
           <MenuItem
             component={Link}
             to="/profile"
@@ -176,15 +206,15 @@ const Header = () => {
             sx={{
               fontSize: "0.95rem",
               py: 1,
-              "&:hover": { backgroundColor: "#f5f5f5" },
+              color: "#26A69A",
+              "&:hover": { backgroundColor: "#F9E79F", color: "#26A69A" }, // Soft Yellow
             }}
           >
             <ListItemIcon>
-              <PersonIcon fontSize="small" sx={{ color: "#1976D2" }} />
+              <PersonIcon fontSize="small" sx={{ color: "#FBBF24" }} />
             </ListItemIcon>
             Profile
           </MenuItem>
-
           <MenuItem
             component={Link}
             to="/"
@@ -192,28 +222,27 @@ const Header = () => {
             sx={{
               fontSize: "0.95rem",
               py: 1,
-              "&:hover": { backgroundColor: "#f5f5f5" },
+              color: "#26A69A",
+              "&:hover": { backgroundColor: "#F9E79F", color: "#26A69A" }, // Soft Yellow
             }}
           >
             <ListItemIcon>
-              <HomeIcon fontSize="small" sx={{ color: "#1976D2" }} />
+              <HomeIcon fontSize="small" sx={{ color: "#FBBF24" }} />
             </ListItemIcon>
             Home
           </MenuItem>
-
-          <Divider sx={{ my: 1 }} />
-
+          <Divider sx={{ my: 1, borderColor: "#E5E7EB" }} />
           <MenuItem
             onClick={handleLogout}
             sx={{
               fontSize: "0.95rem",
               py: 1,
-              color: "#D32F2F",
-              "&:hover": { backgroundColor: "#f5f5f5" },
+              color: "#FF6F61", // Coral
+              "&:hover": { backgroundColor: "#F9E79F", color: "#FF8A80" }, // Soft Yellow + Coral nhạt
             }}
           >
             <ListItemIcon>
-              <LogoutIcon fontSize="small" sx={{ color: "#D32F2F" }} />
+              <LogoutIcon fontSize="small" sx={{ color: "#FF6F61" }} />
             </ListItemIcon>
             Logout
           </MenuItem>

@@ -9,13 +9,28 @@ import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
+// Thêm CSS inline để đảm bảo body và html không có padding/margin ảnh hưởng
+const globalStyles = `
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+  *, *:before, *:after {
+    box-sizing: inherit;
+  }
+`;
+
 const LoginModal = () => {
   const { isAuthenticated, user, login, logout, loginGoogle } =
     useContext(AuthContext) || {};
   const role = user?.role || "";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoginModal, setIsLoginModal] = useState(false);
   const [isOpenMenu, setIsOpenMenu] = useState(false);
   const navigate = useNavigate();
@@ -28,13 +43,29 @@ const LoginModal = () => {
   };
 
   useEffect(() => {
+    // Thêm global styles để loại bỏ padding/margin mặc định
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = globalStyles;
+    document.head.appendChild(styleSheet);
+
     if (isLoginModal) {
       document.addEventListener("mousedown", handleOutsideClick);
+      // Ngăn scroll khi modal mở
+      document.body.style.overflow = "hidden";
+      // Đảm bảo body không có padding/margin
+      document.body.style.margin = "0";
+      document.body.style.padding = "0";
     } else {
       document.removeEventListener("mousedown", handleOutsideClick);
+      // Khôi phục scroll khi modal đóng
+      document.body.style.overflow = "auto";
     }
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
+      document.body.style.overflow = "auto";
+      document.body.style.margin = "";
+      document.body.style.padding = "";
+      document.head.removeChild(styleSheet);
     };
   }, [isLoginModal]);
 
@@ -48,17 +79,9 @@ const LoginModal = () => {
     }
   };
 
-  const handleGoogleError = (error) => {
-    toast.error(error);
-  };
+  const handleGoogleError = (error) => toast.error(error);
 
-  const handleOpenMenu = () => {
-    if (isOpenMenu) {
-      setIsOpenMenu(false);
-    } else {
-      setIsOpenMenu(true);
-    }
-  };
+  const handleOpenMenu = () => setIsOpenMenu(!isOpenMenu);
 
   const handleLogout = () => {
     Swal.fire({
@@ -68,16 +91,8 @@ const LoginModal = () => {
       showCancelButton: true,
       confirmButtonText: "Yes",
       cancelButtonText: "No",
-      confirmButtonColor: "#E63946",
-      cancelButtonColor: "#3085d6",
-      reverseButtons: false,
-      focusCancel: true,
-      customClass: {
-        popup: "rounded-xl shadow-md",
-        title: "text-lg font-semibold",
-        confirmButton: "px-4 py-2 text-sm font-medium",
-        cancelButton: "px-4 py-2 text-sm font-medium",
-      },
+      confirmButtonColor: "#FF6F61", // Coral
+      cancelButtonColor: "#26A69A", // Teal
     }).then((result) => {
       if (result.isConfirmed) {
         logout();
@@ -87,9 +102,7 @@ const LoginModal = () => {
           icon: "success",
           timer: 1500,
           showConfirmButton: false,
-          willClose: () => {
-            navigate("/");
-          },
+          willClose: () => navigate("/"),
         });
       }
     });
@@ -97,10 +110,8 @@ const LoginModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     try {
       const role = await login(email, password);
-      console.log(role);
       switch (role) {
         case "Admin":
           navigate("/admin");
@@ -132,7 +143,7 @@ const LoginModal = () => {
       <ToastContainer />
       {isAuthenticated === false ? (
         <a
-          className="flex items-center py-2 px-3 text-sm font-semibold text-teal-900 hover:text-teal-600 transition-all duration-200 no-underline"
+          className="flex items-center py-2 px-3 text-sm font-semibold text-[#FFFFFF] bg-[#26A69A] hover:text-[#FBBF24] hover:bg-[#4DB6AC] transition-all duration-300 no-underline rounded-md"
           onClick={() => setIsLoginModal(true)}
         >
           <FontAwesomeIcon icon={faUser} className="mr-2" />
@@ -142,7 +153,7 @@ const LoginModal = () => {
         <div className="relative cursor-pointer">
           <div
             onClick={handleOpenMenu}
-            className="flex items-center py-2 px-3 text-sm font-semibold text-teal-900 hover:text-teal-600 hover:bg-teal-50 lg:hover:bg-transparent transition-all duration-200 rounded-md no-underline"
+            className="flex items-center py-2 px-3 text-sm font-semibold text-[#FFFFFF] bg-[#26A69A] hover:text-[#FBBF24] hover:bg-[#4DB6AC] rounded-md transition-all duration-300 no-underline"
           >
             <FontAwesomeIcon icon={faUser} className="mr-2" />
             <span>User</span>
@@ -153,13 +164,13 @@ const LoginModal = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="absolute right-0 mt-2 w-44 bg-teal-50 rounded-lg shadow-lg text-left"
+              className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-md border border-[#E5E7EB] text-left"
             >
-              <ul className="py-2 px-1 text-sm font-medium text-teal-900">
+              <ul className="py-2 px-1 text-sm font-medium text-[#26A69A]">
                 <li>
                   <a
                     href={role}
-                    className="block px-4 py-2 hover:bg-teal-200 hover:text-teal-600 hover:rounded-sm no-underline"
+                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FBBF24] transition-all duration-300 no-underline"
                   >
                     Portal
                   </a>
@@ -167,7 +178,7 @@ const LoginModal = () => {
                 <li>
                   <a
                     href="#"
-                    className="block px-4 py-2 hover:bg-teal-200 hover:text-teal-600 hover:rounded-sm no-underline"
+                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FBBF24] transition-all duration-300 no-underline"
                   >
                     Profile
                   </a>
@@ -175,7 +186,7 @@ const LoginModal = () => {
                 <li>
                   <a
                     href="#"
-                    className="block px-4 py-2 hover:bg-teal-200 hover:text-teal-600 hover:rounded-sm no-underline"
+                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FBBF24] transition-all duration-300 no-underline"
                   >
                     Switch Account
                   </a>
@@ -183,7 +194,7 @@ const LoginModal = () => {
                 <li>
                   <a
                     href="#"
-                    className="block px-4 py-2 hover:bg-teal-200 hover:text-teal-600 hover:rounded-sm no-underline"
+                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FF6F61] transition-all duration-300 no-underline"
                     onClick={handleLogout}
                   >
                     Sign out
@@ -196,26 +207,29 @@ const LoginModal = () => {
       )}
 
       {isLoginModal && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+        <div
+          className="fixed top-0 left-0 w-screen h-screen z-50 flex items-center justify-center"
+          style={{ margin: 0, padding: 0 }}
         >
+          {/* Nền tối với hiệu ứng xuất hiện */}
           <motion.div
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -50, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="relative p-6 w-full max-w-md bg-white rounded-lg shadow-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="absolute top-0 left-0 w-screen h-screen bg-black"
+            style={{ margin: 0, padding: 0 }}
+          />
+          {/* Modal không có hiệu ứng xuất hiện */}
+          <div
+            className="relative p-6 w-full max-w-md bg-white rounded-lg shadow-md border border-[#E5E7EB] z-60"
             ref={modalRef}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-teal-900">Sign In</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-[#26A69A]">Sign In</h3>
               <button
                 type="button"
-                className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-teal-300"
+                className="text-gray-500 hover:text-[#26A69A] hover:bg-[#F9E79F] rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-[#26A69A] transition-all duration-300"
                 onClick={() => setIsLoginModal(false)}
               >
                 <svg
@@ -240,7 +254,7 @@ const LoginModal = () => {
               <div>
                 <input
                   type="text"
-                  className="w-full p-3 bg-teal-50 text-teal-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300"
+                  className="w-full p-3 bg-[#F7FAFC] text-gray-700 text-sm rounded-lg border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#26A69A] transition-all duration-300 shadow-sm"
                   placeholder="Username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -253,7 +267,7 @@ const LoginModal = () => {
                   name="password"
                   id="password"
                   placeholder="Password"
-                  className="w-full p-3 bg-teal-50 text-teal-900 text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300"
+                  className="w-full p-3 bg-[#F7FAFC] text-gray-700 text-sm rounded-lg border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#26A69A] transition-all duration-300 shadow-sm"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -261,12 +275,11 @@ const LoginModal = () => {
               </div>
               <button
                 type="submit"
-                className="w-full bg-teal-600 text-white py-3 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-300 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+                className="w-full bg-[#26A69A] text-white py-3 rounded-lg hover:bg-[#4DB6AC] focus:outline-none focus:ring-2 focus:ring-[#26A69A] shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
               >
                 Login
               </button>
             </form>
-
             <div className="mt-6 flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
@@ -274,12 +287,12 @@ const LoginModal = () => {
                 size="large"
                 theme="outline"
                 text="signin_with"
-                shape="pill" // Bo viền tròn hơn (thay vì rectangular)
-                className="py-3 hover:shadow-lg hover:scale-105 transition-all duration-200 border-teal-600 text-teal-900 font-semibold" // Tùy chỉnh thêm
+                shape="pill"
+                className="py-3 px-4 bg-white text-[#26A69A] font-semibold border border-[#26A69A] rounded-full hover:bg-[#F9E79F] hover:shadow-md hover:scale-105 transition-all duration-300"
               />
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
     </>
   );

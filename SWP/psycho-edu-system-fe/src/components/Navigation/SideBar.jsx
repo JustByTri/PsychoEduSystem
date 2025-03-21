@@ -96,6 +96,7 @@ const getNavItems = (role) => {
         { icon: faTachometerAlt, label: "Dashboard", path: "/admin" },
         { icon: faBookOpen, label: "Programs", path: "/admin/programs" },
         { icon: faPoll, label: "Surveys", path: "/admin/survey" },
+        { icon: faFileAlt, label: "Blogs", path: "/admin/blog" },
         {
           icon: faUserPlus,
           label: "Create Parent",

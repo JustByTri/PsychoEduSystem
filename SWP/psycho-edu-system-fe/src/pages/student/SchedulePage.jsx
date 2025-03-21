@@ -205,7 +205,7 @@ const SchedulePage = () => {
       (appt) => appt.id === id || appt.appointmentId === id
     );
     navigate(`/chat/${id}`, {
-      state: { googleMeetURL: appointment?.googleMeetURL || null },
+      state: { googleMeetURL: appointment?.googleMeetURL || null, },
     });
   };
 
