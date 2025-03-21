@@ -61,7 +61,7 @@ namespace BLL.Hubs
                     return;
                 }
 
-                if (appointment.IsCompleted) 
+                if (appointment.IsCompleted)
                 {
                     await Clients.Caller.SendAsync("ReceiveMessage", "System", "This appointment has been completed.");
                     Context.Abort();

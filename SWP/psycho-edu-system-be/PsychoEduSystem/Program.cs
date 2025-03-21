@@ -69,9 +69,13 @@ namespace MIndAid
             builder.Services.AddScoped<AppointmentTimerService>();
             builder.Services.AddScoped<ChatHub>();
 
+            builder.Services.AddScoped<IMessageService, MessageService>();
+            builder.Services.AddSignalR();
+
 
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+            builder.Services.AddScoped<IBlogPostService, BlogPostService>();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
@@ -118,7 +122,7 @@ namespace MIndAid
             builder.Logging.AddConsole();
             builder.Services.AddSignalR();
 
-     
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -137,7 +141,7 @@ namespace MIndAid
             app.UseAuthorization();
             app.MapControllers();
             app.MapHub<ChatHub>("/chatHub").RequireCors("AllowFrontend"); ;
-       
+
             app.Run();
         }
     }
