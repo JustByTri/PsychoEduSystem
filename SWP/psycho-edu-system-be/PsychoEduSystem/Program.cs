@@ -20,6 +20,7 @@ using Swashbuckle.AspNetCore.Filters;
 using Microsoft.AspNetCore.SignalR;
 using BLL.Hubs;
 using BLL;
+using BLL.Interface.BLL.Interface;
 
 namespace MIndAid
 {
@@ -64,7 +65,7 @@ namespace MIndAid
             builder.Services.AddScoped<IJwtProvider, JwtProvider>();
             builder.Services.AddScoped<IClassService, ClassService>();
             builder.Services.AddScoped<IRelationshipService, RelationshipService>();
-
+            builder.Services.AddScoped<IDimensionService, DimensionService>();
             builder.Services.AddScoped<ITargetProgramService, TargetProgramService>();
             builder.Services.AddScoped<AppointmentTimerService>();
             builder.Services.AddScoped<ChatHub>();
@@ -72,7 +73,7 @@ namespace MIndAid
 
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
             builder.Services.AddScoped<IAppointmentService, AppointmentService>();
-
+            builder.Services.AddScoped<IBlogPostService, BlogPostService>();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {

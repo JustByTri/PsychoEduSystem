@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DAL.Entities;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore;
+using DAL.Entities.DAL.Entities;
 
 namespace DAL.UnitOfWork
 {
@@ -39,6 +40,7 @@ namespace DAL.UnitOfWork
             TargetProgram = new TargetProgramRepository(_context);
             Schedule = new ScheduleRepository(_context);
             ProgramEnrollment = new ProgramEnrollmentRepository(_context);
+            BlogPost = new BlogPostRepository(_context);
         }
 
         // Các repository được khởi tạo từ constructor
@@ -72,6 +74,7 @@ namespace DAL.UnitOfWork
         public IScheduleRepository Schedule { get; private set; }
 
         public IProgramEnrollmentRepository ProgramEnrollment { get; private set; }
+        public IBlogPostRepository BlogPost { get; private set; }
 
         public IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel)
         {

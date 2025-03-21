@@ -1,4 +1,5 @@
 ﻿using DAL.Entities;
+using DAL.Entities.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
@@ -35,6 +36,7 @@ namespace DAL.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<SurveyAnswerUser> SurveyAnswerUsers { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
+        public DbSet<BlogPost> BlogPosts { get; set; }
 
         #endregion
 
@@ -295,7 +297,11 @@ namespace DAL.Data
                     .OnDelete(DeleteBehavior.NoAction);
             });
 
-
+            modelBuilder.Entity<BlogPost>()
+    .HasOne(bp => bp.Dimension)
+    .WithMany()
+    .HasForeignKey(bp => bp.DimensionId)
+    .OnDelete(DeleteBehavior.Restrict);
             #endregion
 
             #region Seed Data

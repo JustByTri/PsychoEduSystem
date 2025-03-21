@@ -32,6 +32,7 @@ namespace DAL.UnitOfWork
         IClassRepository Class { get; }
         ITargetProgramRepository TargetProgram { get; }
         IScheduleRepository Schedule { get; }
+        IBlogPostRepository BlogPost { get; }
         IDbContextTransaction BeginTransaction(System.Data.IsolationLevel isolationLevel);
         // Dispose method để giải phóng tài nguyên
         void Dispose();
