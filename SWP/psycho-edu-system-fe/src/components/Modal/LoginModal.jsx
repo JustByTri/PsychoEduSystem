@@ -166,7 +166,7 @@ const LoginModal = () => {
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-md border border-[#E5E7EB] text-left"
             >
-              <ul className="py-2 px-1 text-sm font-medium text-[#26A69A]">
+              <ul className="py-1 px-1 text-sm font-medium text-[#26A69A]">
                 <li>
                   <a
                     href={role}
@@ -178,23 +178,7 @@ const LoginModal = () => {
                 <li>
                   <a
                     href="#"
-                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FBBF24] transition-all duration-300 no-underline"
-                  >
-                    Profile
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FBBF24] transition-all duration-300 no-underline"
-                  >
-                    Switch Account
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FF6F61] transition-all duration-300 no-underline"
+                    className="block px-4 py-1 hover:bg-[#F9E79F] hover:text-[#FF6F61] transition-all duration-300 no-underline"
                     onClick={handleLogout}
                   >
                     Sign out

@@ -47,20 +47,20 @@ const Dashboard = () => {
   const [surveyResult, setSurveyResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchSurveyResult = async () => {
-      setLoading(true);
-      try {
-        const response = await SurveyService.getSurveyResult({ month, year });
-        setSurveyResult(response.length > 0 ? response[0] : null);
-      } catch (error) {
-        console.error("Error fetching survey result:", error);
-        setSurveyResult(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchSurveyResult = async () => {
+    setLoading(true);
+    try {
+      const response = await SurveyService.getSurveyResult({ month, year });
+      setSurveyResult(response.length > 0 ? response[0] : null);
+    } catch (error) {
+      console.error("Error fetching survey result:", error);
+      setSurveyResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSurveyResult();
   }, [month, year]);
 
@@ -96,22 +96,26 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        className="dashboard-header"
       >
         <Typography
           variant="h4"
-          fontWeight="bold"
+          gutterBottom
           sx={{
-            color: "#1976d2",
-            padding: "10px 20px",
-            borderRadius: "6px",
-            display: "flex",
+            fontWeight: "bold",
+            color: "#fff", 
+            backgroundImage: "linear-gradient(to right, #1976d2, #64b5f6)", 
+            borderRadius: "5px",
+            display: "flex", 
+            padding: "5px",
+            margin: "0 auto",
           }}
         >
           Mental Health Evaluation
         </Typography>
       </motion.div>
       <motion.div
-        className="flex flex-col items-center justify-start bg-gradient-to-b from-white to-gray-100 px-6 py-8"
+        className="dashboard-content flex flex-col items-center justify-start bg-gradient-to-b from-white to-gray-100 px-6 py-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}

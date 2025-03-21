@@ -67,7 +67,7 @@ const TargetProgramsPage = () => {
   return (
     <div style={{ padding: "5px", margin: "0 auto" }}>
       <Typography
-        variant="h5"
+        variant="h4"
         gutterBottom
         sx={{
           fontWeight: "bold",

@@ -47,7 +47,7 @@ const Navbar = () => {
                 <li key={index}>
                   <a
                     href={link.href}
-                    className={`flex items-center px-3 py-2 text-sm font-semibold text-[#FFFFFF] hover:text-[#FBBF24] hover:bg-[#F9E79F] lg:hover:bg-transparent transition-all duration-300 rounded-md no-underline ${
+                    className={`flex items-center px-3 pt-2 text-sm font-semibold text-[#FFFFFF] hover:text-[#FBBF24] hover:bg-[#F9E79F] lg:hover:bg-transparent transition-all duration-300 rounded-md no-underline ${
                       isActive(link.href) ? "bg-[#F9E79F] text-[#26A69A]" : ""
                     }`}
                   >
