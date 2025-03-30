@@ -10,31 +10,39 @@ import {
   faTrash,
   faSearch,
 } from "@fortawesome/free-solid-svg-icons";
-import { Parallax } from "react-parallax";
 import ParticlesBackground from "../../components/ParticlesBackground";
 
 const BlogManagementPage = () => {
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
-  const [dimensions, setDimensions] = useState([]); // Thêm state cho dimensions
+  const [dimensions] = useState(apiService.blog.getDimensions());
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [pagination, setPagination] = useState({
+    pageNumber: 1,
+    pageSize: 5,
+    totalPages: 1,
+  });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [blogToDelete, setBlogToDelete] = useState(null);
 
   useEffect(() => {
-    fetchBlogs();
-    fetchDimensions(); // Gọi API lấy dimensions
-  }, []);
+    fetchBlogs(pagination.pageNumber, pagination.pageSize);
+  }, [pagination.pageNumber, pagination.pageSize]);
 
-  const fetchBlogs = async () => {
+  const fetchBlogs = async (pageNumber, pageSize) => {
     try {
-      const response = await apiService.blog.fetchBlogs();
+      const response = await apiService.blog.fetchBlogs(pageNumber, pageSize);
       if (response.isSuccess) {
         setBlogs(response.result);
         setFilteredBlogs(response.result);
+        setPagination((prev) => ({ ...prev, ...response.pagination }));
       } else {
         setError("Cannot load blog posts");
       }
@@ -42,16 +50,6 @@ const BlogManagementPage = () => {
       setError("An error occurred while loading blog posts");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchDimensions = async () => {
-    try {
-      const response = await apiService.blog.fetchDimensions();
-      setDimensions(response); // Gán mảng trực tiếp từ response
-    } catch (err) {
-      console.error("Error loading dimensions:", err);
-      setDimensions([]); // Gán mảng rỗng nếu lỗi để tránh crash
     }
   };
 
@@ -68,24 +66,38 @@ const BlogManagementPage = () => {
     setFilteredBlogs(filtered);
   }, [searchTerm, filterCategory, blogs]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this blog post?")) {
-      try {
-        const response = await apiService.blog.deleteBlog(id);
-        if (response.isSuccess) {
-          toast.success(response.message);
-          fetchBlogs();
-        }
-      } catch (error) {
-        toast.error(error.message);
+  const handleDelete = (id) => {
+    setBlogToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const response = await apiService.blog.deleteBlog(blogToDelete);
+      if (response.isSuccess) {
+        toast.success(response.message);
+        fetchBlogs(pagination.pageNumber, pagination.pageSize);
       }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setShowDeleteModal(false);
+      setBlogToDelete(null);
     }
   };
 
-  const handleSave = () => {
+  const handleSave = (message) => {
     setIsFormOpen(false);
     setSelectedBlog(null);
-    fetchBlogs();
+    setModalMessage(message);
+    setShowSuccessModal(true);
+    fetchBlogs(pagination.pageNumber, pagination.pageSize);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination((prev) => ({ ...prev, pageNumber: newPage }));
+    }
   };
 
   if (loading) return <p className="text-center text-gray-500">Loading...</p>;
@@ -96,61 +108,45 @@ const BlogManagementPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="p-6 bg-gray-50 min-h-screen text-navy-blue-900 relative overflow-hidden"
+      className="p-6 bg-gray-100 min-h-screen text-gray-900 relative overflow-hidden"
     >
       <ParticlesBackground />
-      <Parallax strength={300} className="absolute inset-0 opacity-20">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-navy-blue-900 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-green-500 rounded-full blur-3xl"></div>
-      </Parallax>
-
-      <div className="relative z-10">
+      <div className="relative z-10 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <motion.h2
-            initial={{ x: -20 }}
-            animate={{ x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl font-extrabold text-navy-blue-900"
-          >
+          <motion.h2 className="text-3xl font-bold text-gray-800">
             Blog Management
           </motion.h2>
           <motion.button
             whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             onClick={() => {
               setSelectedBlog(null);
               setIsFormOpen(true);
             }}
-            className="flex items-center bg-navy-blue-900 px-6  py-3 rounded-lg hover:bg-navy-blue-800 transition-all duration-300 shadow-lg"
+            className="flex items-center bg-indigo-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-indigo-700 transition"
           >
-            <FontAwesomeIcon icon={faPlus} className="w-5 h-5 mr-2" />
+            <FontAwesomeIcon icon={faPlus} className="mr-2" />
             Add New Post
           </motion.button>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8 flex space-x-4"
-        >
+        <div className="mb-8 flex space-x-4">
           <div className="relative flex-1">
             <FontAwesomeIcon
               icon={faSearch}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
             />
             <input
               type="text"
               placeholder="Search blog posts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 text-gray-800 placeholder-gray-400"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
             />
           </div>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="bg-white border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 text-gray-800"
+            className="bg-white border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
           >
             <option value="">All Categories</option>
             {dimensions.map((dim) => (
@@ -159,14 +155,13 @@ const BlogManagementPage = () => {
               </option>
             ))}
           </select>
-        </motion.div>
+        </div>
 
         {isFormOpen && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-12"
+            className="mb-12 bg-white p-6 rounded-lg shadow-lg"
           >
             <BlogForm
               blog={selectedBlog}
@@ -177,28 +172,20 @@ const BlogManagementPage = () => {
           </motion.div>
         )}
 
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-          }}
-          className="bg-white rounded-2xl shadow-2xl overflow-hidden"
-        >
+        <motion.div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Title
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Published Date
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -207,17 +194,9 @@ const BlogManagementPage = () => {
               {filteredBlogs.map((blog) => (
                 <motion.tr
                   key={blog.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 10 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.3 },
-                    },
-                  }}
-                  className="hover:bg-gray-50 transition-colors duration-200"
+                  className="hover:bg-gray-50 transition"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-800">
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-900">
                     {blog.title}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-600">
@@ -229,22 +208,20 @@ const BlogManagementPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap space-x-3">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
                       onClick={() => {
                         setSelectedBlog(blog);
                         setIsFormOpen(true);
                       }}
-                      className="text-green-500 hover:text-green-600"
+                      className="text-indigo-600 hover:text-indigo-800"
                     >
-                      <FontAwesomeIcon icon={faEdit} className="w-5 h-5" />
+                      <FontAwesomeIcon icon={faEdit} />
                     </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
                       onClick={() => handleDelete(blog.id)}
-                      className="text-red-500 hover:text-red-600"
+                      className="text-red-600 hover:text-red-800"
                     >
-                      <FontAwesomeIcon icon={faTrash} className="w-5 h-5" />
+                      <FontAwesomeIcon icon={faTrash} />
                     </motion.button>
                   </td>
                 </motion.tr>
@@ -252,7 +229,72 @@ const BlogManagementPage = () => {
             </tbody>
           </table>
         </motion.div>
+
+        <div className="mt-4 flex justify-between items-center">
+          <button
+            onClick={() => handlePageChange(pagination.pageNumber - 1)}
+            disabled={pagination.pageNumber === 1}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:bg-gray-300"
+          >
+            Previous
+          </button>
+          <span className="text-gray-600">
+            Page {pagination.pageNumber} of {pagination.totalPages} (
+            {pagination.totalRecords} total)
+          </span>
+          <button
+            onClick={() => handlePageChange(pagination.pageNumber + 1)}
+            disabled={pagination.pageNumber === pagination.totalPages}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:bg-gray-300"
+          >
+            Next
+          </button>
+        </div>
       </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Confirm Delete
+            </h3>
+            <p className="mt-2 text-gray-600">
+              Are you sure you want to delete this blog post?
+            </p>
+            <div className="mt-4 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-gray-800">Success</h3>
+            <p className="mt-2 text-gray-600">{modalMessage}</p>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

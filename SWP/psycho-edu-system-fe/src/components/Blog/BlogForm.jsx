@@ -6,20 +6,20 @@ const BlogForm = ({ blog, dimensions, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
     title: blog?.title || "",
     content: blog?.content || "",
-    dimensionId: blog?.dimensionId || (dimensions[0]?.id ?? 1),
-    thumbnail: blog?.thumbnail || "",
+    dimensionId: blog?.dimensionId || dimensions[0]?.id,
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      let response;
       if (blog) {
-        await apiService.blog.updateBlog(blog.id, formData);
+        response = await apiService.blog.updateBlog(blog.id, formData);
       } else {
-        await apiService.blog.createBlog(formData);
+        response = await apiService.blog.createBlog(formData);
       }
-      toast.success("Blog saved successfully");
-      onSave();
+      toast.success(response.message);
+      onSave(response.message);
     } catch (error) {
       toast.error(error.message);
     }
@@ -28,31 +28,43 @@ const BlogForm = ({ blog, dimensions, onSave, onCancel }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Title</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Title
+        </label>
         <input
           type="text"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+          placeholder="Enter blog title"
           required
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Content</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Content
+        </label>
         <textarea
           value={formData.content}
-          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          rows="5"
+          onChange={(e) =>
+            setFormData({ ...formData, content: e.target.value })
+          }
+          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+          rows="6"
+          placeholder="Write your content here"
           required
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Category</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Category
+        </label>
         <select
           value={formData.dimensionId}
-          onChange={(e) => setFormData({ ...formData, dimensionId: e.target.value })}
-          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          onChange={(e) =>
+            setFormData({ ...formData, dimensionId: e.target.value })
+          }
+          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
         >
           {dimensions.map((dim) => (
             <option key={dim.id} value={dim.id}>
@@ -61,26 +73,17 @@ const BlogForm = ({ blog, dimensions, onSave, onCancel }) => {
           ))}
         </select>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Thumbnail URL</label>
-        <input
-          type="text"
-          value={formData.thumbnail}
-          onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        />
-      </div>
       <div className="flex space-x-4">
         <button
           type="submit"
-          className="bg-green-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          className="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition"
         >
           Save
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="bg-gray-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg shadow-md hover:bg-gray-400 transition"
         >
           Cancel
         </button>

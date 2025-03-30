@@ -1,37 +1,14 @@
 import axios from "axios";
 import { parseISO, startOfDay, format } from "date-fns";
 import { getAuthDataFromLocalStorage } from "../utils/auth";
-
 const API_BASE_URL = "https://localhost:7192/api";
 const authData = getAuthDataFromLocalStorage();
-// Hàm phụ trợ để lấy dimensions và cache
-let dimensionsCache = null;
-const fetchDimensionsData = async () => {
-  if (dimensionsCache) return dimensionsCache;
-  try {
-    const response = await axios.get(`${API_BASE_URL}/Dimension`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    if (response.status === 200) {
-      dimensionsCache = response.data.map((dim) => ({
-        id: dim.dimensionId,
-        name: dim.dimensionName,
-      }));
-      return dimensionsCache;
-    } else {
-      throw new Error("Failed to fetch dimensions");
-    }
-  } catch (error) {
-    console.error("Error fetching dimensions:", error);
-    throw new Error(
-      error.response?.data?.message || "Failed to fetch dimensions"
-    );
-  }
-};
+const dimensions = [
+  { id: 1, name: "Lo Âu" },
+  { id: 2, name: "Trầm Cảm" },
+  { id: 3, name: "Căng Thẳng" },
+];
 const apiService = {
-  // Các API khác giữ nguyên, chỉ cập nhật phần blog
   fetchUserProfile: async (userId) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -61,7 +38,6 @@ const apiService = {
       throw new Error("Failed to load user profile. Please try again later.");
     }
   },
-
   updateUserProfile: async (userId, data, config = {}) => {
     try {
       const response = await axios.put(
@@ -83,7 +59,6 @@ const apiService = {
       );
     }
   },
-
   checkUserExistence: async (email) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -105,7 +80,6 @@ const apiService = {
       throw error;
     }
   },
-
   createUserAccount: async (userData) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -132,7 +106,6 @@ const apiService = {
       throw error;
     }
   },
-
   fetchAppointments: async (userId, date) => {
     try {
       const formattedDate = format(new Date(date), "yyyy-MM-dd");
@@ -181,7 +154,6 @@ const apiService = {
       throw error;
     }
   },
-
   cancelAppointment: async (appointmentId) => {
     try {
       if (!appointmentId) {
@@ -210,7 +182,6 @@ const apiService = {
       throw error;
     }
   },
-
   fetchAvailableSlots: async (date) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -238,7 +209,6 @@ const apiService = {
       throw new Error();
     }
   },
-
   fetchConsultantSlots: async (consultantId, date) => {
     try {
       const response = await axios.get(
@@ -262,7 +232,6 @@ const apiService = {
       throw error;
     }
   },
-
   fetchParentChildren: async (parentId) => {
     try {
       const response = await axios.get(
@@ -280,7 +249,6 @@ const apiService = {
       throw error;
     }
   },
-
   bookAppointment: async (appointmentData) => {
     try {
       const { bookedBy, appointmentFor, meetingWith, date, slotId, isOnline } =
@@ -350,7 +318,6 @@ const apiService = {
       };
     }
   },
-
   fetchUserSchedules: async (userId) => {
     try {
       const response = await axios.get(
@@ -373,7 +340,6 @@ const apiService = {
       throw error;
     }
   },
-
   bookSlots: async (payload) => {
     try {
       const response = await axios.post(
@@ -407,7 +373,6 @@ const apiService = {
       throw new Error(error.response?.data?.message || "Failed to book slots");
     }
   },
-
   fetchConsultantAppointments: async (teacherId, date) => {
     try {
       const response = await axios.get(
@@ -430,33 +395,29 @@ const apiService = {
       throw error;
     }
   },
-
-  // Cập nhật API cho Blog (không yêu cầu Authorization)
   blog: {
-    fetchBlogs: async () => {
+    fetchBlogs: async (pageNumber = 1, pageSize = 5) => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/BlogPost`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await axios.get(
+          `${API_BASE_URL}/BlogPost/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+          { headers: { "Content-Type": "application/json" } }
+        );
         if (response.status === 200) {
-          const blogs = response.data;
+          const { blogs, totalPages, totalRecords } = response.data;
           return {
             isSuccess: true,
             result: blogs.map((blog) => ({
-              id: blog.blogPostId,
+              id: blog.blogId,
               title: blog.title,
               content: blog.content,
               category: blog.dimensionName,
-              createdAt: format(new Date(blog.createAt), "yyyy-MM-dd"),
-              thumbnail: blog.thumbnail || "https://via.placeholder.com/150",
+              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
               excerpt: blog.content.substring(0, 100) + "...",
             })),
+            pagination: { pageNumber, pageSize, totalPages, totalRecords },
           };
-        } else {
-          throw new Error("Failed to fetch blogs");
         }
+        throw new Error("Failed to fetch blogs");
       } catch (error) {
         console.error("Error fetching blogs:", error);
         throw new Error(
@@ -464,31 +425,26 @@ const apiService = {
         );
       }
     },
-
     fetchBlogById: async (id) => {
       try {
         const response = await axios.get(`${API_BASE_URL}/BlogPost/${id}`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
         if (response.status === 200) {
           const blog = response.data;
           return {
             isSuccess: true,
             result: {
-              id: blog.blogPostId,
+              id: blog.blogId,
               title: blog.title,
               content: blog.content,
               category: blog.dimensionName,
-              createdAt: format(new Date(blog.createAt), "yyyy-MM-dd"),
-              thumbnail: blog.thumbnail || "https://via.placeholder.com/150",
+              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
               excerpt: blog.content.substring(0, 100) + "...",
             },
           };
-        } else {
-          throw new Error("Blog not found");
         }
+        throw new Error("Blog not found");
       } catch (error) {
         console.error("Error fetching blog by ID:", error);
         throw new Error(
@@ -499,11 +455,10 @@ const apiService = {
 
     createBlog: async (blogData) => {
       try {
-        const dimensions = await fetchDimensionsData();
         const payload = {
           title: blogData.title,
           content: blogData.content,
-          dimensionId: Number(blogData.dimensionId) || dimensions[0].id,
+          dimensionId: Number(blogData.dimensionId),
         };
         const response = await axios.post(`${API_BASE_URL}/BlogPost`, payload, {
           headers: {
@@ -517,19 +472,16 @@ const apiService = {
             isSuccess: true,
             message: "Blog created successfully",
             result: {
-              id: blog.blogPostId,
+              id: blog.blogId,
               title: blog.title,
               content: blog.content,
               category: blog.dimensionName,
-              createdAt: format(new Date(blog.createAt), "yyyy-MM-dd"),
-              thumbnail:
-                blogData.thumbnail || "https://via.placeholder.com/150",
+              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
               excerpt: blog.content.substring(0, 100) + "...",
             },
           };
-        } else {
-          throw new Error("Failed to create blog");
         }
+        throw new Error("Failed to create blog");
       } catch (error) {
         console.error("Error creating blog:", error);
         throw new Error(
@@ -538,13 +490,13 @@ const apiService = {
       }
     },
 
+    // Trong blog.updateBlog
     updateBlog: async (id, blogData) => {
       try {
-        const dimensions = await fetchDimensionsData();
         const payload = {
           title: blogData.title,
           content: blogData.content,
-          dimensionId: Number(blogData.dimensionId) || dimensions[0].id,
+          dimensionId: Number(blogData.dimensionId),
         };
         const response = await axios.put(
           `${API_BASE_URL}/BlogPost/${id}`,
@@ -557,9 +509,9 @@ const apiService = {
           }
         );
         if (response.status === 200 || response.status === 204) {
-          const updatedCategory =
-            dimensions.find((dim) => dim.id === payload.dimensionId)?.name ||
-            blogData.category;
+          const updatedCategory = dimensions.find(
+            (dim) => dim.id === Number(blogData.dimensionId)
+          )?.name;
           return {
             isSuccess: true,
             message: "Blog updated successfully",
@@ -569,29 +521,18 @@ const apiService = {
               content: blogData.content,
               category: updatedCategory,
               createdAt: blogData.createdAt || format(new Date(), "yyyy-MM-dd"),
-              thumbnail:
-                blogData.thumbnail || "https://via.placeholder.com/150",
               excerpt: blogData.content.substring(0, 100) + "...",
             },
           };
-        } else {
-          throw new Error(
-            `Failed to update blog: Unexpected status ${response.status}`
-          );
         }
+        throw new Error("Failed to update blog");
       } catch (error) {
         console.error("Error updating blog:", error);
-        if (error.response) {
-          throw new Error(
-            `Failed to update blog: ${error.response.status} - ${
-              error.response.data?.message || "Unknown error"
-            }`
-          );
-        }
-        throw new Error(error.message || "Failed to update blog");
+        throw new Error(
+          error.response?.data?.message || "Failed to update blog"
+        );
       }
     },
-
     deleteBlog: async (id) => {
       try {
         const response = await axios.delete(`${API_BASE_URL}/BlogPost/${id}`, {
@@ -601,31 +542,18 @@ const apiService = {
           },
         });
         if (response.status === 200 || response.status === 204) {
-          return {
-            isSuccess: true,
-            message: "Blog deleted successfully",
-          };
-        } else {
-          throw new Error(
-            `Failed to delete blog: Unexpected status ${response.status}`
-          );
+          return { isSuccess: true, message: "Blog deleted successfully" };
         }
+        throw new Error("Failed to delete blog");
       } catch (error) {
         console.error("Error deleting blog:", error);
-        if (error.response) {
-          throw new Error(
-            `Failed to delete blog: ${error.response.status} - ${
-              error.response.data?.message || "Unknown error"
-            }`
-          );
-        }
-        throw new Error(error.message || "Failed to delete blog");
+        throw new Error(
+          error.response?.data?.message || "Failed to delete blog"
+        );
       }
     },
 
-    fetchDimensions: async () => {
-      return fetchDimensionsData();
-    },
+    getDimensions: () => dimensions,
   },
 };
 
