@@ -7,9 +7,12 @@ using DAL.Entities;
 
 namespace DAL.Repositories.IRepositories
 {
-    public interface ISurveyResponseRepository : IGenericRepository<SurveyResponse>
+    public interface IUserTargetProgramRepository : IGenericRepository<UserTargetProgram>
     {
 
-        Task<SurveyResponse> GetLatestSurveyResponseByUserIdAsync(Guid userId);
+        Task<UserTargetProgram> FindByUserAndProgramAsync(Guid userId, Guid programId);
+
+
+
     }
 }

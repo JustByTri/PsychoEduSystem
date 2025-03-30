@@ -11,5 +11,8 @@ namespace DAL.Repositories.IRepositories
 {
     public interface IMessageRepository : IGenericRepository<Message>
     {
+        Task<IEnumerable<Message>> GetMessagesBetweenUsers(Guid StudentId, Guid OwnerId);
     }
 }
+
+
