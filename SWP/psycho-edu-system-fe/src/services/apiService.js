@@ -4,7 +4,32 @@ import { getAuthDataFromLocalStorage } from "../utils/auth";
 
 const API_BASE_URL = "https://localhost:7192/api";
 const authData = getAuthDataFromLocalStorage();
-
+// Hàm phụ trợ để lấy dimensions và cache
+let dimensionsCache = null;
+const fetchDimensionsData = async () => {
+  if (dimensionsCache) return dimensionsCache;
+  try {
+    const response = await axios.get(`${API_BASE_URL}/Dimension`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (response.status === 200) {
+      dimensionsCache = response.data.map((dim) => ({
+        id: dim.dimensionId,
+        name: dim.dimensionName,
+      }));
+      return dimensionsCache;
+    } else {
+      throw new Error("Failed to fetch dimensions");
+    }
+  } catch (error) {
+    console.error("Error fetching dimensions:", error);
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch dimensions"
+    );
+  }
+};
 const apiService = {
   // Các API khác giữ nguyên, chỉ cập nhật phần blog
   fetchUserProfile: async (userId) => {
@@ -408,37 +433,26 @@ const apiService = {
 
   // Cập nhật API cho Blog (không yêu cầu Authorization)
   blog: {
-    // Lấy danh sách bài viết (phân trang)
-    fetchBlogs: async (pageNumber = 1, pageSize = 10) => {
+    fetchBlogs: async () => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/BlogPost/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
+        const response = await axios.get(`${API_BASE_URL}/BlogPost`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
         if (response.status === 200) {
-          const { blogs } = response.data;
+          const blogs = response.data;
           return {
             isSuccess: true,
             result: blogs.map((blog) => ({
-              id: blog.blogId,
+              id: blog.blogPostId,
               title: blog.title,
               content: blog.content,
               category: blog.dimensionName,
-              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
+              createdAt: format(new Date(blog.createAt), "yyyy-MM-dd"),
               thumbnail: blog.thumbnail || "https://via.placeholder.com/150",
               excerpt: blog.content.substring(0, 100) + "...",
             })),
-            pagination: {
-              pageNumber: response.data.pageNumber,
-              pageSize: response.data.pageSize,
-              totalPages: response.data.totalPages,
-              totalRecords: response.data.totalRecords,
-            },
           };
         } else {
           throw new Error("Failed to fetch blogs");
@@ -451,7 +465,6 @@ const apiService = {
       }
     },
 
-    // Lấy chi tiết bài viết
     fetchBlogById: async (id) => {
       try {
         const response = await axios.get(`${API_BASE_URL}/BlogPost/${id}`, {
@@ -459,17 +472,16 @@ const apiService = {
             "Content-Type": "application/json",
           },
         });
-
         if (response.status === 200) {
           const blog = response.data;
           return {
             isSuccess: true,
             result: {
-              id: blog.blogId,
+              id: blog.blogPostId,
               title: blog.title,
               content: blog.content,
               category: blog.dimensionName,
-              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
+              createdAt: format(new Date(blog.createAt), "yyyy-MM-dd"),
               thumbnail: blog.thumbnail || "https://via.placeholder.com/150",
               excerpt: blog.content.substring(0, 100) + "...",
             },
@@ -485,34 +497,31 @@ const apiService = {
       }
     },
 
-    // Tạo bài viết mới (vẫn cần Authorization vì đây là hành động của admin)
     createBlog: async (blogData) => {
       try {
+        const dimensions = await fetchDimensionsData();
         const payload = {
           title: blogData.title,
           content: blogData.content,
-          authorId: authData?.userId || 1,
-          dimensionId: mapCategoryToDimensionId(blogData.category),
+          dimensionId: Number(blogData.dimensionId) || dimensions[0].id,
         };
-
         const response = await axios.post(`${API_BASE_URL}/BlogPost`, payload, {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
             "Content-Type": "application/json",
           },
         });
-
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 201) {
           const blog = response.data;
           return {
             isSuccess: true,
             message: "Blog created successfully",
             result: {
-              id: blog.blogId,
+              id: blog.blogPostId,
               title: blog.title,
               content: blog.content,
               category: blog.dimensionName,
-              createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
+              createdAt: format(new Date(blog.createAt), "yyyy-MM-dd"),
               thumbnail:
                 blogData.thumbnail || "https://via.placeholder.com/150",
               excerpt: blog.content.substring(0, 100) + "...",
@@ -529,16 +538,14 @@ const apiService = {
       }
     },
 
-    // Cập nhật bài viết (vẫn cần Authorization vì đây là hành động của admin)
     updateBlog: async (id, blogData) => {
       try {
+        const dimensions = await fetchDimensionsData();
         const payload = {
           title: blogData.title,
           content: blogData.content,
-          authorId: authData?.userId || 1,
-          dimensionId: mapCategoryToDimensionId(blogData.category),
+          dimensionId: Number(blogData.dimensionId) || dimensions[0].id,
         };
-
         const response = await axios.put(
           `${API_BASE_URL}/BlogPost/${id}`,
           payload,
@@ -549,8 +556,10 @@ const apiService = {
             },
           }
         );
-
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 204) {
+          const updatedCategory =
+            dimensions.find((dim) => dim.id === payload.dimensionId)?.name ||
+            blogData.category;
           return {
             isSuccess: true,
             message: "Blog updated successfully",
@@ -558,25 +567,31 @@ const apiService = {
               id,
               title: blogData.title,
               content: blogData.content,
-              category: blogData.category,
-              createdAt: blogData.createdAt,
+              category: updatedCategory,
+              createdAt: blogData.createdAt || format(new Date(), "yyyy-MM-dd"),
               thumbnail:
                 blogData.thumbnail || "https://via.placeholder.com/150",
               excerpt: blogData.content.substring(0, 100) + "...",
             },
           };
         } else {
-          throw new Error("Blog not found");
+          throw new Error(
+            `Failed to update blog: Unexpected status ${response.status}`
+          );
         }
       } catch (error) {
         console.error("Error updating blog:", error);
-        throw new Error(
-          error.response?.data?.message || "Failed to update blog"
-        );
+        if (error.response) {
+          throw new Error(
+            `Failed to update blog: ${error.response.status} - ${
+              error.response.data?.message || "Unknown error"
+            }`
+          );
+        }
+        throw new Error(error.message || "Failed to update blog");
       }
     },
 
-    // Xóa bài viết (vẫn cần Authorization vì đây là hành động của admin)
     deleteBlog: async (id) => {
       try {
         const response = await axios.delete(`${API_BASE_URL}/BlogPost/${id}`, {
@@ -585,33 +600,33 @@ const apiService = {
             "Content-Type": "application/json",
           },
         });
-
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 204) {
           return {
             isSuccess: true,
             message: "Blog deleted successfully",
           };
         } else {
-          throw new Error("Blog not found");
+          throw new Error(
+            `Failed to delete blog: Unexpected status ${response.status}`
+          );
         }
       } catch (error) {
         console.error("Error deleting blog:", error);
-        throw new Error(
-          error.response?.data?.message || "Failed to delete blog"
-        );
+        if (error.response) {
+          throw new Error(
+            `Failed to delete blog: ${error.response.status} - ${
+              error.response.data?.message || "Unknown error"
+            }`
+          );
+        }
+        throw new Error(error.message || "Failed to delete blog");
       }
     },
-  },
-};
 
-// Hàm ánh xạ category sang dimensionId
-const mapCategoryToDimensionId = (category) => {
-  const dimensionMap = {
-    "Lo Âu": 1,
-    "Trầm Cảm": 2,
-    "Căng Thẳng": 3,
-  };
-  return dimensionMap[category] || 1;
+    fetchDimensions: async () => {
+      return fetchDimensionsData();
+    },
+  },
 };
 
 export default apiService;

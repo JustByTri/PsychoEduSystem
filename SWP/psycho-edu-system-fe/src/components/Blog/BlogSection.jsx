@@ -11,7 +11,7 @@ const BlogSection = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await apiService.blog.fetchBlogs(1, 10); // Lấy trang 1, 10 bài viết
+        const response = await apiService.blog.fetchBlogs();
         if (response.isSuccess) setBlogs(response.result);
         else setError("Cannot load blog posts");
       } catch (err) {

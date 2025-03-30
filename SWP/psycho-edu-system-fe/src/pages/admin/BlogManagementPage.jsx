@@ -16,27 +16,25 @@ import ParticlesBackground from "../../components/ParticlesBackground";
 const BlogManagementPage = () => {
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
+  const [dimensions, setDimensions] = useState([]); // Thêm state cho dimensions
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
-  const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     fetchBlogs();
-  }, [pageNumber]);
+    fetchDimensions(); // Gọi API lấy dimensions
+  }, []);
 
   const fetchBlogs = async () => {
     try {
-      const response = await apiService.blog.fetchBlogs(pageNumber, pageSize);
+      const response = await apiService.blog.fetchBlogs();
       if (response.isSuccess) {
         setBlogs(response.result);
         setFilteredBlogs(response.result);
-        setTotalPages(response.pagination.totalPages);
       } else {
         setError("Cannot load blog posts");
       }
@@ -44,6 +42,16 @@ const BlogManagementPage = () => {
       setError("An error occurred while loading blog posts");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDimensions = async () => {
+    try {
+      const response = await apiService.blog.fetchDimensions();
+      setDimensions(response); // Gán mảng trực tiếp từ response
+    } catch (err) {
+      console.error("Error loading dimensions:", err);
+      setDimensions([]); // Gán mảng rỗng nếu lỗi để tránh crash
     }
   };
 
@@ -90,10 +98,7 @@ const BlogManagementPage = () => {
       transition={{ duration: 0.6 }}
       className="p-6 bg-gray-50 min-h-screen text-navy-blue-900 relative overflow-hidden"
     >
-      {/* Particles Background */}
       <ParticlesBackground />
-
-      {/* Parallax Background Decorations */}
       <Parallax strength={300} className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-0 w-96 h-96 bg-navy-blue-900 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-green-500 rounded-full blur-3xl"></div>
@@ -116,14 +121,13 @@ const BlogManagementPage = () => {
               setSelectedBlog(null);
               setIsFormOpen(true);
             }}
-            className="flex items-center bg-navy-blue-900 text-white px-6 py-3 rounded-lg hover:bg-navy-blue-800 transition-all duration-300 shadow-lg"
+            className="flex items-center bg-navy-blue-900 px-6  py-3 rounded-lg hover:bg-navy-blue-800 transition-all duration-300 shadow-lg"
           >
             <FontAwesomeIcon icon={faPlus} className="w-5 h-5 mr-2" />
             Add New Post
           </motion.button>
         </div>
 
-        {/* Search and Filter */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -149,13 +153,11 @@ const BlogManagementPage = () => {
             className="bg-white border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 text-gray-800"
           >
             <option value="">All Categories</option>
-            <option value="Lo Âu">Lo Âu</option>
-            <option value="Trầm Cảm">Trầm Cảm</option>
-            <option value="Cognitive Health">Cognitive Health</option>
-            <option value="Emotional Health">Emotional Health</option>
-            <option value="Social Health">Social Health</option>
-            <option value="Physical Health">Physical Health</option>
-            <option value="School Stories">School Stories</option>
+            {dimensions.map((dim) => (
+              <option key={dim.id} value={dim.name}>
+                {dim.name}
+              </option>
+            ))}
           </select>
         </motion.div>
 
@@ -168,6 +170,7 @@ const BlogManagementPage = () => {
           >
             <BlogForm
               blog={selectedBlog}
+              dimensions={dimensions}
               onSave={handleSave}
               onCancel={() => setIsFormOpen(false)}
             />
@@ -179,12 +182,7 @@ const BlogManagementPage = () => {
           animate="visible"
           variants={{
             hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: {
-                staggerChildren: 0.1,
-              },
-            },
+            visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
           }}
           className="bg-white rounded-2xl shadow-2xl overflow-hidden"
         >
@@ -254,29 +252,6 @@ const BlogManagementPage = () => {
             </tbody>
           </table>
         </motion.div>
-
-        {/* Phân trang */}
-        <div className="mt-6 flex justify-center space-x-2">
-          <button
-            onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
-            disabled={pageNumber === 1}
-            className="px-4 py-2 bg-[#26A69A] text-white rounded-lg disabled:bg-gray-300"
-          >
-            Previous
-          </button>
-          <span className="px-4 py-2 text-[#374151]">
-            Page {pageNumber} of {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setPageNumber((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={pageNumber === totalPages}
-            className="px-4 py-2 bg-[#26A69A] text-white rounded-lg disabled:bg-gray-300"
-          >
-            Next
-          </button>
-        </div>
       </div>
     </motion.div>
   );
