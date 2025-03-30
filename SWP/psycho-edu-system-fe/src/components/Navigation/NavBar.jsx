@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom"; // Thêm Link và useLocation
 import LoginModal from "../Modal/LoginModal";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -10,50 +11,50 @@ import {
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation(); // Sử dụng useLocation để kiểm tra đường dẫn
   const clientId =
     "1018910450198-m8sitc37vcjdg1qbe7d3cp00nca00840.apps.googleusercontent.com";
 
   const links = [
-    { href: "", title: "About", icon: faInfoCircle },
-    { href: "", title: "Home", icon: faHome },
-    { href: "", title: "Contact", icon: faEnvelope },
+    { to: "/about", title: "About", icon: faInfoCircle },
+    { to: "/", title: "Home", icon: faHome },
+    { to: "/contact", title: "Contact", icon: faEnvelope },
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const isActive = (href) => window.location.pathname === href;
+  const isActive = (path) => location.pathname === path;
 
   return (
     <header className="sticky top-0 z-50 shadow-md">
       <nav className="bg-[#26A69A] px-4 lg:px-6 py-2">
         <div className="flex items-center justify-between mx-auto max-w-screen-xl">
-          <a
-            href="/"
+          <Link
+            to="/"
             className="flex items-center group transition-transform duration-300 hover:scale-105 no-underline"
             aria-label="Mental Health Care Homepage"
           >
             <span className="text-2xl text-[#FFFFFF] font-semibold">
               Mental Health Care©
             </span>
-          </a>
+          </Link>
           <div
             className={`${
               isMenuOpen ? "block" : "hidden"
-            } w-full lg:flex lg:w-auto lg:order-1 transition-all duration-300 ease-in-out`}
+            } w-full lg:flex lg:w-auto lg:order-1 transition-all duration-300 mt-2 ease-in-out`}
             id="mobile-menu"
           >
-            <ul className="flex flex-col items-center lg:flex-row lg:items-center lg:space-x-8 w-full mt-2 lg:mt-0">
+            <ul className="flex flex-col items-center lg:flex-row lg:items-center lg:space-x-8 w-full lg:mt-0">
               {links.map((link, index) => (
                 <li key={index}>
-                  <a
-                    href={link.href}
-                    className={`flex items-center px-3 pt-2 text-sm font-semibold text-[#FFFFFF] hover:text-[#FBBF24] hover:bg-[#F9E79F] lg:hover:bg-transparent transition-all duration-300 rounded-md no-underline ${
-                      isActive(link.href) ? "bg-[#F9E79F] text-[#26A69A]" : ""
+                  <Link
+                    to={link.to}
+                    className={`flex items-center px-3 pt-2 text-sm font-semibold text-[#FFFFFF] hover:text-[#FBBF24] hover:bg-[#F9E79F] lg:hover:bg-transparent transition-all duration-300 rounded-md no-underline
                     }`}
                   >
                     <FontAwesomeIcon icon={link.icon} className="mr-2" />
                     <span>{link.title}</span>
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

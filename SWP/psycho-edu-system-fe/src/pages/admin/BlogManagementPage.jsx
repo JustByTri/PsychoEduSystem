@@ -91,7 +91,7 @@ const BlogManagementPage = () => {
     setSelectedBlog(null);
     setModalMessage(message);
     setShowSuccessModal(true);
-    fetchBlogs(pagination.pageNumber, pagination.pageSize);
+    fetchBlogs(pagination.pageNumber, pagination.pageSize); 
   };
 
   const handlePageChange = (newPage) => {
@@ -151,7 +151,7 @@ const BlogManagementPage = () => {
             <option value="">All Categories</option>
             {dimensions.map((dim) => (
               <option key={dim.id} value={dim.name}>
-                {dim.name}
+                {dim.label}
               </option>
             ))}
           </select>
@@ -200,7 +200,8 @@ const BlogManagementPage = () => {
                     {blog.title}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                    {blog.category}
+                    {dimensions.find((dim) => dim.id === blog.dimensionId)
+                      ?.label || blog.category}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                     {blog.createdAt}

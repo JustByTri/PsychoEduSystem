@@ -10,8 +10,9 @@ import {
   faRunning,
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 
-// Thêm CSS inline để đảm bảo body và html không có padding/margin ảnh hưởng
+// Global styles
 const globalStyles = `
   html, body {
     margin: 0;
@@ -63,9 +64,9 @@ const HomePage = () => {
               sx={{
                 marginBottom: "20px",
                 fontWeight: 700,
-                color: "#26A69A", // Teal
+                color: "#26A69A",
                 fontSize: { xs: "2rem", md: "2.5rem" },
-                textShadow: "1px 1px 3px rgba(0, 0, 0, 0.1)", // Thêm shadow cho tiêu đề
+                textShadow: "1px 1px 3px rgba(0, 0, 0, 0.1)",
               }}
             >
               Start Your Learning Journey with FPTU
@@ -75,7 +76,7 @@ const HomePage = () => {
               align="center"
               sx={{
                 marginBottom: "40px",
-                color: "#374151", // Dark Gray
+                color: "#374151",
                 fontSize: "1.1rem",
                 lineHeight: "1.8",
                 maxWidth: "800px",
@@ -95,17 +96,17 @@ const HomePage = () => {
                 <Button
                   variant="contained"
                   sx={{
-                    backgroundColor: "#26A69A", // Teal
+                    backgroundColor: "#26A69A",
                     color: "#FFFFFF",
                     padding: "12px 40px",
                     fontSize: "1rem",
                     fontWeight: 600,
                     borderRadius: "25px",
-                    boxShadow: "0px 4px 12px rgba(38, 166, 154, 0.3)", // Shadow Teal
+                    boxShadow: "0px 4px 12px rgba(38, 166, 154, 0.3)",
                     "&:hover": {
-                      backgroundColor: "#4DB6AC", // Teal nhạt hơn
-                      boxShadow: "0px 6px 16px rgba(38, 166, 154, 0.5)", // Shadow đậm hơn
-                      border: "1px solid #FF6F61", // Viền Coral khi hover
+                      backgroundColor: "#4DB6AC",
+                      boxShadow: "0px 6px 16px rgba(38, 166, 154, 0.5)",
+                      border: "1px solid #FF6F61",
                     },
                     textTransform: "none",
                   }}
@@ -122,9 +123,9 @@ const HomePage = () => {
       <Box
         sx={{
           paddingY: "50px",
-          backgroundColor: "#26A69A", // Teal
+          backgroundColor: "#26A69A",
           margin: 0,
-          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)", // Shadow cho section
+          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
         }}
       >
         <Container maxWidth="lg">
@@ -141,7 +142,7 @@ const HomePage = () => {
                 fontWeight: 700,
                 color: "#FFFFFF",
                 fontSize: { xs: "2rem", md: "2.5rem" },
-                textShadow: "2px 2px 4px rgba(0, 0, 0, 0.2)", // Shadow cho tiêu đề
+                textShadow: "2px 2px 4px rgba(0, 0, 0, 0.2)",
               }}
             >
               Why Choose FPTU?
@@ -154,19 +155,18 @@ const HomePage = () => {
                   sm: "1fr 1fr",
                   lg: "1fr 1fr 1fr 1fr",
                 },
-                gap: "30px",
+                gap: "20px",
               }}
             >
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(10px)",
+                  backgroundColor: "#ffffff1a",
                   borderRadius: "16px",
-                  padding: "30px",
+                  padding: "20px",
                   textAlign: "center",
                   boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-                  transition: "all 0.3s ease", // Transition mượt mà
+                  transition: "all 0.3s ease",
                   border: "1px solid transparent",
                 }}
                 whileTap={{ scale: 0.95 }}
@@ -175,9 +175,9 @@ const HomePage = () => {
                   icon={faBrain}
                   style={{
                     fontSize: "48px",
-                    color: "#FBBF24", // Gold
+                    color: "#FBBF24",
                     marginBottom: "20px",
-                    filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))", // Shadow cho icon
+                    filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))",
                   }}
                 />
                 <Typography
@@ -186,11 +186,18 @@ const HomePage = () => {
                     color: "#FFFFFF",
                     fontWeight: 600,
                     marginBottom: "10px",
+                    fontSize: { xs: "1.1rem", md: "1.25rem" },
                   }}
                 >
                   Cognitive Growth
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#D1D5DB" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#D1D5DB",
+                    fontSize: { xs: "0.9rem", md: "1rem" },
+                  }}
+                >
                   Develop critical thinking and problem-solving skills for a
                   successful career.
                 </Typography>
@@ -198,10 +205,9 @@ const HomePage = () => {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(10px)",
+                  backgroundColor: "#ffffff1a",
                   borderRadius: "16px",
-                  padding: "30px",
+                  padding: "20px",
                   textAlign: "center",
                   boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
                   transition: "all 0.3s ease",
@@ -213,7 +219,7 @@ const HomePage = () => {
                   icon={faHeart}
                   style={{
                     fontSize: "48px",
-                    color: "#FF6F61", // Coral để làm nổi bật
+                    color: "#FF6F61",
                     marginBottom: "20px",
                     filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))",
                   }}
@@ -224,11 +230,18 @@ const HomePage = () => {
                     color: "#FFFFFF",
                     fontWeight: 600,
                     marginBottom: "10px",
+                    fontSize: { xs: "1.1rem", md: "1.25rem" },
                   }}
                 >
                   Emotional Support
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#D1D5DB" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#D1D5DB",
+                    fontSize: { xs: "0.9rem", md: "1rem" },
+                  }}
+                >
                   Access resources to manage stress and build emotional
                   resilience.
                 </Typography>
@@ -236,10 +249,9 @@ const HomePage = () => {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(10px)",
+                  backgroundColor: "#ffffff1a",
                   borderRadius: "16px",
-                  padding: "30px",
+                  padding: "10px",
                   textAlign: "center",
                   boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
                   transition: "all 0.3s ease",
@@ -251,7 +263,7 @@ const HomePage = () => {
                   icon={faUsers}
                   style={{
                     fontSize: "48px",
-                    color: "#FBBF24", // Gold
+                    color: "#FBBF24",
                     marginBottom: "20px",
                     filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))",
                   }}
@@ -262,11 +274,18 @@ const HomePage = () => {
                     color: "#FFFFFF",
                     fontWeight: 600,
                     marginBottom: "10px",
+                    fontSize: { xs: "1.1rem", md: "1.25rem" },
                   }}
                 >
                   Community Engagement
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#D1D5DB" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#D1D5DB",
+                    fontSize: { xs: "0.9rem", md: "1rem" },
+                  }}
+                >
                   Join a vibrant community to connect, collaborate, and grow
                   together.
                 </Typography>
@@ -274,10 +293,9 @@ const HomePage = () => {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(10px)",
+                  backgroundColor: "#ffffff1a",
                   borderRadius: "16px",
-                  padding: "30px",
+                  padding: "20px",
                   textAlign: "center",
                   boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
                   transition: "all 0.3s ease",
@@ -289,7 +307,7 @@ const HomePage = () => {
                   icon={faRunning}
                   style={{
                     fontSize: "48px",
-                    color: "#FF6F61", // Coral để làm nổi bật
+                    color: "#FF6F61",
                     marginBottom: "20px",
                     filter: "drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2))",
                   }}
@@ -300,11 +318,18 @@ const HomePage = () => {
                     color: "#FFFFFF",
                     fontWeight: 600,
                     marginBottom: "10px",
+                    fontSize: { xs: "1.1rem", md: "1.25rem" },
                   }}
                 >
                   Holistic Development
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#D1D5DB" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#D1D5DB",
+                    fontSize: { xs: "0.9rem", md: "1rem" },
+                  }}
+                >
                   Balance academics with extracurriculars for all-around growth.
                 </Typography>
               </motion.div>
@@ -336,7 +361,7 @@ const HomePage = () => {
           paddingY: "20px",
           marginTop: "20px",
           margin: 0,
-          boxShadow: "0px -4px 20px rgba(0, 0, 0, 0.1)", // Shadow cho footer
+          boxShadow: "0px -4px 20px rgba(0, 0, 0, 0.1)",
         }}
       >
         <Container maxWidth="lg">
@@ -363,6 +388,8 @@ const HomePage = () => {
                   cursor: "pointer",
                   "&:hover": { color: "#FFD700", transition: "color 0.3s" },
                 }}
+                component={Link}
+                to="/privacy-policy"
               >
                 Privacy Policy
               </Typography>
@@ -373,6 +400,8 @@ const HomePage = () => {
                   cursor: "pointer",
                   "&:hover": { color: "#FFD700", transition: "color 0.3s" },
                 }}
+                component={Link}
+                to="/terms-of-service"
               >
                 Terms of Service
               </Typography>
@@ -383,6 +412,8 @@ const HomePage = () => {
                   cursor: "pointer",
                   "&:hover": { color: "#FFD700", transition: "color 0.3s" },
                 }}
+                component={Link}
+                to="/contact-us"
               >
                 Contact Us
               </Typography>

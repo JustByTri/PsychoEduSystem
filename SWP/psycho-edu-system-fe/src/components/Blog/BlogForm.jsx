@@ -11,6 +11,7 @@ const BlogForm = ({ blog, dimensions, onSave, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Form Data on Submit:", formData);
     try {
       let response;
       if (blog) {
@@ -68,7 +69,7 @@ const BlogForm = ({ blog, dimensions, onSave, onCancel }) => {
         >
           {dimensions.map((dim) => (
             <option key={dim.id} value={dim.id}>
-              {dim.name}
+              {dim.label}
             </option>
           ))}
         </select>

@@ -4,9 +4,9 @@ import { getAuthDataFromLocalStorage } from "../utils/auth";
 const API_BASE_URL = "https://localhost:7192/api";
 const authData = getAuthDataFromLocalStorage();
 const dimensions = [
-  { id: 1, name: "Lo Âu" },
-  { id: 2, name: "Trầm Cảm" },
-  { id: 3, name: "Căng Thẳng" },
+  { id: 1, name: "Lo Âu", label: "Anxiety" },
+  { id: 2, name: "Trầm Cảm", label: "Depression" },
+  { id: 3, name: "Căng Thẳng", label: "Stress" },
 ];
 const apiService = {
   fetchUserProfile: async (userId) => {
@@ -439,6 +439,7 @@ const apiService = {
               title: blog.title,
               content: blog.content,
               category: blog.dimensionName,
+              dimensionId: blog.dimensionId,
               createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
               excerpt: blog.content.substring(0, 100) + "...",
             },
@@ -489,8 +490,6 @@ const apiService = {
         );
       }
     },
-
-    // Trong blog.updateBlog
     updateBlog: async (id, blogData) => {
       try {
         const payload = {
@@ -509,6 +508,7 @@ const apiService = {
           }
         );
         if (response.status === 200 || response.status === 204) {
+          const updatedBlog = response.data || {};
           const updatedCategory = dimensions.find(
             (dim) => dim.id === Number(blogData.dimensionId)
           )?.name;
@@ -520,6 +520,7 @@ const apiService = {
               title: blogData.title,
               content: blogData.content,
               category: updatedCategory,
+              dimensionId: Number(blogData.dimensionId), // Thêm dimensionId
               createdAt: blogData.createdAt || format(new Date(), "yyyy-MM-dd"),
               excerpt: blogData.content.substring(0, 100) + "...",
             },

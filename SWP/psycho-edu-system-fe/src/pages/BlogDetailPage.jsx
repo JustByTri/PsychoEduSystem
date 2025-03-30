@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import apiService from "../services/apiService";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -68,10 +68,14 @@ const generateTags = (content, maxTags) => {
 
 const BlogDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [blog, setBlog] = useState(null);
   const [relatedBlogs, setRelatedBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Lấy dimensions từ apiService
+  const dimensions = apiService.blog.getDimensions();
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -126,6 +130,10 @@ const BlogDetailPage = () => {
   if (!blog)
     return <p className="text-center text-[#666]">Blog post not found</p>;
 
+  // Tính toán categoryLabel sau khi blog đã được tải
+  const categoryLabel =
+    dimensions.find((dim) => dim.id === blog.dimensionId)?.label ||
+    blog.category;
   const wordCount = blog.content.split(" ").length;
   const readingTime = Math.ceil(wordCount / 200);
   const tags = generateTags(blog.content, 5);
@@ -165,7 +173,7 @@ const BlogDetailPage = () => {
           className="mb-8"
         >
           <span className="inline-block bg-[#26A69A] text-white text-xs font-semibold px-3 py-1 rounded-full mb-3">
-            {blog.category}
+            {categoryLabel}
           </span>
           <h1 className="text-4xl md:text-5xl font-bold text-[#26A69A] leading-tight mb-4">
             {blog.title}
@@ -232,12 +240,6 @@ const BlogDetailPage = () => {
               <FontAwesomeIcon icon={faShareAlt} className="w-5 h-5 mr-2" />
               Share
             </button>
-            <Link
-              to="/blogs"
-              className="flex items-center text-[#26A69A] hover:text-[#FF6F61] font-semibold transition-colors duration-300 no-underline"
-            >
-              More Articles
-            </Link>
           </div>
         </motion.div>
 
