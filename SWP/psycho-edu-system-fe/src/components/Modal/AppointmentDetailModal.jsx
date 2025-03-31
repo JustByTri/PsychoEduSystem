@@ -9,8 +9,6 @@ const AppointmentDetailModal = ({
   isOpen,
   onClose,
   appointment,
-  handleChat,
-  handleCancelAppointment,
 }) => {
   const [studentDetails, setStudentDetails] = useState(null);
   const [classDetails, setClassDetails] = useState(null);
@@ -19,7 +17,6 @@ const AppointmentDetailModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [role, setRole] = useState(null);
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   const parseDate = (dateInput) => {
     if (typeof dateInput === "string") {
@@ -155,31 +152,6 @@ const AppointmentDetailModal = ({
     return times[slotId - 1] || "Unknown";
   };
 
-  const handleOpenCancelModal = () => {
-    showConfirm(
-      "Confirm Cancellation",
-      "Are you sure you want to cancel this appointment?",
-      handleConfirmCancel
-    );
-  };
-
-  const handleCloseCancelModal = () => {
-    setIsCancelModalOpen(false);
-  };
-
-  const handleConfirmCancel = async () => {
-    try {
-      const appointmentId = appointment.appointmentId || appointment.id;
-      const message = await apiService.cancelAppointment(appointmentId);
-      handleCancelAppointment(appointmentId);
-      showSuccess("Success", "Appointment cancelled successfully!");
-      onClose();
-    } catch (error) {
-      console.error("Error cancelling appointment:", error.message);
-      showError("Error", "Failed to cancel appointment. Please try again.");
-    }
-  };
-
   const displayStatus = isPastDay ? "Completed" : appointment.status;
 
   return (
@@ -272,14 +244,6 @@ const AppointmentDetailModal = ({
                       </p>
                       <p className="font-medium text-[clamp(14px,1.5vw,16px)] text-gray-800">
                         {studentDetails?.university || "Unknown"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[clamp(12px,1.2vw,14px)] text-gray-500">
-                        Class
-                      </p>
-                      <p className="font-medium text-[clamp(14px,1.5vw,16px)] text-gray-800">
-                        {classDetails?.className || "Unknown"}
                       </p>
                     </div>
                     <div>
@@ -499,36 +463,6 @@ const AppointmentDetailModal = ({
                   <FeedbackForm appointment={appointment} role={role} />
                 </div>
               </>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex justify-end gap-4 mt-auto border-t border-gray-300 pt-4">
-            {appointment.type === "Online" &&
-              !isPastDay &&
-              displayStatus === "Scheduled" && (
-                <motion.button
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  onClick={() => handleChat(appointment.id)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full shadow-md transition-all duration-200 w-[150px] h-12 flex items-center justify-center text-[clamp(14px,1.5vw,16px)] truncate"
-                  sx={{ fontFamily: "Inter, sans-serif" }}
-                >
-                  Join
-                </motion.button>
-              )}
-            {!isPastDay && displayStatus === "Scheduled" && (
-              <motion.button
-                variants={buttonVariants}
-                whileHover="hover"
-                whileTap="tap"
-                onClick={handleOpenCancelModal}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold rounded-full shadow-md transition-all duration-200 w-[150px] h-12 flex items-center justify-center text-[clamp(14px,1.5vw,16px)] truncate"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                Cancel
-              </motion.button>
             )}
           </div>
         </div>

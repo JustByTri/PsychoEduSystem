@@ -31,7 +31,7 @@ const AppointmentsList = ({
     const startTime = getTimeFromSlotId(slotId);
     if (startTime === "Unknown") return "Unknown";
     const [hours, minutes] = startTime.split(":").map(Number);
-    const endHours = hours + (minutes + 45 >= 60 ? 1 : 0); // 45 minutes duration
+    const endHours = hours + (minutes + 45 >= 60 ? 1 : 0); 
     const endMinutes = (minutes + 45) % 60;
     const endTime = `${endHours.toString().padStart(2, "0")}:${endMinutes
       .toString()
