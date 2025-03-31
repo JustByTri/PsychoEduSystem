@@ -201,7 +201,7 @@ const ParentSchedulePage = () => {
     } catch (error) {
       console.error("Failed to cancel appointment:", error);
       setErrorMessage("Không thể hủy cuộc hẹn: " + error.message);
-      toast.error("Không thể hủy cuộc hẹn.", { position: "top-right" });
+      toast.error("Không thể hủy cuộc hẹn.", { position: "top-right" });  
     }
   };
 

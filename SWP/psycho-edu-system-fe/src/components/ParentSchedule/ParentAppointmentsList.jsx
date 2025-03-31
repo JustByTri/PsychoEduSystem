@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, Typography, Box, Button } from "@mui/material";
 import { Clock } from "lucide-react";
-import { format, isSameDay } from "date-fns"; // Added isSameDay import here
+import { format, isSameDay } from "date-fns";
 
 const ParentAppointmentsList = ({
   isLoading,
