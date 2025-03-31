@@ -575,6 +575,87 @@ namespace BLL.Service
                 return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
+
+        public async Task<ResponseDTO> GetTotalUserAsync()
+        {
+            try
+            {
+                var totalUser = _unitOfWork.User.GetAll().Count();
+                return new ResponseDTO("Retrieve total user successfully", 200, true, totalUser);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetTotalParentAsync()
+        {
+            try
+            {
+                var totalParent = _unitOfWork.User.GetAll().Count(u => u.RoleId == 4);
+                return new ResponseDTO("Retrieve total parent successfully", 200, true, totalParent);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetTotalClassAsync()
+        {
+            try
+            {
+                var totalClass = _unitOfWork.Class.GetAll().Count();
+                return new ResponseDTO("Retrieve total class successfully", 200, true, totalClass);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetTotalTargetProramAsync()
+        {
+            try
+            {
+                var totalTargetProgram = _unitOfWork.TargetProgram.GetAll().Count();
+                return new ResponseDTO("Retrieve total target program successfully", 200, true, totalTargetProgram);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetTotalAppointmentAsync()
+        {
+            try
+            {
+                var totalAppointment = _unitOfWork.Appointment.GetAll().Count();
+                return new ResponseDTO("Retrieve total appointment successfully", 200, true, totalAppointment);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
+
+        public async Task<ResponseDTO> GetUpcomingAppointmentsAsync()
+        {
+            try
+            {
+                var appointments = _unitOfWork.Appointment.GetAll()
+                    .Where(a => a.Date.ToDateTime(TimeOnly.MinValue) >= DateTime.UtcNow)
+                    .Take(5)
+                    .ToList();
+                return new ResponseDTO("Retrieve upcoming appointments successfully", 200, true, appointments);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
     }
     }
 

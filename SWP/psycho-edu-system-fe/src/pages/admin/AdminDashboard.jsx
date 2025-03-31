@@ -8,71 +8,112 @@ import {
   faChalkboardTeacher,
   faUserFriends,
 } from "@fortawesome/free-solid-svg-icons";
+import { useState, useEffect } from "react";
+import adminService from "../../api/services/adminService";
 
 const AdminDashboard = () => {
+  const [totalUsers, setTotalUsers] = useState(null);
+  const [totalParents, setTotalParents] = useState(null);
+  const [totalClasses, setTotalClasses] = useState(null);
+  const [totalTargetPrograms, setTotalTargetPrograms] = useState(null);
+  const [totalAppointments, setTotalAppointments] = useState(null);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const users = await adminService.getTotalUsers();
+        setTotalUsers(users);
+
+        const parents = await adminService.getTotalParents();
+        setTotalParents(parents);
+
+        const classes = await adminService.getTotalClasses();
+        setTotalClasses(classes);
+
+        const programs = await adminService.getTotalTargetPrograms();
+        setTotalTargetPrograms(programs);
+
+        const appointments = await adminService.getTotalAppointments();
+        setTotalAppointments(appointments);
+
+        setUpcomingAppointments(await adminService.getUpcomingAppointments());
+        // eslint-disable-next-line no-unused-vars
+      } catch (err) {
+        setError("Failed to fetch data from the API");
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="p-8 bg-white min-h-screen text-gray-900">
+      {/* Error Display */}
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
       {/* Overview Section */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <DashboardCard
           icon={faUsers}
           title="Total Users"
-          count="1,245"
+          count={totalUsers !== null ? totalUsers : "Loading..."}
           color="blue-500"
         />
         <DashboardCard
           icon={faCalendarCheck}
           title="Appointments"
-          count="86"
+          count={totalAppointments !== null ? totalAppointments : "Loading..."}
           color="green-500"
         />
         <DashboardCard
           icon={faBullseye}
           title="Target Programs"
-          count="12"
+          count={
+            totalTargetPrograms !== null ? totalTargetPrograms : "Loading..."
+          }
           color="purple-500"
-        />
-        <DashboardCard
-          icon={faBookOpen}
-          title="Bookings"
-          count="254"
-          color="orange-500"
         />
         <DashboardCard
           icon={faChalkboardTeacher}
           title="Classrooms"
-          count="18"
+          count={totalClasses !== null ? totalClasses : "Loading..."}
           color="teal-500"
         />
         <DashboardCard
           icon={faUserFriends}
           title="Parents"
-          count="742"
+          count={totalParents !== null ? totalParents : "Loading..."}
           color="red-500"
         />
       </section>
 
       {/* Detailed Sections */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <DashboardSection title="Recent Bookings">
-          <p className="text-gray-600 text-center">📊 Table Placeholder</p>
-        </DashboardSection>
-
         <DashboardSection title="Upcoming Appointments">
-          <ul className="space-y-4">
-            <li className="flex justify-between text-gray-700 border-b pb-2 border-gray-300">
-              <span>📅 Meeting with John Doe</span>
-              <span>10:30 AM</span>
-            </li>
-            <li className="flex justify-between text-gray-700 border-b pb-2 border-gray-300">
-              <span>👨‍🏫 Parent-Teacher Conference</span>
-              <span>02:00 PM</span>
-            </li>
-            <li className="flex justify-between text-gray-700 border-b pb-2 border-gray-300">
-              <span>🎓 Student Enrollment Review</span>
-              <span>05:00 PM</span>
-            </li>
-          </ul>
+          {upcomingAppointments.length > 0 ? (
+            <ul className="space-y-4">
+              {upcomingAppointments.map((appt) => (
+                <li
+                  key={appt.id}
+                  className="flex justify-between text-gray-700 border-b pb-2 border-gray-300"
+                >
+                  <span>📅 {appt.title}</span>
+                  <span>
+                    {new Date(appt.dateTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600 text-center">
+              No upcoming appointments
+            </p>
+          )}
         </DashboardSection>
       </section>
     </div>
