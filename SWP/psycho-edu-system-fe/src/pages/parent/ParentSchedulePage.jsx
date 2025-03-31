@@ -19,7 +19,7 @@ import ChildSelector from "../../components/ParentSchedule/ChildSelector";
 import CalendarHeader from "../../components/Header/CalendarHeader";
 import AppointmentDetailModal from "../../components/Modal/AppointmentDetailModal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
-import AppointmentsList from "../../components/StudentSchedule/AppointmentsList";
+import ParentAppointmentsList from "../../components/ParentSchedule/ParentAppointmentsList"; // Import mới
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -35,7 +35,6 @@ const globalStyles = `
 const ParentSchedulePage = () => {
   const navigate = useNavigate();
 
-  // State từ SchedulePage
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -55,8 +54,6 @@ const ParentSchedulePage = () => {
   const calendarContainerRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
-
-  // State riêng của ParentSchedulePage
   const [selectedChildId, setSelectedChildId] = useState(null);
   const [parentProfile, setParentProfile] = useState(null);
 
@@ -87,7 +84,6 @@ const ParentSchedulePage = () => {
 
   const allDays = generateMonthDays();
 
-  // Tải thông tin parent profile
   const loadParentProfile = async () => {
     try {
       const profileResponse = await axios.get(
@@ -103,14 +99,11 @@ const ParentSchedulePage = () => {
         setParentProfile(profileResponse.data.result);
       }
     } catch (error) {
-      toast.error("Failed to load parent profile.", {
-        position: "top-right",
-      });
+      toast.error("Failed to load parent profile.", { position: "top-right" });
       setErrorMessage("Không thể tải thông tin phụ huynh: " + error.message);
     }
   };
 
-  // Tải danh sách appointments từ API (đã điều chỉnh khi appointmentFor là fullName)
   const loadAppointments = async (childId, date) => {
     if (!childId) return;
     setIsLoading(true);
@@ -156,8 +149,8 @@ const ParentSchedulePage = () => {
               ? "Completed"
               : "Scheduled",
             details: {
-              studentId: childId, // Dùng childId từ ChildSelector
-              studentName: appointment.appointmentFor || "Unknown Student", // appointmentFor là fullName
+              studentId: childId,
+              studentName: appointment.appointmentFor || "Unknown Student",
               consultantId: appointment.meetingWith,
               bookedBy: parentProfile ? parentProfile.fullName : "Parent",
               appointmentFor: appointment.appointmentFor,
@@ -175,6 +168,7 @@ const ParentSchedulePage = () => {
         setErrorMessage(null);
       } else {
         setBookings([]);
+        setErrorMessage("Không thể tải lịch hẹn từ server.");
       }
     } catch (error) {
       console.error("Failed to load appointments:", error);
@@ -185,7 +179,6 @@ const ParentSchedulePage = () => {
     }
   };
 
-  // Hủy cuộc hẹn
   const handleCancelAppointmentApi = async (appointmentId) => {
     try {
       const response = await axios.get(
@@ -219,7 +212,6 @@ const ParentSchedulePage = () => {
     }
   };
 
-  // Các hàm xử lý từ SchedulePage
   const handleViewDetail = (appointment) => {
     setDetailModalState({ isOpen: true, selectedAppointment: appointment });
   };
@@ -323,13 +315,11 @@ const ParentSchedulePage = () => {
       );
   };
 
-  // Xử lý chọn student
   const handleChildSelected = (childId) => {
     setSelectedChildId(childId);
     if (childId) loadAppointments(childId, selectedDate);
   };
 
-  // Tính toán thời gian từ slotId
   const getTimeFromSlotId = (slotId) => {
     const times = [
       "08:00",
@@ -345,7 +335,6 @@ const ParentSchedulePage = () => {
     return times[slotId - 1] || "Unknown";
   };
 
-  // Khởi tạo dữ liệu ban đầu
   useEffect(() => {
     if (!parentId) {
       setErrorMessage("Không tìm thấy ID phụ huynh. Vui lòng đăng nhập lại.");
@@ -354,7 +343,6 @@ const ParentSchedulePage = () => {
     loadParentProfile();
   }, [parentId, authData?.accessToken]);
 
-  // Cập nhật visibleDaysCount dựa trên kích thước container
   useEffect(() => {
     const updateVisibleDaysCount = () => {
       if (calendarContainerRef.current) {
@@ -379,17 +367,13 @@ const ParentSchedulePage = () => {
         fluid
         className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr] p-4"
       >
-        {/* Header với ChildSelector */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-center text-gray-800">
-            {parentProfile
-              ? `${parentProfile.fullName}`
-              : ""}
+            {parentProfile ? `${parentProfile.fullName}` : ""}
           </h1>
           <ChildSelector onChildSelected={handleChildSelected} />
         </div>
 
-        {/* Calendar */}
         {selectedChildId && (
           <div ref={calendarContainerRef} className="w-full">
             <CalendarHeader
@@ -414,7 +398,6 @@ const ParentSchedulePage = () => {
           </div>
         )}
 
-        {/* Appointments List */}
         <div className="w-full flex-1 flex flex-col">
           {errorMessage && (
             <motion.div
@@ -433,7 +416,7 @@ const ParentSchedulePage = () => {
               transition={{ duration: 0.3 }}
               className="flex-1"
             >
-              <AppointmentsList
+              <ParentAppointmentsList
                 isLoading={isLoading}
                 filteredAppointments={
                   filterStatus === "All"
@@ -458,7 +441,6 @@ const ParentSchedulePage = () => {
           )}
         </div>
 
-        {/* Confirm Modal */}
         <ConfirmModal
           visible={confirmModalState.visible}
           onClose={() =>
@@ -473,7 +455,6 @@ const ParentSchedulePage = () => {
           appointmentId={confirmModalState.appointmentId}
         />
 
-        {/* Appointment Detail Modal */}
         <AppointmentDetailModal
           isOpen={detailModalState.isOpen}
           handleChat={handleChat}
