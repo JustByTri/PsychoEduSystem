@@ -41,17 +41,23 @@ namespace BLL.Service
                 }
 
                 var availableSchedule = await _unitOfWork.Schedule.GetByConditionAsync(s => s.UserId == meetingWith.UserId && s.Date == DateTime.Parse(request.Date.ToString()) && s.SlotId == request.SlotId);
-                
+
                 if (availableSchedule == null)
                 {
                     return new ResponseDTO("Meeting date not valid", 400, false, string.Empty);
                 }
-
+                var slot = await _unitOfWork.Slot.GetByIdInt(request.SlotId);
                 var bookedAppointment = await _unitOfWork.Appointment.GetByConditionAsync(s => s.SlotId == request.SlotId && s.Date == request.Date && s.MeetingWith == request.MeetingWith && s.IsCanceled == false);
+                var bookedTargetProgram = await _unitOfWork.TargetProgram.GetByConditionAsync(t => t.StartDate == DateTime.Parse(request.Date.ToString() + " " + slot.SlotName));
 
                 if (bookedAppointment != null)
                 {
                     return new ResponseDTO("An appointment already exists for the selected date and slot.", 409, false, string.Empty);
+                }
+
+                if (bookedTargetProgram != null)
+                {
+                    return new ResponseDTO("A target program already exists for the selected date and slot.", 404, false, string.Empty);
                 }
 
                 var newAppointment = new Appointment
@@ -77,7 +83,7 @@ namespace BLL.Service
                 {
                     return new ResponseDTO("Created appointment success", 200, true, string.Empty);
                 }
-                
+
                 return new ResponseDTO("Failed to create appointment", 500, false, string.Empty);
             }
             catch (Exception ex)
