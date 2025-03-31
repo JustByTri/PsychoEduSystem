@@ -27,5 +27,6 @@ namespace BLL.Interface
         Task<ResponseDTO> GetTotalClassAsync();
         Task<ResponseDTO> GetTotalTargetProramAsync();
         Task<ResponseDTO> GetTotalAppointmentAsync();
+        Task<ResponseDTO> GetUpcomingAppointmentsAsync();
     }
 }
