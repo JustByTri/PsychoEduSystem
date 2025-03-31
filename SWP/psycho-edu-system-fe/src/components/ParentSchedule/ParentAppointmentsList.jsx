@@ -7,8 +7,6 @@ import { format, isSameDay } from "date-fns"; // Added isSameDay import here
 const ParentAppointmentsList = ({
   isLoading,
   filteredAppointments,
-  handleViewDetail,
-  handleCancelAppointment,
   handleChat,
   selectedDate,
 }) => {
@@ -152,45 +150,6 @@ const ParentAppointmentsList = ({
                         gap: 1,
                       }}
                     >
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        disabled={booking.details.isCancelled}
-                        onClick={() => handleChat(booking.id)}
-                        sx={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "0.9rem",
-                          color: "#1e88e5",
-                          borderColor: "#1e88e5",
-                          "&:hover": {
-                            backgroundColor: "#e3f2fd",
-                            borderColor: "#1e88e5",
-                          },
-                          textTransform: "none",
-                          px: 2,
-                        }}
-                      >
-                        Join
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleViewDetail(booking)}
-                        sx={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "0.9rem",
-                          color: "#f57c00",
-                          borderColor: "#f57c00",
-                          "&:hover": {
-                            backgroundColor: "#fff3e0",
-                            borderColor: "#f57c00",
-                          },
-                          textTransform: "none",
-                          px: 2,
-                        }}
-                      >
-                        Details
-                      </Button>
                     </Box>
                   </CardContent>
                 </Card>

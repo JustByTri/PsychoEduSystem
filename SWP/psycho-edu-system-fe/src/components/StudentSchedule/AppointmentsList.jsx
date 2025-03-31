@@ -1,22 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { CSpinner } from "@coreui/react";
 import AppointmentsCard from "./AppointmentCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isValid } from "date-fns";
-import apiService from "../../services/apiService";
 
 const AppointmentsList = ({
   isLoading,
-  filteredAppointments = [], // Add default empty array here
+  filteredAppointments = [], // Default empty array
   handleViewDetail,
   handleCancelAppointment,
   handleChat,
   handleNavigate,
   selectedDate,
 }) => {
-  const [appointmentsWithNames, setAppointmentsWithNames] = useState([]);
-  const userProfileCache = useRef({});
-
   const getTimeFromSlotId = (slotId) => {
     const times = [
       "08:00",
@@ -35,71 +31,13 @@ const AppointmentsList = ({
     const startTime = getTimeFromSlotId(slotId);
     if (startTime === "Unknown") return "Unknown";
     const [hours, minutes] = startTime.split(":").map(Number);
-    const endHours = hours + (minutes + 45 >= 60 ? 1 : 0); // 45 phút như student
+    const endHours = hours + (minutes + 45 >= 60 ? 1 : 0); // 45 minutes duration
     const endMinutes = (minutes + 45) % 60;
     const endTime = `${endHours.toString().padStart(2, "0")}:${endMinutes
       .toString()
       .padStart(2, "0")}`;
     return `${startTime} - ${endTime}`;
   };
-
-  const fetchNamesForAppointment = async (appointment) => {
-    if (!appointment) return null;
-
-    const isPsychologist = !!appointment.details; // Phân biệt student và psychologist
-    const details = isPsychologist ? appointment.details : appointment;
-
-    try {
-      if (!details || !details.studentId) {
-        // Available slot hoặc appointment không có student
-        return {
-          ...appointment,
-          student: "N/A", // Không có student cho available slot
-          lesson: details?.meetingWith || "Available Slot",
-          bookedBy: details?.bookedBy || "N/A",
-          appointmentFor: details?.appointmentFor || "N/A",
-        };
-      }
-      let studentProfile = userProfileCache.current[details.studentId];
-      if (!studentProfile) {
-        studentProfile = await apiService.fetchUserProfile(details.studentId);
-        userProfileCache.current[details.studentId] = studentProfile;
-      }
-      return {
-        ...appointment,
-        student:
-          studentProfile?.fullName || studentProfile?.name || "Unknown Student",
-        lesson: details.meetingWith || "Unknown Psychologist",
-        bookedBy: details.bookedBy || "Unknown",
-        appointmentFor: details.appointmentFor || "Unknown",
-      };
-    } catch (error) {
-      console.error("Error fetching names:", error);
-      return {
-        ...appointment,
-        student: "Unknown Student",
-        lesson: details?.meetingWith || "Unknown Psychologist",
-        bookedBy: details?.bookedBy || "Unknown",
-        appointmentFor: details?.appointmentFor || "Unknown",
-      };
-    }
-  };
-
-  useEffect(() => {
-    const fetchAllNames = async () => {
-      if (!filteredAppointments || filteredAppointments.length === 0) {
-        setAppointmentsWithNames([]);
-        return;
-      }
-
-      const appointmentsWithNames = await Promise.all(
-        filteredAppointments.map(fetchNamesForAppointment)
-      );
-      // Filter out any null values that might have occurred
-      setAppointmentsWithNames(appointmentsWithNames.filter(Boolean));
-    };
-    fetchAllNames();
-  }, [filteredAppointments]);
 
   return (
     <div className="appointments-container h-full overflow-hidden flex flex-col bg-gray-50">
@@ -116,18 +54,19 @@ const AppointmentsList = ({
             transition={{ duration: 0.3 }}
           >
             <AnimatePresence>
-              {appointmentsWithNames.map((appointment) => {
+              {filteredAppointments.map((appointment) => {
                 if (!appointment) return null;
 
                 const isPsychologist = !!appointment.details;
                 const details = isPsychologist
                   ? appointment.details
                   : appointment;
+
                 return (
                   <AppointmentsCard
                     key={appointment.id || `appointment-${Math.random()}`}
-                    student={appointment.student}
-                    lesson={appointment.lesson}
+                    student={details?.appointmentFor || "Unknown Student"}
+                    lesson={details?.meetingWith || "Unknown Psychologist"}
                     date={
                       appointment.date && isValid(new Date(appointment.date))
                         ? format(new Date(appointment.date), "EEE, dd-MM-yyyy")
@@ -140,8 +79,8 @@ const AppointmentsList = ({
                     }
                     status={appointment.status || details?.status || "Unknown"}
                     type={details?.type || "N/A"}
-                    bookedBy={appointment.bookedBy}
-                    appointmentFor={appointment.appointmentFor}
+                    bookedBy={details?.bookedBy || "Unknown"}
+                    appointmentFor={details?.appointmentFor || "Unknown"}
                     onJoin={() => handleChat(appointment.id)}
                     onCancel={() =>
                       handleCancelAppointment(
