@@ -39,7 +39,6 @@ const SchedulePage = () => {
 
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
@@ -78,33 +77,43 @@ const SchedulePage = () => {
 
   const allDays = generateMonthDays();
 
-  const loadUserProfile = async () => {
+  const loadUserProfile = async (userId) => {
     try {
       const authData = getAuthDataFromLocalStorage();
       if (!authData || !authData.userId) {
         throw new Error("Authentication data not found. Please log in.");
       }
-      const profile = await apiService.fetchUserProfile(authData.userId);
+      console.log("Auth Data:", authData);
+      const profile = await apiService.fetchUserProfile(
+        userId || authData.userId
+      );
+      console.log("User Profile Loaded:", profile);
       setUserProfile(profile);
+      return profile;
     } catch (error) {
-      console.error("Failed to load user:", error);
-      setErrorMessage("Không thể tải hồ sơ người dùng.");
+      console.error("Failed to load user profile:", error);
+      setErrorMessage("Không thể tải hồ sơ người dùng: " + error.message);
+      throw error;
     }
   };
 
-  const loadAppointments = async (date) => {
-    if (!userProfile?.userId) return;
+  const loadAppointments = async (userId, date) => {
     setIsLoading(true);
     try {
-      const appointmentsData = await apiService.fetchAppointments(
-        userProfile.userId,
-        date
+      console.log(
+        "Loading appointments for userId:",
+        userId,
+        "date:",
+        format(date, "yyyy-MM-dd")
       );
-      setBookings(appointmentsData || []);
+      const appointmentsData = await apiService.fetchAppointments(userId, date);
+      console.log("Loaded Appointments:", appointmentsData);
+      setBookings(appointmentsData);
       setAppointmentViewKey((prev) => prev + 1);
     } catch (error) {
+      console.error("Failed to load appointments:", error);
       setBookings([]);
-      setError("Không thể tải lịch hẹn: " + error.message);
+      setErrorMessage("Không thể tải lịch hẹn: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -121,6 +130,7 @@ const SchedulePage = () => {
         )
       );
     } catch (error) {
+      console.error("Failed to cancel appointment:", error);
       setErrorMessage("Không thể hủy cuộc hẹn: " + error.message);
     }
   };
@@ -133,7 +143,7 @@ const SchedulePage = () => {
     const nextDay = addDays(selectedDate, 1);
     setAnimationDirection("next");
     setSelectedDate(nextDay);
-    if (userProfile?.userId) loadAppointments(nextDay);
+    if (userProfile?.userId) loadAppointments(userProfile.userId, nextDay);
     if (nextDay.getMonth() !== currentMonth.getMonth()) {
       setCurrentMonth(addMonths(currentMonth, 1));
     }
@@ -152,7 +162,7 @@ const SchedulePage = () => {
     const prevDay = addDays(selectedDate, -1);
     setAnimationDirection("prev");
     setSelectedDate(prevDay);
-    if (userProfile?.userId) loadAppointments(prevDay);
+    if (userProfile?.userId) loadAppointments(userProfile.userId, prevDay);
     if (prevDay.getMonth() !== currentMonth.getMonth()) {
       setCurrentMonth(subMonths(currentMonth, 1));
     }
@@ -179,7 +189,8 @@ const SchedulePage = () => {
     return allDays.slice(startIndex, startIndex + visibleDaysCount);
   };
 
-  const handleSelectDate = (date) => {
+  const handleSelectDate = async (date) => {
+    console.log("Selected date:", format(date, "yyyy-MM-dd"));
     setAnimationDirection(date > selectedDate ? "next" : "prev");
     setSelectedDate(date);
     if (date.getMonth() !== currentMonth.getMonth()) {
@@ -192,7 +203,19 @@ const SchedulePage = () => {
       Math.floor((dateIndex - halfCount) / visibleDaysCount)
     );
     setCurrentPage(newPage);
-    if (userProfile?.userId) loadAppointments(date);
+    if (userProfile?.userId) {
+      await loadAppointments(userProfile.userId, date);
+    } else {
+      const authData = getAuthDataFromLocalStorage();
+      if (authData?.userId) {
+        const profile = await loadUserProfile(authData.userId);
+        if (profile?.userId) {
+          await loadAppointments(profile.userId, date);
+        }
+      } else {
+        console.warn("No auth data available to load appointments.");
+      }
+    }
   };
 
   const handleCancelAppointment = (appointmentId) => {
@@ -213,14 +236,20 @@ const SchedulePage = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
     setSelectedDate(startOfMonth(addMonths(currentMonth, 1)));
     if (userProfile?.userId)
-      loadAppointments(startOfMonth(addMonths(currentMonth, 1)));
+      loadAppointments(
+        userProfile.userId,
+        startOfMonth(addMonths(currentMonth, 1))
+      );
   };
 
   const handlePrevMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
     setSelectedDate(startOfMonth(subMonths(currentMonth, 1)));
     if (userProfile?.userId)
-      loadAppointments(startOfMonth(subMonths(currentMonth, 1)));
+      loadAppointments(
+        userProfile.userId,
+        startOfMonth(subMonths(currentMonth, 1))
+      );
   };
 
   useEffect(() => {
@@ -240,10 +269,21 @@ const SchedulePage = () => {
     const initializeData = async () => {
       setIsLoading(true);
       try {
-        await loadUserProfile();
+        const authData = getAuthDataFromLocalStorage();
+        if (!authData?.userId) {
+          throw new Error("No auth data found. Please log in.");
+        }
+        console.log("Initializing with authData:", authData);
+        const profile = await loadUserProfile(authData.userId);
+        const userIdToUse = profile.userId || authData.userId;
+        if (userIdToUse) {
+          await loadAppointments(userIdToUse, selectedDate);
+        } else {
+          setErrorMessage("Không tìm thấy userId hợp lệ để tải lịch hẹn.");
+        }
       } catch (error) {
         console.error("Failed to initialize data:", error);
-        setErrorMessage("Không thể tải dữ liệu ban đầu. Vui lòng thử lại sau.");
+        setErrorMessage("Không thể tải dữ liệu ban đầu: " + error.message);
       } finally {
         setIsLoading(false);
       }
@@ -252,8 +292,8 @@ const SchedulePage = () => {
   }, []);
 
   useEffect(() => {
-    if (userProfile?.userId) {
-      loadAppointments(selectedDate);
+    if (userProfile?.userId && selectedDate) {
+      loadAppointments(userProfile.userId, selectedDate);
     }
   }, [userProfile, selectedDate]);
 
@@ -298,15 +338,6 @@ const SchedulePage = () => {
               className="bg-red-500 text-white rounded-lg mb-4 p-4 shadow-md"
             >
               <p>{errorMessage}</p>
-            </motion.div>
-          )}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-500 text-white rounded-lg mb-4 p-4 shadow-md"
-            >
-              <p>{error}</p>
             </motion.div>
           )}
           <motion.div

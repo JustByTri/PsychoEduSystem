@@ -1,182 +1,335 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { CContainer } from "@coreui/react";
+import "@coreui/coreui/dist/css/coreui.min.css";
+import { useNavigate } from "react-router-dom";
+import {
+  format,
+  addDays,
+  getDaysInMonth,
+  startOfMonth,
+  isSameDay,
+  startOfDay,
+  addMonths,
+  subMonths,
+} from "date-fns";
 import axios from "axios";
+import { motion } from "framer-motion";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import ChildSelector from "../../components/ParentSchedule/ChildSelector";
+import CalendarHeader from "../../components/Header/CalendarHeader";
+import AppointmentDetailModal from "../../components/Modal/AppointmentDetailModal";
+import ConfirmModal from "../../components/Modal/ConfirmModal";
+import AppointmentsList from "../../components/StudentSchedule/AppointmentsList";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  Box,
-  Modal,
-  Fade,
-  Button,
-  Typography,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-} from "@mui/material";
-import moment from "moment";
-import { Clock } from "lucide-react";
+
+const globalStyles = `
+  :root {
+    font-size: 14px;
+  }
+  * {
+    box-sizing: border-box;
+  }
+`;
 
 const ParentSchedulePage = () => {
+  const navigate = useNavigate();
+
+  // State từ SchedulePage
   const [bookings, setBookings] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [selectedEventToCancel, setSelectedEventToCancel] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [confirmModalState, setConfirmModalState] = useState({
+    visible: false,
+    appointmentId: null,
+  });
+  const [detailModalState, setDetailModalState] = useState({
+    isOpen: false,
+    selectedAppointment: null,
+  });
+  const [currentPage, setCurrentPage] = useState(0);
+  const [animationDirection, setAnimationDirection] = useState("");
+  const [visibleDaysCount, setVisibleDaysCount] = useState(15);
+  const [appointmentViewKey, setAppointmentViewKey] = useState(0);
+  const calendarContainerRef = useRef(null);
+  const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+
+  // State riêng của ParentSchedulePage
   const [selectedChildId, setSelectedChildId] = useState(null);
-  const [currentMonth, setCurrentMonth] = useState(moment());
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [parentProfile, setParentProfile] = useState(null); // Thêm state để lưu thông tin parent
+  const [parentProfile, setParentProfile] = useState(null);
 
   const authData = getAuthDataFromLocalStorage();
   const parentId = authData?.userId;
 
-  const daysInMonth = () => {
-    const days = [];
-    const startOfMonth = moment(currentMonth).startOf("month");
-    const endOfMonth = moment(currentMonth).endOf("month");
-    const totalDays = endOfMonth.date();
-    const firstDayOfWeek = startOfMonth.day();
-    const totalSlots = 42;
+  useEffect(() => {
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = globalStyles;
+    document.head.appendChild(styleSheet);
+    return () => document.head.removeChild(styleSheet);
+  }, []);
 
-    for (let i = 0; i < firstDayOfWeek; i++) days.push(null);
-    for (let i = 0; i < totalDays; i++) {
-      const date = startOfMonth.clone().add(i, "days").toDate();
-      days.push({
-        day: moment(date).date(),
-        weekday: ["S", "M", "T", "W", "T", "F", "S"][moment(date).day()],
-        fullDate: date,
-      });
-    }
-    const remainingSlots = totalSlots - days.length;
-    for (let i = 0; i < remainingSlots; i++) days.push(null);
-
-    return days;
+  const generateMonthDays = () => {
+    const monthStart = startOfMonth(currentMonth);
+    const totalDays = getDaysInMonth(currentMonth);
+    return Array.from({ length: totalDays }, (_, i) => {
+      const currentDay = startOfDay(addDays(monthStart, i));
+      return {
+        day: currentDay.getDate(),
+        weekday: format(currentDay, "E")[0],
+        fullDate: currentDay,
+        isToday: isSameDay(currentDay, new Date()),
+        dayOfWeek: format(currentDay, "E")[0],
+      };
+    });
   };
 
-  const days = daysInMonth();
-  const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
+  const allDays = generateMonthDays();
 
+  // Tải thông tin parent profile
+  const loadParentProfile = async () => {
+    try {
+      const profileResponse = await axios.get(
+        `https://localhost:7192/api/User/profile?userId=${parentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (profileResponse.status === 200 && profileResponse.data.isSuccess) {
+        setParentProfile(profileResponse.data.result);
+      }
+    } catch (error) {
+      toast.error("Failed to load parent profile.", {
+        position: "top-right",
+      });
+      setErrorMessage("Không thể tải thông tin phụ huynh: " + error.message);
+    }
+  };
+
+  // Tải danh sách appointments từ API (đã điều chỉnh khi appointmentFor là fullName)
+  const loadAppointments = async (childId, date) => {
+    if (!childId) return;
+    setIsLoading(true);
+    try {
+      const selectedDateStr = format(date, "yyyy-MM-dd");
+      const response = await axios.get(
+        `https://localhost:7192/api/appointments/students/${childId}/appointments?selectedDate=${selectedDateStr}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 && response.data.isSuccess) {
+        const appointments = response.data.result || [];
+        const events = appointments.map((appointment) => {
+          const startDateTime = new Date(
+            `${appointment.date
+              .split("/")
+              .reverse()
+              .join("-")}T${getTimeFromSlotId(appointment.slotId)}`
+          );
+          const endDateTime = new Date(startDateTime);
+          endDateTime.setMinutes(endDateTime.getMinutes() + 60);
+
+          let title = `Meeting with ${appointment.meetingWith}`;
+          if (appointment.meetingWith === "Counselor")
+            title = "Mental Health Support";
+          else if (appointment.meetingWith === "Teacher")
+            title = "Career Guidance";
+
+          return {
+            id: appointment.appointmentId,
+            title: `${title} ${appointment.isOnline ? "Online" : "Offline"}`,
+            start: startDateTime,
+            end: endDateTime,
+            date: appointment.date.split("/").reverse().join("-"),
+            status: appointment.isCancelled
+              ? "Cancelled"
+              : appointment.isCompleted
+              ? "Completed"
+              : "Scheduled",
+            details: {
+              studentId: childId, // Dùng childId từ ChildSelector
+              studentName: appointment.appointmentFor || "Unknown Student", // appointmentFor là fullName
+              consultantId: appointment.meetingWith,
+              bookedBy: parentProfile ? parentProfile.fullName : "Parent",
+              appointmentFor: appointment.appointmentFor,
+              date: appointment.date.split("/").reverse().join("-"),
+              slotId: appointment.slotId,
+              time: getTimeFromSlotId(appointment.slotId),
+              meetingType: appointment.isOnline ? "Online" : "Offline",
+              isCompleted: appointment.isCompleted,
+              isCancelled: appointment.isCancelled,
+            },
+          };
+        });
+        setBookings(events);
+        setAppointmentViewKey((prev) => prev + 1);
+        setErrorMessage(null);
+      } else {
+        setBookings([]);
+      }
+    } catch (error) {
+      console.error("Failed to load appointments:", error);
+      setBookings([]);
+      setErrorMessage("Không thể tải lịch hẹn: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Hủy cuộc hẹn
+  const handleCancelAppointmentApi = async (appointmentId) => {
+    try {
+      const response = await axios.get(
+        `https://localhost:7192/api/appointments/${appointmentId}/cancellation`,
+        {
+          headers: {
+            Authorization: `Bearer ${authData.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.isSuccess && response.data.statusCode === 200) {
+        setBookings((prev) =>
+          prev.map((booking) =>
+            booking.id === appointmentId
+              ? {
+                  ...booking,
+                  status: "Cancelled",
+                  details: { ...booking.details, isCancelled: true },
+                }
+              : booking
+          )
+        );
+        toast.success("Đã hủy cuộc hẹn thành công!", { position: "top-right" });
+      }
+    } catch (error) {
+      console.error("Failed to cancel appointment:", error);
+      setErrorMessage("Không thể hủy cuộc hẹn: " + error.message);
+      toast.error("Không thể hủy cuộc hẹn.", { position: "top-right" });
+    }
+  };
+
+  // Các hàm xử lý từ SchedulePage
+  const handleViewDetail = (appointment) => {
+    setDetailModalState({ isOpen: true, selectedAppointment: appointment });
+  };
+
+  const handleNext = () => {
+    const nextDay = addDays(selectedDate, 1);
+    setAnimationDirection("next");
+    setSelectedDate(nextDay);
+    if (selectedChildId) loadAppointments(selectedChildId, nextDay);
+    if (nextDay.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(addMonths(currentMonth, 1));
+    }
+    const nextDayIndex = allDays.findIndex((day) =>
+      isSameDay(day.fullDate, nextDay)
+    );
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((nextDayIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
+  };
+
+  const handlePrev = () => {
+    const prevDay = addDays(selectedDate, -1);
+    setAnimationDirection("prev");
+    setSelectedDate(prevDay);
+    if (selectedChildId) loadAppointments(selectedChildId, prevDay);
+    if (prevDay.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(subMonths(currentMonth, 1));
+    }
+    const prevDayIndex = allDays.findIndex((day) =>
+      isSameDay(day.fullDate, prevDay)
+    );
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((prevDayIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
+  };
+
+  const getVisibleDays = () => {
+    const selectedDayIndex = allDays.findIndex((day) =>
+      isSameDay(day.fullDate, selectedDate)
+    );
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    let startIndex = Math.max(0, selectedDayIndex - halfCount);
+    if (startIndex + visibleDaysCount > allDays.length) {
+      startIndex = Math.max(0, allDays.length - visibleDaysCount);
+    }
+    return allDays.slice(startIndex, startIndex + visibleDaysCount);
+  };
+
+  const handleSelectDate = async (date) => {
+    setAnimationDirection(date > selectedDate ? "next" : "prev");
+    setSelectedDate(date);
+    if (date.getMonth() !== currentMonth.getMonth()) {
+      setCurrentMonth(startOfMonth(date));
+    }
+    const dateIndex = allDays.findIndex((day) => isSameDay(day.fullDate, date));
+    const halfCount = Math.floor(visibleDaysCount / 2);
+    const newPage = Math.max(
+      0,
+      Math.floor((dateIndex - halfCount) / visibleDaysCount)
+    );
+    setCurrentPage(newPage);
+    if (selectedChildId) await loadAppointments(selectedChildId, date);
+  };
+
+  const handleCancelAppointment = (appointmentId) => {
+    setConfirmModalState({ visible: true, appointmentId });
+  };
+
+  const handleNavigate = () => navigate("/parent/booking");
+
+  const handleChat = (id) => {
+    const appointment = bookings.find((appt) => appt.id === id);
+    navigate(`/chat/${id}`, {
+      state: { googleMeetURL: appointment?.googleMeetURL || null },
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1));
+    setSelectedDate(startOfMonth(addMonths(currentMonth, 1)));
+    if (selectedChildId)
+      loadAppointments(
+        selectedChildId,
+        startOfMonth(addMonths(currentMonth, 1))
+      );
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(subMonths(currentMonth, 1));
+    setSelectedDate(startOfMonth(subMonths(currentMonth, 1)));
+    if (selectedChildId)
+      loadAppointments(
+        selectedChildId,
+        startOfMonth(subMonths(currentMonth, 1))
+      );
+  };
+
+  // Xử lý chọn student
   const handleChildSelected = (childId) => {
     setSelectedChildId(childId);
+    if (childId) loadAppointments(childId, selectedDate);
   };
 
-  useEffect(() => {
-    if (!parentId) {
-      setError("Parent ID not found in token. Please log in again.");
-      setIsLoading(false);
-      return;
-    }
-
-    const fetchParentProfile = async () => {
-      try {
-        const profileResponse = await axios.get(
-          `https://localhost:7192/api/User/profile?userId=${parentId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authData.accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (profileResponse.status === 200 && profileResponse.data.isSuccess) {
-          setParentProfile(profileResponse.data.result);
-        }
-      } catch (error) {
-        toast.error("Failed to load parent profile.", {
-          position: "top-right",
-        });
-      }
-    };
-
-    fetchParentProfile();
-  }, [parentId, authData?.accessToken]);
-
-  useEffect(() => {
-    if (!selectedChildId) {
-      setBookings([]);
-      setError(null);
-      setIsLoading(false);
-      return;
-    }
-
-    const fetchBookings = async () => {
-      try {
-        setIsLoading(true);
-        const selectedDateStr = moment(selectedDate).format("YYYY-MM-DD");
-        const response = await axios.get(
-          `https://localhost:7192/api/appointments/students/${selectedChildId}/appointments?selectedDate=${selectedDateStr}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authData.accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response.status === 200 && response.data.isSuccess) {
-          const appointments = response.data.result || [];
-          const events = appointments.map((appointment) => {
-            const startDateTime = moment(
-              `${appointment.date
-                .split("/")
-                .reverse()
-                .join("-")} ${getTimeFromSlotId(appointment.slotId)}`,
-              "YYYY-MM-DD HH:mm"
-            ).toDate();
-            const endDateTime = moment(startDateTime)
-              .add(60, "minutes")
-              .toDate();
-
-            let title = `Meeting with ${appointment.meetingWith}`;
-            if (appointment.meetingWith === "Counselor")
-              title = "Mental Health Support";
-            else if (appointment.meetingWith === "Teacher")
-              title = "Career Guidance";
-
-            return {
-              id: appointment.appointmentId,
-              title: `${title} ${appointment.isOnline ? "Online" : "Offline"}`,
-              start: startDateTime,
-              end: endDateTime,
-              details: {
-                studentId: appointment.appointmentFor || selectedChildId,
-                consultantId: appointment.meetingWith,
-                bookedBy: parentProfile ? parentProfile.fullName : "Parent", // Sử dụng tên parent từ profile
-                appointmentFor: appointment.appointmentFor,
-                date: appointment.date.split("/").reverse().join("-"),
-                slotId: appointment.slotId,
-                meetingType: appointment.isOnline ? "Online" : "Offline",
-                isCompleted: appointment.isCompleted,
-                isCancelled: appointment.isCancelled,
-              },
-            };
-          });
-          setBookings(events);
-          setError(null);
-        } else {
-          setBookings([]);
-          toast.error("Failed to load schedule.", { position: "top-right" });
-        }
-      } catch (error) {
-        setBookings([]);
-        setError("Failed to fetch appointments");
-        toast.error("Failed to load schedule.", { position: "top-right" });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (parentProfile) fetchBookings(); // Chỉ fetch lịch khi đã có profile parent
-  }, [selectedChildId, selectedDate, authData?.accessToken, parentProfile]);
-
+  // Tính toán thời gian từ slotId
   const getTimeFromSlotId = (slotId) => {
     const times = [
       "08:00",
@@ -192,696 +345,151 @@ const ParentSchedulePage = () => {
     return times[slotId - 1] || "Unknown";
   };
 
-  const handleSelectEvent = (event) => setSelectedEvent(event);
-  const closeModal = () => setSelectedEvent(null);
-
-  const handleCancelAppointment = async () => {
-    if (!selectedEvent) return;
-
-    try {
-      setIsLoading(true);
-      const response = await axios.get(
-        `https://localhost:7192/api/appointments/${selectedEvent.id}/cancellation`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.isSuccess && response.data.statusCode === 200) {
-        setBookings((prev) =>
-          prev.map((booking) =>
-            booking.id === selectedEvent.id
-              ? {
-                  ...booking,
-                  details: { ...booking.details, isCancelled: true },
-                }
-              : booking
-          )
-        );
-        setSelectedEvent((prev) => ({
-          ...prev,
-          details: { ...prev.details, isCancelled: true },
-        }));
-        setIsConfirmModalOpen(false);
-        setSelectedEventToCancel(null);
-        setSelectedEvent(null);
-        setIsSuccessModalOpen(true);
-        toast.success("Appointment cancelled successfully!", {
-          position: "top-right",
-        });
-      }
-    } catch (error) {
-      toast.error("Failed to cancel appointment.", { position: "top-right" });
-    } finally {
-      setIsLoading(false);
+  // Khởi tạo dữ liệu ban đầu
+  useEffect(() => {
+    if (!parentId) {
+      setErrorMessage("Không tìm thấy ID phụ huynh. Vui lòng đăng nhập lại.");
+      return;
     }
-  };
+    loadParentProfile();
+  }, [parentId, authData?.accessToken]);
 
-  const openConfirmModal = (event) => {
-    setSelectedEventToCancel(event);
-    setIsConfirmModalOpen(true);
-  };
-
-  const confirmCancelAppointment = () => handleCancelAppointment();
-  const closeConfirmModal = () => {
-    setIsConfirmModalOpen(false);
-    setSelectedEventToCancel(null);
-  };
-  const closeSuccessModal = () => setIsSuccessModalOpen(false);
-
-  const handleDayClick = (fullDate) => setSelectedDate(fullDate);
-  const handleNextMonth = () =>
-    setCurrentMonth(moment(currentMonth).add(1, "month"));
-  const handlePrevMonth = () =>
-    setCurrentMonth(moment(currentMonth).subtract(1, "month"));
-
-  const filteredBookings = bookings.filter((booking) =>
-    moment(booking.start).isSame(selectedDate, "day")
-  );
-
-  const getStatus = (event) => {
-    const { isCompleted, isCancelled } = event.details;
-    if (isCancelled) return "Cancelled";
-    if (isCompleted) return "Completed";
-    return "Booked";
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <CircularProgress size={40} sx={{ color: "#3b82f6" }} />
-      </div>
-    );
-  }
+  // Cập nhật visibleDaysCount dựa trên kích thước container
+  useEffect(() => {
+    const updateVisibleDaysCount = () => {
+      if (calendarContainerRef.current) {
+        const containerWidth = calendarContainerRef.current.offsetWidth;
+        const possibleDaysToShow = Math.floor(containerWidth / 70);
+        setVisibleDaysCount(Math.max(5, possibleDaysToShow));
+      }
+    };
+    updateVisibleDaysCount();
+    window.addEventListener("resize", updateVisibleDaysCount);
+    return () => window.removeEventListener("resize", updateVisibleDaysCount);
+  }, []);
 
   return (
-    <div className="p-6 bg-white min-h-screen text-gray-900 flex flex-col max-w-7xl mx-auto">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="mb-8"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="w-full min-h-screen bg-gray-50 flex items-center justify-center"
+    >
+      <CContainer
+        fluid
+        className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr] p-4"
       >
-        <Typography
-          variant="h4"
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontWeight: 700,
-            textAlign: "center",
-            background: "linear-gradient(to right, #1e88e5, #8e24aa)",
-            WebkitBackgroundClip: "text",
-            color: "transparent",
-          }}
-        >
-          Your Child's Schedule
-        </Typography>
-        <Typography
-          variant="body1"
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: "1rem",
-            color: "#555",
-            textAlign: "center",
-            mt: 1,
-          }}
-        >
-          {parentProfile
-            ? `Welcome, ${parentProfile.fullName}`
-            : "Select a child to view their appointments"}
-        </Typography>
-      </motion.div>
+        {/* Header với ChildSelector */}
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-center text-gray-800">
+            {parentProfile
+              ? `${parentProfile.fullName}`
+              : ""}
+          </h1>
+          <ChildSelector onChildSelected={handleChildSelected} />
+        </div>
 
-      {/* Child Selector */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="mb-8"
-      >
-        <ChildSelector onChildSelected={handleChildSelected} />
-      </motion.div>
-
-      {/* Calendar Section */}
-      {selectedChildId && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="bg-orange-100 p-6 rounded-2xl shadow-xl mb-8"
-        >
-          <Box className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-            <Button
-              onClick={handlePrevMonth}
-              variant="contained"
-              sx={{
-                backgroundColor: "#1e88e5",
-                "&:hover": { backgroundColor: "#1565c0" },
-                textTransform: "none",
-                fontFamily: "Inter, sans-serif",
-              }}
-            >
-              Back
-            </Button>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 600,
-                color: "#333",
-                fontFamily: "Inter, sans-serif",
-              }}
-            >
-              {moment(currentMonth).format("MMMM YYYY")}
-            </Typography>
-            <Button
-              onClick={handleNextMonth}
-              variant="contained"
-              sx={{
-                backgroundColor: "#1e88e5",
-                "&:hover": { backgroundColor: "#1565c0" },
-                textTransform: "none",
-                fontFamily: "Inter, sans-serif",
-              }}
-            >
-              Next
-            </Button>
-          </Box>
-          <Typography
-            sx={{
-              fontFamily: "Inter, sans-serif",
-              fontSize: "1rem",
-              color: "#555",
-              textAlign: "center",
-              mb: 4,
-            }}
-          >
-            Selected: {moment(selectedDate).format("dddd, DD/MM/YYYY")}
-          </Typography>
-          <div className="grid grid-cols-7 gap-2">
-            {weekdays.map((weekday, index) => (
-              <Typography
-                key={`weekday-${index}`}
-                sx={{
-                  fontFamily: "Inter, sans-serif",
-                  fontWeight: 600,
-                  color: "#666",
-                  textAlign: "center",
-                }}
-              >
-                {weekday}
-              </Typography>
-            ))}
+        {/* Calendar */}
+        {selectedChildId && (
+          <div ref={calendarContainerRef} className="w-full">
+            <CalendarHeader
+              currentMonth={currentMonth}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              allDays={allDays}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              animationDirection={animationDirection}
+              setAnimationDirection={setAnimationDirection}
+              visibleDaysCount={visibleDaysCount}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              handlePrev={handlePrev}
+              handleNext={handleNext}
+              handleSelectDate={handleSelectDate}
+              getVisibleDays={getVisibleDays}
+              handleNextMonth={handleNextMonth}
+              handlePrevMonth={handlePrevMonth}
+            />
           </div>
-          <motion.div
-            className="grid grid-cols-7 gap-2 mt-4"
-            key={currentMonth.format("YYYY-MM")}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {days.map((d, index) =>
-              d ? (
-                <motion.button
-                  key={`${currentMonth.format("YYYY-MM")}-${index}`}
-                  className={`w-full h-12 flex items-center justify-center rounded-xl font-medium transition-all duration-300 shadow-md ${
-                    moment(d.fullDate).isSame(selectedDate, "day")
-                      ? "bg-green-500 text-white"
-                      : "bg-blue-200 hover:bg-blue-300"
-                  }`}
-                  onClick={() => handleDayClick(d.fullDate)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Typography
-                    sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
-                  >
-                    {d.day}
-                  </Typography>
-                </motion.button>
-              ) : (
-                <div
-                  key={`${currentMonth.format("YYYY-MM")}-${index}`}
-                  className="w-full h-12 bg-gray-100 rounded-xl"
-                />
-              )
-            )}
-          </motion.div>
-        </motion.div>
-      )}
+        )}
 
-      {/* Bookings Section */}
-      {selectedChildId ? (
-        <Box className="mt-8">
-          {filteredBookings.length > 0 ? (
-            <AnimatePresence>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {filteredBookings.map((booking) => (
-                  <motion.div
-                    key={booking.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <Card
-                      className="rounded-xl shadow-lg bg-orange-50 border border-orange-200 hover:shadow-xl transition-shadow duration-300"
-                      sx={{ minWidth: 280, maxWidth: 350 }}
-                    >
-                      <CardContent sx={{ p: 3 }}>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontWeight: 600,
-                            fontSize: "1.25rem",
-                            color: "#333",
-                            mb: 1.5,
-                          }}
-                        >
-                          {booking.title}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.95rem",
-                            color: "#666",
-                            mb: 1,
-                          }}
-                        >
-                          <strong>Student ID:</strong>{" "}
-                          {booking.details.studentId}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "0.95rem",
-                            color: "#666",
-                            display: "flex",
-                            alignItems: "center",
-                            mb: 2,
-                          }}
-                        >
-                          <Clock className="w-5 h-5 mr-2 text-gray-700" />
-                          {moment(booking.start).format("HH:mm")} -{" "}
-                          {moment(booking.end).format("HH:mm")}
-                        </Typography>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            mb: 2,
-                          }}
-                        >
-                          <Typography
-                            sx={{
-                              fontFamily: "Inter, sans-serif",
-                              fontSize: "0.9rem",
-                              fontWeight: 500,
-                              color: "#fff",
-                              backgroundColor: "#4caf50",
-                              px: 1.5,
-                              py: 0.5,
-                              borderRadius: "12px",
-                            }}
-                          >
-                            {booking.details.meetingType}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontFamily: "Inter, sans-serif",
-                              fontSize: "0.9rem",
-                              fontWeight: 500,
-                              color:
-                                getStatus(booking) === "Cancelled"
-                                  ? "#ef5350"
-                                  : getStatus(booking) === "Completed"
-                                  ? "#4caf50"
-                                  : "#1e88e5",
-                            }}
-                          >
-                            {getStatus(booking)}
-                          </Typography>
-                        </Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: 1,
-                          }}
-                        >
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            disabled={booking.details.isCancelled}
-                            sx={{
-                              fontFamily: "Inter, sans-serif",
-                              fontSize: "0.9rem",
-                              color: "#1e88e5",
-                              borderColor: "#1e88e5",
-                              "&:hover": {
-                                backgroundColor: "#e3f2fd",
-                                borderColor: "#1e88e5",
-                              },
-                              textTransform: "none",
-                              px: 2,
-                            }}
-                          >
-                            Join
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleSelectEvent(booking)}
-                            sx={{
-                              fontFamily: "Inter, sans-serif",
-                              fontSize: "0.9rem",
-                              color: "#f57c00",
-                              borderColor: "#f57c00",
-                              "&:hover": {
-                                backgroundColor: "#fff3e0",
-                                borderColor: "#f57c00",
-                              },
-                              textTransform: "none",
-                              px: 2,
-                            }}
-                          >
-                            Details
-                          </Button>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          ) : (
-            <Typography
-              sx={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: { xs: "1.5rem", sm: "2rem" },
-                fontWeight: 500,
-                color: "#666",
-                textAlign: "center",
-                mt: 4,
-              }}
+        {/* Appointments List */}
+        <div className="w-full flex-1 flex flex-col">
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-500 text-white rounded-lg mb-4 p-4 shadow-md"
             >
-              No appointments for this date
-            </Typography>
+              <p>{errorMessage}</p>
+            </motion.div>
           )}
-        </Box>
-      ) : (
-        <Typography
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: { xs: "1.5rem", sm: "2rem" },
-            fontWeight: 500,
-            color: "#666",
-            textAlign: "center",
-            mt: 4,
+          {selectedChildId ? (
+            <motion.div
+              key={appointmentViewKey}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="flex-1"
+            >
+              <AppointmentsList
+                isLoading={isLoading}
+                filteredAppointments={
+                  filterStatus === "All"
+                    ? bookings
+                    : bookings.filter(
+                        (booking) => booking.status === filterStatus
+                      )
+                }
+                handleViewDetail={handleViewDetail}
+                handleCancelAppointment={handleCancelAppointment}
+                handleChat={handleChat}
+                handleNavigate={handleNavigate}
+                selectedDate={selectedDate}
+              />
+            </motion.div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-gray-600 text-lg">
+                Vui lòng chọn một học sinh để xem lịch hẹn.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Confirm Modal */}
+        <ConfirmModal
+          visible={confirmModalState.visible}
+          onClose={() =>
+            setConfirmModalState({ visible: false, appointmentId: null })
+          }
+          onConfirm={() => {
+            if (confirmModalState.appointmentId) {
+              handleCancelAppointmentApi(confirmModalState.appointmentId);
+            }
+            setConfirmModalState({ visible: false, appointmentId: null });
           }}
-        >
-          Please select a child to view their schedule
-        </Typography>
-      )}
+          appointmentId={confirmModalState.appointmentId}
+        />
 
-      {/* Event Details Dialog */}
-      {selectedEvent && (
-        <Dialog
-          open={Boolean(selectedEvent)}
-          onClose={closeModal}
-          sx={{
-            "& .MuiDialog-paper": {
-              borderRadius: "16px",
-              width: { xs: "90%", sm: 550 },
-              maxWidth: 550,
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
-              p: 3,
-            },
-          }}
-        >
-          <DialogTitle
-            sx={{
-              fontFamily: "Inter, sans-serif",
-              fontWeight: 700,
-              fontSize: "1.5rem",
-              color: "#333",
-              pb: 2,
-              borderBottom: "1px solid #e0e0e0",
-            }}
-          >
-            {selectedEvent.title}
-          </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {[
-                {
-                  label: "Date",
-                  value: moment(selectedEvent.details.date).format(
-                    "YYYY-MM-DD"
-                  ),
-                },
-                {
-                  label: "Time",
-                  value: getTimeFromSlotId(selectedEvent.details.slotId),
-                },
-                { label: "Student ID", value: selectedEvent.details.studentId },
-                {
-                  label: "Consultant",
-                  value: selectedEvent.details.consultantId,
-                },
-                { label: "Booked By", value: selectedEvent.details.bookedBy }, // Hiển thị tên parent
-                {
-                  label: "Meeting Type",
-                  value: selectedEvent.details.meetingType,
-                },
-                { label: "Status", value: getStatus(selectedEvent) },
-              ].map((item) => (
-                <Box
-                  key={item.label}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    py: 0.5,
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: "Inter, sans-serif",
-                      fontWeight: 500,
-                      fontSize: "1rem",
-                      color: "#555",
-                    }}
-                  >
-                    {item.label}:
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: "1rem",
-                      color: "#333",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {item.value}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, justifyContent: "space-between" }}>
-            {!selectedEvent.details.isCancelled && (
-              <Button
-                onClick={() => openConfirmModal(selectedEvent)}
-                variant="contained"
-                color="error"
-                sx={{
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: "0.95rem",
-                  textTransform: "none",
-                  px: 4,
-                  py: 1,
-                  minWidth: 120,
-                }}
-              >
-                Cancel Appointment
-              </Button>
-            )}
-            <Button
-              onClick={closeModal}
-              variant="outlined"
-              sx={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "0.95rem",
-                color: "#555",
-                borderColor: "#555",
-                "&:hover": { backgroundColor: "#f5f5f5", borderColor: "#333" },
-                textTransform: "none",
-                px: 4,
-                py: 1,
-                minWidth: 120,
-              }}
-            >
-              Close
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
+        {/* Appointment Detail Modal */}
+        <AppointmentDetailModal
+          isOpen={detailModalState.isOpen}
+          handleChat={handleChat}
+          onClose={() =>
+            setDetailModalState((prev) => ({
+              ...prev,
+              isOpen: false,
+              selectedAppointment: null,
+            }))
+          }
+          appointment={detailModalState.selectedAppointment}
+        />
 
-      {/* Confirm Cancellation Modal */}
-      <Modal
-        open={isConfirmModalOpen}
-        onClose={closeConfirmModal}
-        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-      >
-        <Fade in={isConfirmModalOpen}>
-          <Box
-            sx={{
-              backgroundColor: "#fff",
-              borderRadius: "16px",
-              p: 4,
-              width: { xs: "90%", sm: 450 },
-              maxWidth: 450,
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
-            }}
-          >
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 700,
-                fontSize: "1.5rem",
-                color: "#333",
-                mb: 2,
-                textAlign: "center",
-              }}
-            >
-              Confirm Cancellation
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "1rem",
-                color: "#666",
-                mb: 3,
-                textAlign: "center",
-              }}
-            >
-              Are you sure you want to cancel this appointment on{" "}
-              {moment(selectedEventToCancel?.details?.date).format(
-                "YYYY-MM-DD"
-              )}{" "}
-              at {getTimeFromSlotId(selectedEventToCancel?.details?.slotId)}?
-            </Typography>
-            <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-              <Button
-                onClick={confirmCancelAppointment}
-                variant="contained"
-                color="error"
-                sx={{
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: "0.95rem",
-                  textTransform: "none",
-                  px: 3,
-                  py: 1,
-                }}
-              >
-                Yes
-              </Button>
-              <Button
-                onClick={closeConfirmModal}
-                variant="outlined"
-                sx={{
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: "0.95rem",
-                  color: "#666",
-                  borderColor: "#666",
-                  "&:hover": {
-                    backgroundColor: "#f5f5f5",
-                    borderColor: "#444",
-                  },
-                  textTransform: "none",
-                  px: 3,
-                  py: 1,
-                }}
-              >
-                No
-              </Button>
-            </Box>
-          </Box>
-        </Fade>
-      </Modal>
-
-      {/* Success Modal */}
-      <Modal
-        open={isSuccessModalOpen}
-        onClose={closeSuccessModal}
-        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-      >
-        <Fade in={isSuccessModalOpen}>
-          <Box
-            sx={{
-              backgroundColor: "#fff",
-              borderRadius: "16px",
-              p: 4,
-              width: { xs: "90%", sm: 400 },
-              maxWidth: 400,
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
-              textAlign: "center",
-            }}
-          >
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 700,
-                fontSize: "1.5rem",
-                color: "#4caf50",
-                mb: 2,
-              }}
-            >
-              Success!
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "1rem",
-                color: "#333",
-                mb: 3,
-              }}
-            >
-              Appointment cancelled successfully!
-            </Typography>
-            <Button
-              onClick={closeSuccessModal}
-              variant="contained"
-              sx={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "0.95rem",
-                backgroundColor: "#4caf50",
-                "&:hover": { backgroundColor: "#388e3c" },
-                textTransform: "none",
-                px: 4,
-                py: 1,
-              }}
-            >
-              Close
-            </Button>
-          </Box>
-        </Fade>
-      </Modal>
-
-      <ToastContainer />
-    </div>
+        <ToastContainer />
+      </CContainer>
+    </motion.div>
   );
 };
 

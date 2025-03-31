@@ -1,8 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import apiService from "../../services/apiService";
+import { showSuccess, showError, showConfirm } from "../../utils/swalConfig";
 
 const CreateUserPage = () => {
   const [formData, setFormData] = useState({
@@ -68,17 +67,18 @@ const CreateUserPage = () => {
       setErrors({
         [`studentEmail-${index}`]: "Student email must end with @fpt.edu.vn",
       });
-      toast.error("Student email must end with @fpt.edu.vn");
+      showError("Error", "Student email must end with @fpt.edu.vn");
       return;
     }
 
     try {
       const res = await apiService.checkUserExistence(studentEmail);
-      if (res.message === "User does not exist") {
+      console.log("Check user response:", res); // Debug
+      if (res.message === "User does not exist" || !res.isSuccess) {
         setErrors({
           [`studentEmail-${index}`]: "Student email does not exist",
         });
-        toast.error("Student email does not exist");
+        showError("Error", "Student email does not exist");
       } else {
         const updatedRelationships = [...formData.studentRelationships];
         updatedRelationships[index].confirmed = true;
@@ -86,12 +86,16 @@ const CreateUserPage = () => {
           ...formData,
           studentRelationships: updatedRelationships,
         });
-        toast.success(`Student email ${studentEmail} confirmed!`);
+        showSuccess("Success", `Student email ${studentEmail} confirmed!`);
         setErrors((prev) => ({ ...prev, [`studentEmail-${index}`]: "" }));
       }
     } catch (error) {
+      console.error("Error in handleConfirmStudentEmail:", error); // Debug
       setErrors({ [`studentEmail-${index}`]: "Error checking email" });
-      toast.error("Error checking student email");
+      showError(
+        "Error",
+        error.message || "Failed to check student email. Please try again."
+      );
     }
   };
 
@@ -111,16 +115,19 @@ const CreateUserPage = () => {
   };
 
   const handleRemoveRelationship = (index) => {
-    const updatedRelationships = formData.studentRelationships.filter(
-      (_, i) => i !== index
-    );
-    setFormData({ ...formData, studentRelationships: updatedRelationships });
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[`studentEmail-${index}`];
-      delete newErrors[`relationship-${index}`];
-      delete newErrors[`customRelationship-${index}`];
-      return newErrors;
+    showConfirm("Are you sure?", "This relationship will be removed.", () => {
+      const updatedRelationships = formData.studentRelationships.filter(
+        (_, i) => i !== index
+      );
+      setFormData({ ...formData, studentRelationships: updatedRelationships });
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[`studentEmail-${index}`];
+        delete newErrors[`relationship-${index}`];
+        delete newErrors[`customRelationship-${index}`];
+        return newErrors;
+      });
+      showSuccess("Success", "Relationship removed successfully!");
     });
   };
 
@@ -129,7 +136,7 @@ const CreateUserPage = () => {
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      toast.error("Please fix the errors in the form");
+      showError("Error", "Please fix the errors in the form");
       return;
     }
 
@@ -151,9 +158,10 @@ const CreateUserPage = () => {
           })),
         }),
       };
-
-      await apiService.createUserAccount(payload);
-      toast.success("User created successfully!");
+      console.log("Payload sent to createUserAccount:", payload); // Debug
+      const response = await apiService.createUserAccount(payload);
+      console.log("Create user response:", response); // Debug
+      showSuccess("Success", "User created successfully!");
       setFormData({
         role: "",
         userName: "",
@@ -169,7 +177,11 @@ const CreateUserPage = () => {
       });
       setErrors({});
     } catch (error) {
-      toast.error(error.message || "Failed to create user");
+      console.error("Error in handleSubmit:", error); // Debug
+      showError(
+        "Error",
+        error.message || "Failed to create user. Please try again."
+      );
     }
   };
 
