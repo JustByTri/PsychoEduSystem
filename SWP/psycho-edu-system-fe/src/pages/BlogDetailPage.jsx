@@ -9,6 +9,7 @@ import {
   faClock,
   faTag,
 } from "@fortawesome/free-solid-svg-icons";
+import { showSuccess, showError } from "../utils/swalConfig";
 
 const generateTags = (content, maxTags) => {
   const stopWords = [
@@ -81,10 +82,10 @@ const BlogDetailPage = () => {
           setBlog(response.result);
           fetchRelatedBlogs(response.result.dimensionId);
         } else {
-          setError("Cannot load blog post");
+          setError("This blog post is not available right now.");
         }
       } catch (err) {
-        setError("An error occurred while loading the blog post");
+        setError("Something went wrong, please try again later.");
       } finally {
         setLoading(false);
       }
@@ -117,14 +118,15 @@ const BlogDetailPage = () => {
         .catch((err) => console.error("Share failed:", err));
     } else {
       navigator.clipboard.writeText(shareData.url);
-      alert("Link copied to clipboard!");
+      showSuccess("Copied!", "Link copied to clipboard.");
     }
   };
 
-  if (loading) return <p className="text-center text-[#666]">Loading...</p>;
-  if (error) return <p className="text-center text-[#FF6F61]">{error}</p>;
+  if (loading)
+    return <p className="text-center text-[#666] py-12">Loading...</p>;
+  if (error) return <p className="text-center text-[#FF6F61] py-12">{error}</p>;
   if (!blog)
-    return <p className="text-center text-[#666]">Blog post not found</p>;
+    return <p className="text-center text-[#666] py-12">Blog post not found</p>;
 
   const wordCount = blog.content.split(" ").length;
   const readingTime = Math.ceil(wordCount / 200);
@@ -147,7 +149,7 @@ const BlogDetailPage = () => {
           <nav className="flex items-center space-x-2 text-sm font-medium">
             <Link
               to="/"
-              className="text-[#26A69A] hover:text-[#50eea4d2] transition-colors duration-300 no-underline"
+              className="text-[#26A69A] hover:text-[#4DB6AC] transition-colors duration-300 no-underline"
             >
               Home
             </Link>
@@ -219,7 +221,7 @@ const BlogDetailPage = () => {
         >
           <Link
             to="/"
-            className="flex items-center text-[#FBBF24] hover:text-[#c9e559e3] font-semibold transition-colors duration-300 no-underline"
+            className="flex items-center text-[#FBBF24] hover:text-[#FFD700] font-semibold transition-colors duration-300 no-underline"
           >
             <FontAwesomeIcon icon={faArrowLeft} className="w-5 h-5 mr-2" />
             Back to Home
@@ -235,7 +237,7 @@ const BlogDetailPage = () => {
           </div>
         </motion.div>
 
-        {relatedBlogs.length > 0 && (
+        {relatedBlogs.length > 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -250,7 +252,7 @@ const BlogDetailPage = () => {
                 <Link
                   key={relatedBlog.id}
                   to={`/blog/${relatedBlog.id}`}
-                  className="bg-white rounded-lg shadow-md p-4 border border-[#E5E7EB] hover:shadow-lg transition-shadow no-underline"
+                  className="bg-white rounded-lg shadow-md p-4 border border-[#E5E7EB] hover:shadow-lg transition-shadow duration-300 no-underline"
                 >
                   <h3 className="text-lg font-semibold text-[#374151] mb-2">
                     {relatedBlog.title}
@@ -265,6 +267,10 @@ const BlogDetailPage = () => {
               ))}
             </div>
           </motion.div>
+        ) : (
+          <p className="mt-12 text-center text-[#666]">
+            No related articles found.
+          </p>
         )}
       </div>
     </motion.div>

@@ -157,7 +157,6 @@ export const getAuthDataFromLocalStorage = () => {
   try {
     const parsedData = JSON.parse(userData);
     const tokenPayload = JSON.parse(atob(parsedData.accessToken.split(".")[1]));
-
     return {
       accessToken: parsedData.accessToken,
       role: parsedData.role,

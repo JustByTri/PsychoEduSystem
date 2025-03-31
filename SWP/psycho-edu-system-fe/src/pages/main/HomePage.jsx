@@ -11,7 +11,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect } from "react";
 
-// Thêm CSS inline để đảm bảo body và html không có padding/margin ảnh hưởng
 const globalStyles = `
   html, body {
     margin: 0;

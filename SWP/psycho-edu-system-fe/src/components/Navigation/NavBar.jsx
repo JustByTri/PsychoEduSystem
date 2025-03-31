@@ -20,34 +20,32 @@ const Navbar = () => {
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
   const isActive = (href) => window.location.pathname === href;
 
   return (
     <header className="sticky top-0 z-50 shadow-md">
       <nav className="bg-[#26A69A] px-4 lg:px-6 py-2">
-        <div className="flex items-center justify-between mx-auto max-w-screen-xl">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
           <a
             href="/"
             className="flex items-center group transition-transform duration-300 hover:scale-105 no-underline"
             aria-label="Mental Health Care Homepage"
           >
-            <span className="text-2xl text-[#FFFFFF] font-semibold">
+            <span className="text-2xl text-white font-semibold">
               Mental Health Care©
             </span>
           </a>
           <div
             className={`${
               isMenuOpen ? "block" : "hidden"
-            } w-full lg:flex lg:w-auto lg:order-1 transition-all duration-300 ease-in-out`}
-            id="mobile-menu"
+            } w-full lg:flex lg:w-auto lg:order-1 transition-all duration-300`}
           >
-            <ul className="flex flex-col items-center lg:flex-row lg:items-center lg:space-x-8 w-full mt-2 lg:mt-0">
+            <ul className="flex flex-col items-center lg:flex-row lg:space-x-8 w-full mt-2 lg:mt-0">
               {links.map((link, index) => (
                 <li key={index}>
                   <a
                     href={link.href}
-                    className={`flex items-center px-3 pt-2 text-sm font-semibold text-[#FFFFFF] hover:text-[#FBBF24] hover:bg-[#F9E79F] lg:hover:bg-transparent transition-all duration-300 rounded-md no-underline ${
+                    className={`flex items-center px-3 py-2 text-sm font-semibold text-white hover:text-[#FBBF24] hover:bg-[#F9E79F] lg:hover:bg-transparent transition-all duration-300 rounded-md no-underline ${
                       isActive(link.href) ? "bg-[#F9E79F] text-[#26A69A]" : ""
                     }`}
                   >
@@ -65,7 +63,7 @@ const Navbar = () => {
             <button
               onClick={toggleMenu}
               type="button"
-              className="inline-flex items-center p-1.5 text-[#FFFFFF] lg:hidden focus:outline-none focus:ring-2 focus:ring-[#FBBF24] rounded-md"
+              className="lg:hidden text-white p-1.5 focus:outline-none focus:ring-2 focus:ring-[#FBBF24] rounded-md"
             >
               <span className="sr-only">Open main menu</span>
               <svg
