@@ -8,8 +8,6 @@ const CalendarHeader = ({
   setSelectedDate,
   allDays,
   animationDirection,
-  filterStatus,
-  setFilterStatus,
   handlePrev,
   handleNext,
   handleSelectDate,
@@ -81,31 +79,6 @@ const CalendarHeader = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-4 md:space-y-0">
         <h1 className="text-white text-4xl font-medium">Your Schedule</h1>
         <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-3">
-          {/* Dropdown filter status */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-gradient-to-r from-white to-blue-50 text-blue-900 rounded-lg pl-4 pr-8 py-2 text-sm border border-blue-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition-all duration-300 hover:shadow-xl hover:border-blue-400 appearance-none cursor-pointer"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333333' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 0.75rem center",
-                backgroundSize: "1rem",
-              }}
-            >
-              <option value="All">All Statuses</option>
-              <option value="SCHEDULED">Scheduled</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          </motion.div>
-
           {/* Ngày được chọn */}
           <span className="text-blue-100 text-lg min-w-[200px] text-center">
             {format(selectedDate, "EEEE, MM/dd/yyyy")}

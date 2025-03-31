@@ -3,21 +3,29 @@ import { CSpinner, CNav, CNavItem, CNavLink } from "@coreui/react";
 import PsychologistAppointmentCard from "./PsychologistAppointmentCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isValid } from "date-fns";
+import { getAuthDataFromLocalStorage } from "../../utils/auth";
 
 const PsychologistAppointmentsList = ({
   isLoading,
   filteredBookings,
   filteredAvailableSlots,
+  targetPrograms,
   handleViewDetail,
   handleChat,
   handleCancelAppointment,
   handleNavigate,
   selectedDate,
+  filterStatus,
+  setFilterStatus,
 }) => {
   const [appointmentsWithNames, setAppointmentsWithNames] = useState([]);
   const [activeTab, setActiveTab] = useState("booked");
   const [error, setError] = useState(null);
   const userProfileCache = useRef({});
+  const [sortFilter, setSortFilter] = useState("default");
+
+  const authData = getAuthDataFromLocalStorage();
+  const userId = authData?.userId;
 
   const getTimeFromSlotId = (slotId) => {
     const times = [
@@ -58,6 +66,17 @@ const PsychologistAppointmentsList = ({
           showParent: false,
         };
       }
+      if (appointment.status === "TARGET PROGRAM") {
+        return {
+          ...appointment,
+          student: `${appointment.details.currentCapacity}/${appointment.details.capacity}`,
+          psychologist: appointment.details.meetingWith || "Unknown Counselor",
+          bookedBy: "Admin",
+          appointmentFor: appointment.title || "Target Program",
+          isOnline: false,
+          showParent: false,
+        };
+      }
       const studentName =
         appointment.details.appointmentFor || "Unknown Student";
       const isParentBooking =
@@ -91,14 +110,42 @@ const PsychologistAppointmentsList = ({
   useEffect(() => {
     const fetchAllNames = async () => {
       setError(null);
-      const allAppointments = [...filteredBookings, ...filteredAvailableSlots];
+      const allAppointments = [
+        ...filteredBookings,
+        ...filteredAvailableSlots,
+        ...targetPrograms,
+      ];
       const appointmentsWithNames = await Promise.all(
         allAppointments.map(fetchNamesForAppointment)
       );
       setAppointmentsWithNames(appointmentsWithNames);
     };
     fetchAllNames();
-  }, [filteredBookings, filteredAvailableSlots]);
+  }, [filteredBookings, filteredAvailableSlots, targetPrograms]);
+
+  const sortAppointments = (appointments) => {
+    let sortedAppointments = [...appointments];
+
+    if (sortFilter === "slotTime") {
+      sortedAppointments.sort((a, b) => {
+        const slotA = a.details?.slotId || 0;
+        const slotB = b.details?.slotId || 0;
+        return slotA - slotB;
+      });
+    } else if (sortFilter === "newest") {
+      sortedAppointments.sort((a, b) => {
+        const dateA = a.details?.createAt
+          ? new Date(a.details.createAt)
+          : new Date(0);
+        const dateB = b.details?.createAt
+          ? new Date(b.details.createAt)
+          : new Date(0);
+        return dateB - dateA;
+      });
+    }
+
+    return sortedAppointments;
+  };
 
   const tabVariants = {
     hidden: { opacity: 0, y: 10 },
@@ -108,34 +155,98 @@ const PsychologistAppointmentsList = ({
 
   return (
     <div className="appointments-container w-full h-full overflow-hidden flex flex-col bg-[#F5F7FA] overflow-x-hidden">
-      <CNav variant="tabs" className="bg-white border-b border-gray-200">
-        <CNavItem>
-          <CNavLink
-            active={activeTab === "booked"}
-            onClick={() => setActiveTab("booked")}
-            className={`px-6 py-3 text-gray-700 font-semibold cursor-pointer ${
-              activeTab === "booked"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "hover:text-blue-500"
-            }`}
+      <div className="bg-white border-b border-gray-200 flex justify-between items-center">
+        <CNav variant="tabs">
+          <CNavItem>
+            <CNavLink
+              active={activeTab === "booked"}
+              onClick={() => setActiveTab("booked")}
+              className={`px-6 py-3 text-gray-700 font-semibold cursor-pointer ${
+                activeTab === "booked"
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "hover:text-blue-500"
+              }`}
+            >
+              Booked Appointments ({filteredBookings.length})
+            </CNavLink>
+          </CNavItem>
+          <CNavItem>
+            <CNavLink
+              active={activeTab === "available"}
+              onClick={() => setActiveTab("available")}
+              className={`px-6 py-3 text-gray-700 font-semibold cursor-pointer ${
+                activeTab === "available"
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "hover:text-blue-500"
+              }`}
+            >
+              Available Slots ({filteredAvailableSlots.length})
+            </CNavLink>
+          </CNavItem>
+          <CNavItem>
+            <CNavLink
+              active={activeTab === "targetProgram"}
+              onClick={() => setActiveTab("targetProgram")}
+              className={`px-6 py-3 text-gray-700 font-semibold cursor-pointer ${
+                activeTab === "targetProgram"
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "hover:text-blue-500"
+              }`}
+            >
+              Target Programs ({targetPrograms.length})
+            </CNavLink>
+          </CNavItem>
+        </CNav>
+
+        {/* Đặt filterStatus và sortFilter bên phải */}
+        <div className="flex items-center space-x-2 pr-4">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            Booked Appointments ({filteredBookings.length})
-          </CNavLink>
-        </CNavItem>
-        <CNavItem>
-          <CNavLink
-            active={activeTab === "available"}
-            onClick={() => setActiveTab("available")}
-            className={`px-6 py-3 text-gray-700 font-semibold cursor-pointer ${
-              activeTab === "available"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "hover:text-blue-500"
-            }`}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="bg-gradient-to-r from-white to-blue-50 text-blue-900 rounded-lg pl-4 pr-8 py-2 text-sm border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition-all duration-300 hover:shadow-xl hover:border-blue-400 appearance-none cursor-pointer"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333333' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 0.75rem center",
+                backgroundSize: "1rem",
+              }}
+            >
+              <option value="All">All Statuses</option>
+              <option value="SCHEDULED">Scheduled</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            Available Slots ({filteredAvailableSlots.length})
-          </CNavLink>
-        </CNavItem>
-      </CNav>
+            <select
+              value={sortFilter}
+              onChange={(e) => setSortFilter(e.target.value)}
+              className="bg-gradient-to-r from-white to-blue-50 text-blue-900 rounded-lg pl-4 pr-8 py-2 text-sm border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition-all duration-300 hover:shadow-xl hover:border-blue-400 appearance-none cursor-pointer"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333333' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 0.75rem center",
+                backgroundSize: "1rem",
+              }}
+            >
+              <option value="newest">Sort by Newest</option>
+              <option value="slotTime">Sort by Slot Time</option>
+            </select>
+          </motion.div>
+        </div>
+      </div>
 
       <div className="flex-1 p-2 sm:p-3 md:p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {isLoading ? (
@@ -155,41 +266,43 @@ const PsychologistAppointmentsList = ({
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 w-full max-w-[1248px] mx-auto" // Thay w-[1248px] bằng w-full, giữ max-w-[1248px]
+                className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 w-full max-w-[1248px] mx-auto"
               >
                 {filteredBookings.length > 0 ? (
-                  appointmentsWithNames
-                    .filter((appt) => appt.status !== "AVAILABLE")
-                    .map((appointment) => (
-                      <div
-                        key={appointment.id}
-                        className="w-[300px] min-w-[250px] sm:max-w-[300px] md:max-w-[300px] lg:max-w-[300px]"
-                      >
-                        <PsychologistAppointmentCard
-                          id={appointment.id}
-                          student={appointment.student}
-                          psychologist={appointment.psychologist}
-                          date={
-                            isValid(appointment.date)
-                              ? format(appointment.date, "EEE, dd-MM-yyyy")
-                              : "Invalid Date"
-                          }
-                          timeRange={calculateTimeRange(
-                            appointment.details.slotId
-                          )}
-                          status={appointment.status}
-                          bookedBy={appointment.bookedBy}
-                          appointmentFor={appointment.appointmentFor}
-                          isOnline={appointment.isOnline}
-                          showParent={appointment.showParent}
-                          onViewDetail={() => handleViewDetail(appointment)}
-                          onChat={() => handleChat(appointment.id)}
-                          onCancel={() =>
-                            handleCancelAppointment(appointment.id)
-                          }
-                        />
-                      </div>
-                    ))
+                  sortAppointments(
+                    appointmentsWithNames.filter(
+                      (appt) =>
+                        appt.status !== "AVAILABLE" &&
+                        appt.status !== "TARGET PROGRAM"
+                    )
+                  ).map((appointment) => (
+                    <div
+                      key={appointment.id}
+                      className="w-[300px] min-w-[250px] sm:max-w-[300px] md:max-w-[300px] lg:max-w-[300px]"
+                    >
+                      <PsychologistAppointmentCard
+                        id={appointment.id}
+                        student={appointment.student}
+                        psychologist={appointment.psychologist}
+                        date={
+                          isValid(appointment.date)
+                            ? format(appointment.date, "EEE, dd-MM-yyyy")
+                            : "Invalid Date"
+                        }
+                        timeRange={calculateTimeRange(
+                          appointment.details.slotId
+                        )}
+                        status={appointment.status}
+                        bookedBy={appointment.bookedBy}
+                        appointmentFor={appointment.appointmentFor}
+                        isOnline={appointment.isOnline}
+                        showParent={appointment.showParent}
+                        onViewDetail={() => handleViewDetail(appointment)}
+                        onChat={() => handleChat(appointment.id)}
+                        onCancel={() => handleCancelAppointment(appointment.id)}
+                      />
+                    </div>
+                  ))
                 ) : (
                   <p className="w-full text-center text-gray-600 py-4">
                     No booked appointments for this date
@@ -204,37 +317,39 @@ const PsychologistAppointmentsList = ({
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 w-full max-w-[1248px] mx-auto" // Thay w-[1248px] bằng w-full, giữ max-w-[1248px]
+                className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 w-full max-w-[1248px] mx-auto"
               >
                 {filteredAvailableSlots.length > 0 ? (
-                  appointmentsWithNames
-                    .filter((appt) => appt.status === "AVAILABLE")
-                    .map((slot) => (
-                      <div
-                        key={slot.id}
-                        className="w-[300px] min-w-[250px] sm:max-w-[300px] md:max-w-[300px] lg:max-w-[300px]"
-                      >
-                        <PsychologistAppointmentCard
-                          id={slot.id}
-                          student={slot.student}
-                          psychologist={slot.psychologist}
-                          date={
-                            isValid(slot.date)
-                              ? format(slot.date, "EEE, dd-MM-yyyy")
-                              : "Invalid Date"
-                          }
-                          timeRange={calculateTimeRange(slot.details.slotId)}
-                          status={slot.status}
-                          bookedBy={slot.bookedBy}
-                          appointmentFor={slot.appointmentFor}
-                          isOnline={slot.isOnline}
-                          showParent={slot.showParent}
-                          onViewDetail={() => handleViewDetail(slot)}
-                          onChat={() => handleChat(slot.id)}
-                          onCancel={() => handleCancelAppointment(slot.id)}
-                        />
-                      </div>
-                    ))
+                  sortAppointments(
+                    appointmentsWithNames.filter(
+                      (appt) => appt.status === "AVAILABLE"
+                    )
+                  ).map((slot) => (
+                    <div
+                      key={slot.id}
+                      className="w-[300px] min-w-[250px] sm:max-w-[300px] md:max-w-[300px] lg:max-w-[300px]"
+                    >
+                      <PsychologistAppointmentCard
+                        id={slot.id}
+                        student={slot.student}
+                        psychologist={slot.psychologist}
+                        date={
+                          isValid(slot.date)
+                            ? format(slot.date, "EEE, dd-MM-yyyy")
+                            : "Invalid Date"
+                        }
+                        timeRange={calculateTimeRange(slot.details.slotId)}
+                        status={slot.status}
+                        bookedBy={slot.bookedBy}
+                        appointmentFor={slot.appointmentFor}
+                        isOnline={slot.isOnline}
+                        showParent={slot.showParent}
+                        onViewDetail={() => handleViewDetail(slot)}
+                        onChat={() => handleChat(slot.id)}
+                        onCancel={() => handleCancelAppointment(slot.id)}
+                      />
+                    </div>
+                  ))
                 ) : (
                   <div className="w-full flex flex-col items-center justify-center py-4">
                     <p className="text-gray-600 mb-2">
@@ -249,6 +364,53 @@ const PsychologistAppointmentsList = ({
                       Register New Slots
                     </motion.button>
                   </div>
+                )}
+              </motion.div>
+            )}
+            {activeTab === "targetProgram" && (
+              <motion.div
+                key="targetProgram"
+                variants={tabVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 w-full max-w-[1248px] mx-auto"
+              >
+                {targetPrograms.length > 0 ? (
+                  sortAppointments(
+                    appointmentsWithNames.filter(
+                      (slot) => slot.status === "TARGET PROGRAM"
+                    )
+                  ).map((program) => (
+                    <div
+                      key={program.id}
+                      className="w-[300px] min-w-[250px] sm:max-w-[300px] md:max-w-[300px] lg:max-w-[300px]"
+                    >
+                      <PsychologistAppointmentCard
+                        id={program.id}
+                        student={`${program.details.currentCapacity}/${program.details.capacity}`}
+                        psychologist={program.details.meetingWith}
+                        date={
+                          isValid(program.date)
+                            ? format(program.date, "EEE, dd-MM-yyyy")
+                            : "Invalid Date"
+                        }
+                        timeRange={calculateTimeRange(program.details.slotId)}
+                        status={program.status}
+                        bookedBy="Admin"
+                        appointmentFor={program.title}
+                        isOnline={false}
+                        showParent={false}
+                        onViewDetail={() => handleViewDetail(program)}
+                        onChat={() => handleChat(program.id)}
+                        onCancel={null}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <p className="w-full text-center text-gray-600 py-4">
+                    No Target Programs assigned for this date
+                  </p>
                 )}
               </motion.div>
             )}

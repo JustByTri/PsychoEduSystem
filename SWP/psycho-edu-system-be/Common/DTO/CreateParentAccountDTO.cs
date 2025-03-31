@@ -16,7 +16,7 @@ namespace Common.DTO
         public required string Email { get; set; }
 
         [Required(ErrorMessage = "Role name is required.")]
-        [RegularExpression("^(Parent|Student|Teacher)$", ErrorMessage = "Invalid role name.")]
+        [RegularExpression("^(Parent|Psychologist|Teacher)$", ErrorMessage = "Invalid role name.")]
         public required string RoleName { get; set; }
 
         public List<StudentRelationshipDTO>? StudentRelationships { get; set; }

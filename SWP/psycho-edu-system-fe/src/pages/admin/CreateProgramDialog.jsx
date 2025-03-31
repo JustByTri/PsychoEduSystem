@@ -1,6 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/prop-types */
-// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -22,7 +19,7 @@ import { TargetProgramService } from "../../api/services/targetProgram";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import "dayjs/locale/vi"; // Import Vietnamese locale
+import "dayjs/locale/vi";
 import {
   LocalizationProvider,
   DatePicker,
@@ -31,6 +28,7 @@ import {
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { toast } from "react-toastify";
 import { showError } from "../../utils/swalConfig";
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 const VN_TZ = "Asia/Ho_Chi_Minh";
@@ -90,13 +88,12 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
   };
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
-  console.log(programData);
 
   const handleSubmit = async () => {
     try {
       await TargetProgramService.createProgram(programData);
       reloadPrograms();
-      showSuccess("Success", "Program created successfully!");
+      toast.success("Program created successfully!");
       resetForm();
       onClose();
     } catch (error) {
@@ -250,7 +247,7 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
                 }}
               />
 
-              {/* Counselor Selection (Previously Step 3) */}
+              {/* Counselor Selection */}
               <Typography
                 variant="h6"
                 fontWeight="bold"
