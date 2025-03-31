@@ -187,5 +187,13 @@ namespace PsychoEduSystem.Controller
                 return StatusCode(500, new { Message = "An error occurred while updating user profile.", Error = ex.Message });
             }
         }
+        [HttpGet("students")]
+        public async Task<IActionResult> GetStudents()
+        {
+            var response = await _userService.GetStudentsAsync();
+            if (!response.IsSuccess || response.Result == null)
+                return NotFound(response.Message);
+            return Ok(response);
+        }
     }
 }
