@@ -22,5 +22,10 @@ namespace BLL.Interface
         Task<ResponseDTO> GetUserProfile(Guid userId);
         Task<ResponseDTO> UpdateUserProfileAsync(Guid userId, UpdateUserProfileDTO updateDto);
         Task<ResponseDTO> GetStudentsAsync();
+        Task<ResponseDTO> GetTotalUserAsync();
+        Task<ResponseDTO> GetTotalParentAsync();
+        Task<ResponseDTO> GetTotalClassAsync();
+        Task<ResponseDTO> GetTotalTargetProramAsync();
+        Task<ResponseDTO> GetTotalAppointmentAsync();
     }
 }
