@@ -133,6 +133,9 @@ const apiService = {
   fetchAppointments: async (userId, date) => {
     try {
       const formattedDate = format(new Date(date), "yyyy-MM-dd");
+      console.log(
+        `Fetching appointments for userId: ${userId}, date: ${formattedDate}`
+      );
       const response = await axios.get(
         `${API_BASE_URL}/appointments/students/${userId}/appointments?selectedDate=${formattedDate}`,
         {
@@ -142,19 +145,33 @@ const apiService = {
           },
         }
       );
-      if (response.data.isSuccess) {
-        console.log("API Response:", response.data.result);
-        return response.data.result.map((appointment) => {
-          const parsedDate = parseISO(
-            appointment.date.split("/").reverse().join("-")
-          );
+
+      console.log("Raw API Response:", response.data);
+
+      if (response.data.isSuccess && Array.isArray(response.data.result)) {
+        const appointments = response.data.result.map((appointment) => {
+          // Xử lý ngày linh hoạt hơn
+          let parsedDate;
+          try {
+            // Giả sử API trả về định dạng DD/MM/YYYY
+            parsedDate = parseISO(
+              appointment.date.split("/").reverse().join("-")
+            );
+          } catch (error) {
+            console.warn(
+              `Invalid date format for appointment ${appointment.appointmentId}: ${appointment.date}. Using fallback date.`,
+              error
+            );
+            parsedDate = startOfDay(new Date(date)); // Dùng ngày mặc định nếu parse thất bại
+          }
           const localDate = startOfDay(parsedDate);
+
           return {
             id: appointment.appointmentId,
             studentId: appointment.studentId || userId,
-            appointmentFor: appointment.appointmentFor,
-            bookedBy: appointment.bookedBy,
-            meetingWith: appointment.meetingWith,
+            appointmentFor: appointment.appointmentFor || "Unknown",
+            bookedBy: appointment.bookedBy || "Unknown",
+            meetingWith: appointment.meetingWith || "Unknown",
             type: appointment.isOnline ? "Online" : "Offline",
             date: localDate,
             slot: appointment.slotId || 0,
@@ -163,19 +180,24 @@ const apiService = {
               : appointment.isCompleted
               ? "Completed"
               : "Scheduled",
-            notes: appointment.notes,
+            notes: appointment.notes || "",
             appointmentId: appointment.appointmentId,
             isCancelled: appointment.isCancelled || false,
             googleMeetURL: appointment.googleMeetURL || null,
           };
         });
+        console.log("Processed Appointments:", appointments);
+        return appointments;
       } else {
-        throw new Error(
-          response.data.message || "Failed to fetch appointments"
+        console.warn(
+          "API returned no appointments or invalid data:",
+          response.data
         );
+        return []; // Trả về mảng rỗng thay vì ném lỗi
       }
     } catch (error) {
-      throw error;
+      console.error("Error fetching appointments:", error.response || error);
+      return []; // Trả về mảng rỗng nếu có lỗi (bao gồm 404)
     }
   },
   fetchAvailableSlots: async (date) => {

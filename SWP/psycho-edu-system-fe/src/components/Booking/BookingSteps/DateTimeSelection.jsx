@@ -3,7 +3,7 @@ import { useBooking } from "../../../context/BookingContext";
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { format, isBefore, startOfDay } from "date-fns";
+import { format, isBefore, startOfDay, startOfMonth } from "date-fns";
 import { Box, Typography, Button } from "@mui/material";
 import Swal from "sweetalert2";
 
@@ -20,8 +20,8 @@ const swalWithConfig = Swal.mixin({
 
 export const DateTimeSelection = () => {
   const { updateBookingData, bookingData } = useBooking();
-  const [selectedDate, setSelectedDate] = useState(new Date(2025, 2, 31)); // Mặc định là 31/03/2025
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 2, 1)); // Tháng 3/2025
+  const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [slots] = useState([
     { id: 1, time: "8:00" },
     { id: 2, time: "9:00" },
@@ -34,6 +34,7 @@ export const DateTimeSelection = () => {
   ]);
   const [availableSlotsCache, setAvailableSlotsCache] = useState({});
   const [bookedSlotsCache, setBookedSlotsCache] = useState({});
+  const [targetProgramsCache, setTargetProgramsCache] = useState({});
   const [availableSlots, setAvailableSlots] = useState([]);
   const [appointmentType, setAppointmentType] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,14 +44,30 @@ export const DateTimeSelection = () => {
   const fetchAvailableSlots = useCallback(
     async (date, consultantId) => {
       const dateKey = format(date, "yyyy-MM-dd");
-      if (availableSlotsCache[dateKey] && bookedSlotsCache[dateKey]) {
+      const authData = getAuthDataFromLocalStorage();
+      const today = startOfDay(new Date());
+
+      // Không fetch nếu ngày trong quá khứ
+      if (isBefore(date, today)) {
+        setAvailableSlots([]);
+        setHasSlots(false);
+        setError("Cannot select slots for past dates.");
+        return [];
+      }
+
+      // Kiểm tra cache
+      if (
+        availableSlotsCache[dateKey] &&
+        bookedSlotsCache[dateKey] &&
+        targetProgramsCache[dateKey]
+      ) {
         const cachedAvailableSlots = availableSlotsCache[dateKey];
         const cachedBookedSlots = bookedSlotsCache[dateKey];
+        const cachedTargetPrograms = targetProgramsCache[dateKey];
         const finalAvailableSlots = cachedAvailableSlots.filter(
-          (slotId) => !cachedBookedSlots.includes(slotId)
-        );
-        console.log(
-          `Using cached data for ${dateKey}: Available slots = ${cachedAvailableSlots}, Booked slots = ${cachedBookedSlots}, Final available slots = ${finalAvailableSlots}`
+          (slotId) =>
+            !cachedBookedSlots.includes(slotId) &&
+            !cachedTargetPrograms.includes(slotId)
         );
         setAvailableSlots(finalAvailableSlots);
         setHasSlots(finalAvailableSlots.length > 0);
@@ -66,68 +83,92 @@ export const DateTimeSelection = () => {
 
       setIsLoading(true);
       try {
-        const authData = getAuthDataFromLocalStorage();
-
-        // Bước 1: Lấy danh sách slot mà consultant đã đăng ký (AVAILABLE)
-        const availableResponse = await axios.get(
-          `https://localhost:7192/api/Schedule/user-schedules/${consultantId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authData.accessToken}`,
-              "Content-Type": "application/json",
-            },
+        // Bước 1: Lấy danh sách slot đã đăng ký bởi psychologist
+        let availableSlotsData = [];
+        try {
+          const availableResponse = await axios.get(
+            `https://localhost:7192/api/Schedule/user-schedules/${consultantId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${authData.accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          availableSlotsData = (availableResponse.data || [])
+            .filter(
+              (schedule) =>
+                format(new Date(schedule.date), "yyyy-MM-dd") === dateKey
+            )
+            .map((schedule) => schedule.slotId)
+            .filter((id) => id >= 1 && id <= 8);
+        } catch (error) {
+          if (error.response?.status !== 404) {
+            throw error; // Chỉ ném lỗi nếu không phải 404
           }
-        );
+          // Nếu 404, coi như không có slot đăng ký và tiếp tục
+          availableSlotsData = [];
+        }
 
-        // Lọc các slot theo ngày được chọn
-        const availableSlotsData = (availableResponse.data || [])
-          .filter(
-            (schedule) =>
-              format(new Date(schedule.date), "yyyy-MM-dd") === dateKey
+        // Bước 2: Lấy danh sách slot đã booked
+        let bookedSlotsData = [];
+        try {
+          const bookedResponse = await axios.get(
+            `https://localhost:7192/api/booking/consultant/${consultantId}?date=${dateKey}`,
+            {
+              headers: {
+                Authorization: `Bearer ${authData.accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          bookedSlotsData = (
+            bookedResponse.data.result ||
+            bookedResponse.data ||
+            []
           )
-          .map((schedule) => schedule.slotId)
-          .filter((id) => id >= 1 && id <= 8);
-
-        console.log(
-          `Available slots for ${consultantId} on ${dateKey}:`,
-          availableSlotsData
-        );
-
-        // Bước 2: Lấy danh sách slot đã book (SCHEDULED)
-        const bookedResponse = await axios.get(
-          `https://localhost:7192/api/booking/consultant/${consultantId}?date=${dateKey}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authData.accessToken}`,
-              "Content-Type": "application/json",
-            },
+            .filter((booking) => booking.status === "SCHEDULED")
+            .map((booking) => booking.slotId);
+        } catch (error) {
+          if (error.response?.status !== 404) {
+            throw error; // Chỉ ném lỗi nếu không phải 404
           }
-        );
+          // Nếu 404, coi như không có slot booked và tiếp tục
+          bookedSlotsData = [];
+        }
 
-        const bookedSlotsData = (
-          bookedResponse.data.result ||
-          bookedResponse.data ||
-          []
-        )
-          .filter((booking) => booking.status === "SCHEDULED")
-          .map((booking) => booking.slotId);
+        // Bước 3: Lấy danh sách Target Programs
+        let targetProgramsData = [];
+        try {
+          const targetResponse = await axios.get(
+            `https://localhost:7192/api/TargetProgram/list?day=${dateKey}`,
+            {
+              headers: { Authorization: `Bearer ${authData.accessToken}` },
+            }
+          );
+          targetProgramsData = (targetResponse.data || [])
+            .filter((program) => program.counselor.userId === consultantId)
+            .map((program) => {
+              const slotTime = program.time.split(":")[0] + ":00";
+              return slots.find((s) => s.time === slotTime)?.id;
+            })
+            .filter((id) => id); // Loại bỏ undefined/null
+        } catch (error) {
+          if (error.response?.status !== 404) {
+            throw error; // Chỉ ném lỗi nếu không phải 404
+          }
+          // Nếu 404, coi như không có Target Programs và tiếp tục
+          targetProgramsData = [];
+        }
 
-        console.log(
-          `Booked slots for ${consultantId} on ${dateKey}:`,
-          bookedSlotsData
-        );
-
-        // Bước 3: Lọc ra các slot còn trống
+        // Bước 4: Lọc ra các slot còn trống
         const finalAvailableSlots = availableSlotsData.filter(
-          (slotId) => !bookedSlotsData.includes(slotId)
+          (slotId) =>
+            !bookedSlotsData.includes(slotId) &&
+            !targetProgramsData.includes(slotId)
         );
 
-        console.log(
-          `Final available slots for ${consultantId} on ${dateKey}:`,
-          finalAvailableSlots
-        );
-
-        // Lưu vào cache
+        // Cập nhật cache
         setAvailableSlotsCache((prev) => ({
           ...prev,
           [dateKey]: availableSlotsData,
@@ -136,8 +177,13 @@ export const DateTimeSelection = () => {
           ...prev,
           [dateKey]: bookedSlotsData,
         }));
+        setTargetProgramsCache((prev) => ({
+          ...prev,
+          [dateKey]: targetProgramsData,
+        }));
         setAvailableSlots(finalAvailableSlots);
         setHasSlots(finalAvailableSlots.length > 0);
+
         if (finalAvailableSlots.length === 0) {
           swalWithConfig.fire({
             title: "No Schedules",
@@ -148,38 +194,34 @@ export const DateTimeSelection = () => {
         return finalAvailableSlots;
       } catch (error) {
         console.error("Error fetching available slots:", error);
-        if (error.response?.status === 404) {
-          setAvailableSlots([]);
-          setHasSlots(false);
-          setError("There are no available slots for this date.");
-          swalWithConfig.fire({
-            title: "No Schedules",
-            text: "No available slots for this date.",
-            icon: "info",
-          });
-        } else {
-          setAvailableSlots([]);
-          setHasSlots(false);
-          setError(
-            error.response?.data?.message || "Failed to fetch available slots."
-          );
-          swalWithConfig.fire({
-            title: "Error",
-            text: "Failed to fetch available slots. Please try again.",
-            icon: "error",
-          });
-        }
+        setAvailableSlots([]);
+        setHasSlots(false);
+        setError("Failed to fetch available slots.");
+        swalWithConfig.fire({
+          title: "Error",
+          text: "Failed to fetch available slots. Please try again.",
+          icon: "error",
+        });
         return [];
       } finally {
         setIsLoading(false);
       }
     },
-    [availableSlotsCache, bookedSlotsCache]
+    [availableSlotsCache, bookedSlotsCache, targetProgramsCache, slots]
   );
 
   useEffect(() => {
     if (bookingData.consultantId && selectedDate) {
-      fetchAvailableSlots(selectedDate, bookingData.consultantId);
+      fetchAvailableSlots(selectedDate, bookingData.consultantId).then(() => {
+        // Kiểm tra và bỏ chọn slot nếu không còn available
+        if (
+          bookingData.slotId &&
+          !availableSlots.includes(bookingData.slotId)
+        ) {
+          updateBookingData({ time: null, slotId: null });
+          setAppointmentType(null);
+        }
+      });
     }
   }, [bookingData.consultantId, selectedDate, fetchAvailableSlots]);
 
@@ -480,7 +522,7 @@ export const DateTimeSelection = () => {
                   py: 1,
                   borderRadius: "8px",
                   border:
-                    bookingData.time === slot.time &&
+                    bookingData.slotId === slot.id &&
                     availableSlots.includes(slot.id)
                       ? "2px solid #4CAF50"
                       : "1px solid #e0e0e0",
