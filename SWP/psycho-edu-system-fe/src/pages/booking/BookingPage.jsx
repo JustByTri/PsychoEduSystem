@@ -6,13 +6,31 @@ import { ConsultantSelection } from "../../components/Booking/BookingSteps/Consu
 import { DateTimeSelection } from "../../components/Booking/BookingSteps/DateTimeSelection";
 import { ConfirmationStep } from "../../components/Booking/BookingSteps/ConfirmationStep";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import axios from "axios";
-import { CircularProgress } from "@mui/material";
 import { motion } from "framer-motion";
 import apiService from "../../services/apiService";
+import Swal from "sweetalert2";
+import {
+  Box,
+  Stepper,
+  Step,
+  StepLabel,
+  Button,
+  Typography,
+} from "@mui/material";
+
+const swalWithConfig = Swal.mixin({
+  confirmButtonColor: "#26A69A",
+  cancelButtonColor: "#FF6F61",
+  timer: 1500,
+  showConfirmButton: false,
+  position: "center",
+  didOpen: (popup) => {
+    popup.style.zIndex = 9999;
+  },
+});
+
 const BookingPageContent = () => {
   const { isParent, bookingData, updateBookingData, resetBookingData } =
     useBooking();
@@ -22,9 +40,20 @@ const BookingPageContent = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasCriticalError, setHasCriticalError] = useState(false);
   const navigate = useNavigate();
   const authData = getAuthDataFromLocalStorage();
   const userId = authData?.userId;
+
+  const steps = isParent()
+    ? [
+        "Select Child",
+        "Consultant Type",
+        "Consultant",
+        "Date & Time",
+        "Confirm",
+      ]
+    : ["Consultant Type", "Consultant", "Date & Time", "Confirm"];
 
   const determineStudentId = useCallback(async () => {
     if (studentId) return;
@@ -58,11 +87,23 @@ const BookingPageContent = () => {
             childId: firstChildId,
           });
         } else {
-          setError("No children found for this parent.");
+          setError("There are no students associated with this account.");
+          setHasCriticalError(true);
         }
       }
     } catch (error) {
-      setError("Failed to determine student ID: " + error.message);
+      if (error.response?.status === 404) {
+        setError("There are no students associated with this account.");
+        setHasCriticalError(true);
+      } else {
+        setError("Unable to determine student ID: " + error.message);
+        setHasCriticalError(true);
+        swalWithConfig.fire({
+          title: "Error",
+          text: "Unable to determine student ID. Please try again.",
+          icon: "error",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +111,7 @@ const BookingPageContent = () => {
     isParent,
     userId,
     bookingData.childId,
-    authData.accessToken,
+    authData?.accessToken,
     updateBookingData,
   ]);
 
@@ -90,25 +131,54 @@ const BookingPageContent = () => {
 
   const handleNextWithValidation = () => {
     const userInfoStep = isParent() ? 5 : 4;
+
+    if (step === 1 && isParent() && !bookingData.childId) {
+      swalWithConfig.fire({
+        title: "Missing Selection",
+        text: "Please select a child before proceeding.",
+        icon: "warning",
+      });
+      return;
+    }
+    if (step === (isParent() ? 2 : 1) && !bookingData.consultantType) {
+      swalWithConfig.fire({
+        title: "Missing Selection",
+        text: "Please select a consultant type before proceeding.",
+        icon: "warning",
+      });
+      return;
+    }
+    if (step === (isParent() ? 3 : 2) && !bookingData.consultantId) {
+      swalWithConfig.fire({
+        title: "Missing Selection",
+        text: "Please select a consultant before proceeding.",
+        icon: "warning",
+      });
+      return;
+    }
+    if (
+      step === (isParent() ? 4 : 3) &&
+      (!bookingData.date || !bookingData.slotId || !bookingData.appointmentType)
+    ) {
+      swalWithConfig.fire({
+        title: "Missing Selection",
+        text: "Please select date, time, and appointment type before proceeding.",
+        icon: "warning",
+      });
+      return;
+    }
     if (step === userInfoStep) {
       if (!bookingData.userName || !bookingData.phone || !bookingData.email) {
-        console.log("Missing fields:", {
-          userName: bookingData.userName,
-          phone: bookingData.phone,
-          email: bookingData.email,
-        });
-        toast.error("Please fill in all required fields!", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
+        swalWithConfig.fire({
+          title: "Missing Information",
+          text: "Please fill in all required information!",
+          icon: "warning",
         });
         return;
       }
     }
-    if (step < totalSteps) {
+
+    if (step < totalSteps && !error) {
       setStep(step + 1);
     }
   };
@@ -120,7 +190,11 @@ const BookingPageContent = () => {
       !bookingData.date ||
       !bookingData.slotId
     ) {
-      toast.error("Please complete all steps before confirming.");
+      swalWithConfig.fire({
+        title: "Incomplete Steps",
+        text: "Please complete all steps before confirming.",
+        icon: "warning",
+      });
       return;
     }
 
@@ -128,44 +202,49 @@ const BookingPageContent = () => {
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(bookingData.date);
     if (selectedDate < today) {
-      toast.error("Meeting date must be in the future.");
+      swalWithConfig.fire({
+        title: "Invalid Date",
+        text: "The appointment date must be in the future.",
+        icon: "warning",
+      });
       return;
     }
 
     setIsSubmitting(true);
     try {
       const appointmentData = {
-        bookedBy: userId, // Luôn là ID của người đăng nhập (Parent hoặc Student)
-        appointmentFor: studentId, // ID của student được đặt lịch
+        bookedBy: userId,
+        appointmentFor: studentId,
         meetingWith: bookingData.consultantId,
         date: bookingData.date,
         slotId: bookingData.slotId,
         isOnline: bookingData.appointmentType === "Online",
       };
 
-      console.log("Sending appointment data:", appointmentData); // Log để kiểm tra
-
       const response = await apiService.bookAppointment(appointmentData);
 
       if (!response.isSuccess) {
-        throw new Error(response.message || "Failed to save appointment");
+        throw new Error(response.message || "Failed to book appointment");
       }
 
-      toast.success("Booking registered successfully!");
+      swalWithConfig.fire({
+        title: "Success",
+        text: "Appointment booked successfully!",
+        icon: "success",
+        timer: 2000,
+      });
       setTimeout(() => {
         resetBookingData();
         navigate(isParent() ? "/parent/schedule" : "/student/schedule");
-      }, 3000);
+      }, 2000);
     } catch (error) {
-      const errorMessage = error.message || "Failed to register appointment";
-      setError(`Failed to register appointment: ${errorMessage}`);
-      if (errorMessage.includes("Meeting date not valid")) {
-        toast.error(
-          "The selected date is not valid. Please choose a different date or check available slots."
-        );
-      } else {
-        toast.error(`Failed to register appointment: ${errorMessage}`);
-      }
+      const errorMessage = error.message || "Failed to book appointment";
+      setError(`Failed to book appointment: ${errorMessage}`);
+      swalWithConfig.fire({
+        title: "Error",
+        text: errorMessage,
+        icon: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -203,85 +282,138 @@ const BookingPageContent = () => {
   };
 
   if (isLoading) {
-    return <div className="text-center">Loading student data...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center text-red-600">{error}</div>;
+    return (
+      <Box sx={{ textAlign: "center", py: 8, fontFamily: "Inter, sans-serif" }}>
+        <Typography>Loading data...</Typography>
+      </Box>
+    );
   }
 
   return (
-    <div className="w-[960px] mx-auto p-2 sm:p-4 md:p-6 bg-white min-h-screen flex flex-col overflow-x-hidden">
+    <Box
+      sx={{
+        maxWidth: "960px",
+        mx: "auto",
+        p: 3,
+        bgcolor: "white",
+        minHeight: "100vh",
+        fontFamily: "Inter, sans-serif",
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="mb-4 sm:mb-6 md:mb-8 text-center"
+        sx={{ mb: 2, textAlign: "center" }}
       >
-        <div className="flex justify-center items-center w-full px-4 sm:px-6 md:px-8">
-          <h1
-            className="font-inter font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 
-            text-[1.25rem] sm:text-[1.5rem] md:text-[1.75rem] lg:text-[2rem] leading-tight 
-            antialiased break-words transition-all duration-300 ease-in-out"
-          >
-            Book an Appointment
-          </h1>
-        </div>
-        <p
-          className="font-inter text-gray-600 mt-2 sm:mt-3 md:mt-4 px-2 sm:px-4 md:px-6 lg:px-0 
-          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
-          md:text-[clamp(0.85rem,3.5vw,1rem)] lg:text-[clamp(0.9rem,4vw,1.125rem)] 
-          leading-relaxed break-words transition-all duration-300 ease-in-out"
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: "bold",
+            background: "linear-gradient(to right, #26A69A, #FF6F61)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            mb: 1,
+          }}
         >
+          Book an Appointment
+        </Typography>
+        <Typography sx={{ color: "#666", mb: 2 }}>
           Follow the steps below to schedule your consultation
-        </p>
+        </Typography>
+        <Stepper activeStep={step - 1} alternativeLabel sx={{ mb: 2 }}>
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
       </motion.div>
 
-      <div className="">{renderStepContent()}</div>
+      <Box sx={{ mb: 2 }}>{renderStepContent()}</Box>
 
-      <div className="bg-white p-2 sm:p-4 md:p-6 flex justify-between items-center w-full">
-        <button
-          onClick={handleBack}
-          disabled={step === 1 || isSubmitting}
-          className={`font-inter px-4 sm:px-6 py-2 
-          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
-          md:text-[clamp(0.85rem,3.5vw,1rem)] border border-blue-600 text-blue-600 rounded 
-          hover:border-blue-800 hover:text-blue-800 transition-colors duration-300 
-          ${step > 1 ? "visible" : "invisible"} ${
-            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+      {!hasCriticalError && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            bgcolor: "white",
+            p: 2,
+            borderTop: "1px solid #e0e0e0",
+          }}
         >
-          Back
-        </button>
-        <button
-          onClick={step < totalSteps ? handleNextWithValidation : handleConfirm}
-          disabled={isSubmitting}
-          className={`font-inter px-4 sm:px-6 py-2 
-          text-[clamp(0.65rem,2.5vw,0.75rem)] sm:text-[clamp(0.75rem,3vw,0.875rem)] 
-          md:text-[clamp(0.85rem,3.5vw,1rem)] rounded text-white 
-          ${
-            step < totalSteps
-              ? "bg-blue-600 hover:bg-blue-800"
-              : "bg-green-600 hover:bg-green-800"
-          } 
-          transition-all duration-300 ${
-            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          {isSubmitting ? (
-            <CircularProgress size={20} color="inherit" />
-          ) : step < totalSteps ? (
-            "Next"
-          ) : (
-            "Confirm Booking"
-          )}
-        </button>
-      </div>
-
-      <ToastContainer />
-    </div>
+          <Button
+            onClick={handleBack}
+            disabled={step === 1 || isSubmitting}
+            sx={{
+              px: 4,
+              py: 1,
+              color: "#26A69A",
+              borderColor: "#26A69A",
+              borderRadius: "8px",
+              fontFamily: "Inter, sans-serif",
+              visibility: step > 1 ? "visible" : "hidden",
+              opacity: isSubmitting ? 0.5 : 1,
+              "&:hover": { borderColor: "#1D7A74", color: "#1D7A74" },
+            }}
+            variant="outlined"
+          >
+            Back
+          </Button>
+          <Button
+            onClick={
+              step < totalSteps ? handleNextWithValidation : handleConfirm
+            }
+            disabled={isSubmitting}
+            sx={{
+              px: 4,
+              py: 1,
+              bgcolor: step < totalSteps ? "#26A69A" : "#388E3C",
+              color: "white",
+              borderRadius: "8px",
+              fontFamily: "Inter, sans-serif",
+              opacity: isSubmitting ? 0.5 : 1,
+              "&:hover": {
+                bgcolor: step < totalSteps ? "#1D7A74" : "#2E7D32",
+              },
+            }}
+            variant="contained"
+          >
+            {isSubmitting ? (
+              <svg
+                className="animate-spin h-5 w-5 text-white inline mr-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+            ) : null}
+            {isSubmitting
+              ? "Processing..."
+              : step < totalSteps
+              ? "Next"
+              : "Confirm Booking"}
+          </Button>
+        </Box>
+      )}
+    </Box>
   );
 };
+
 const BookingPage = () => {
   return (
     <BookingProvider>

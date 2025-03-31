@@ -30,6 +30,7 @@ import {
   CModalFooter,
   CButton,
 } from "@coreui/react";
+import axios from "axios";
 
 const globalStyles = `
   :root {
@@ -50,6 +51,7 @@ const PsychologistSchedulePage = () => {
 
   const [bookings, setBookings] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [targetPrograms, setTargetPrograms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -70,10 +72,12 @@ const PsychologistSchedulePage = () => {
   const calendarContainerRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const [prevTeacherId, setPrevTeacherId] = useState(null);
 
   const navigate = useNavigate();
   const authData = getAuthDataFromLocalStorage();
   const teacherId = authData?.userId;
+  const token = authData?.accessToken;
 
   const generateMonthDays = () => {
     const monthStart = startOfMonth(currentMonth);
@@ -92,6 +96,27 @@ const PsychologistSchedulePage = () => {
 
   const allDays = generateMonthDays();
 
+  useEffect(() => {
+    if (prevTeacherId && teacherId && prevTeacherId !== teacherId) {
+      setBookings([]);
+      setAvailableSlots([]);
+      setTargetPrograms([]);
+      setUserProfile(null);
+      setErrorMessage(null);
+      setFilterStatus("All");
+      setConfirmModalState({ visible: false, slotId: null });
+      setDetailModalState({ isOpen: false, selectedSlot: null });
+      setIsSuccessModalOpen(false);
+      setCurrentPage(0);
+      setAnimationDirection("");
+      setVisibleDaysCount(15);
+      setSlotsViewKey(0);
+      setSelectedDate(startOfDay(new Date()));
+      setCurrentMonth(startOfMonth(new Date()));
+    }
+    setPrevTeacherId(teacherId);
+  }, [teacherId, prevTeacherId]);
+
   const loadUserProfile = async () => {
     try {
       if (!teacherId) {
@@ -102,6 +127,7 @@ const PsychologistSchedulePage = () => {
     } catch (error) {
       console.error("Failed to load user:", error);
       setErrorMessage("Failed to load user profile.");
+      setUserProfile(null);
     }
   };
 
@@ -157,7 +183,7 @@ const PsychologistSchedulePage = () => {
             appointmentFor: appointment.appointmentFor || "Unknown",
             isOnline: appointment.isOnline,
             googleMeetURL: appointment.googleMeetURL,
-            notes: appointment.notes, // Thêm notes để FeedbackForm sử dụng
+            notes: appointment.notes,
           },
         };
       });
@@ -173,21 +199,11 @@ const PsychologistSchedulePage = () => {
     try {
       const selectedDateStr = moment(date).format("YYYY-MM-DD");
       const today = startOfDay(new Date());
-
-      // // Không hiển thị slot cho ngày trong quá khứ
-      // if (moment(date).isBefore(today, "day")) {
-      //   setAvailableSlots([]);
-      //   setIsLoading(false);
-      //   return;
-      // }
-
-      // Gọi API fetchConsultantSlots với teacherId và ngày được chọn
       const availableSlotIds = await apiService.fetchConsultantSlots(
         teacherId,
         selectedDateStr
       );
 
-      // Ánh xạ slotId với thời gian
       const slotMap = {
         1: { slotName: "08:00", startHour: 8 },
         2: { slotName: "09:00", startHour: 9 },
@@ -199,18 +215,25 @@ const PsychologistSchedulePage = () => {
         8: { slotName: "16:00", startHour: 16 },
       };
 
-      // Chuyển đổi danh sách slotId thành danh sách slot khả dụng
-      const psychologistAvailableSlots = availableSlotIds
+      const filteredSlotIds = availableSlotIds.filter((slotId) => {
+        const slotTime = slotMap[slotId]?.slotName;
+        const slotDateTime = `${selectedDateStr}T${slotTime}:00`;
+        return !targetPrograms.some(
+          (program) => program.details.startDate === slotDateTime
+        );
+      });
+
+      const psychologistAvailableSlots = filteredSlotIds
         .map((slotId) => {
           const slotInfo = slotMap[slotId];
           if (!slotInfo) {
             console.warn(`Invalid slotId from API: ${slotId}`);
-            return null; // Bỏ qua slotId không hợp lệ
+            return null;
           }
 
           const parsedDate = startOfDay(new Date(selectedDateStr));
           return {
-            id: `${selectedDateStr}-${slotId}`, // ID tạm thời
+            id: `${selectedDateStr}-${slotId}`,
             title: "Available Slot",
             slot: slotId,
             date: parsedDate,
@@ -225,7 +248,7 @@ const PsychologistSchedulePage = () => {
               slotId: slotId,
               date: parsedDate,
               slotName: slotInfo.slotName,
-              createAt: new Date().toISOString(), // Thời gian tạo giả lập
+              createAt: new Date().toISOString(),
               status: "AVAILABLE",
               studentId: null,
               meetingWith: userProfile?.fullName || "You",
@@ -236,7 +259,7 @@ const PsychologistSchedulePage = () => {
             },
           };
         })
-        .filter((slot) => slot !== null); // Loại bỏ slot không hợp lệ
+        .filter((slot) => slot !== null);
 
       setAvailableSlots(psychologistAvailableSlots);
       setSlotsViewKey((prev) => prev + 1);
@@ -245,6 +268,55 @@ const PsychologistSchedulePage = () => {
       setAvailableSlots([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchTargetPrograms = async (date) => {
+    try {
+      const selectedDateStr = moment(date).format("YYYY-MM-DD");
+      const response = await axios.get(
+        `https://localhost:7192/api/TargetProgram/list?day=${selectedDateStr}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const programs = response.data || [];
+
+      const filteredPrograms = programs.filter(
+        (program) => program.counselor.userId === teacherId
+      );
+
+      const mappedPrograms = filteredPrograms.map((program) => ({
+        id: program.programId,
+        title: `Target Program: ${program.name}`,
+        slot: getSlotIdFromTime(program.time),
+        date: startOfDay(new Date(program.startDate)),
+        start: moment(program.startDate).toDate(),
+        end: moment(program.startDate).add(1, "hour").toDate(),
+        status: "TARGET PROGRAM",
+        details: {
+          slotId: getSlotIdFromTime(program.time),
+          date: startOfDay(new Date(program.startDate)),
+          slotName: program.time,
+          status: "TARGET PROGRAM",
+          meetingWith: program.counselor.fullName,
+          programId: program.programId,
+          description: program.description,
+          dimensionName: program.dimensionName,
+          minPoint: program.minPoint,
+          capacity: program.capacity,
+          currentCapacity: program.currentCapacity,
+          googleMeetURL: program.counselor.googleMeetURL,
+          startDate: program.startDate,
+        },
+      }));
+      setTargetPrograms(mappedPrograms);
+
+      await fetchAvailableSlots(date);
+
+      return mappedPrograms;
+    } catch (error) {
+      console.error("Error fetching target programs:", error);
+      setTargetPrograms([]);
+      return [];
     }
   };
 
@@ -260,6 +332,20 @@ const PsychologistSchedulePage = () => {
       "16:00",
     ];
     return times[slotId - 1] || "Unknown";
+  };
+
+  const getSlotIdFromTime = (time) => {
+    const slotMap = {
+      "08:00": 1,
+      "09:00": 2,
+      "10:00": 3,
+      "11:00": 4,
+      "13:00": 5,
+      "14:00": 6,
+      "15:00": 7,
+      "16:00": 8,
+    };
+    return slotMap[time] || null;
   };
 
   const handleCancelAppointment = async (appointmentId) => {
@@ -284,7 +370,7 @@ const PsychologistSchedulePage = () => {
     setAnimationDirection("next");
     setSelectedDate(nextDay);
     fetchAppointments(nextDay);
-    fetchAvailableSlots(nextDay);
+    fetchTargetPrograms(nextDay).then(() => fetchAvailableSlots(nextDay));
     if (nextDay.getMonth() !== currentMonth.getMonth()) {
       setCurrentMonth(addMonths(currentMonth, 1));
     }
@@ -304,7 +390,7 @@ const PsychologistSchedulePage = () => {
     setAnimationDirection("prev");
     setSelectedDate(prevDay);
     fetchAppointments(prevDay);
-    fetchAvailableSlots(prevDay);
+    fetchTargetPrograms(prevDay).then(() => fetchAvailableSlots(prevDay));
     if (prevDay.getMonth() !== currentMonth.getMonth()) {
       setCurrentMonth(subMonths(currentMonth, 1));
     }
@@ -335,7 +421,7 @@ const PsychologistSchedulePage = () => {
     setAnimationDirection(date > selectedDate ? "next" : "prev");
     setSelectedDate(date);
     fetchAppointments(date);
-    fetchAvailableSlots(date);
+    fetchTargetPrograms(date).then(() => fetchAvailableSlots(date));
     if (date.getMonth() !== currentMonth.getMonth()) {
       setCurrentMonth(startOfMonth(date));
     }
@@ -353,15 +439,21 @@ const PsychologistSchedulePage = () => {
   const handleNextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
     setSelectedDate(startOfMonth(addMonths(currentMonth, 1)));
-    fetchAppointments(startOfMonth(addMonths(currentMonth, 1)));
-    fetchAvailableSlots(startOfMonth(addMonths(currentMonth, 1)));
+    const nextMonthStart = startOfMonth(addMonths(currentMonth, 1));
+    fetchAppointments(nextMonthStart);
+    fetchTargetPrograms(nextMonthStart).then(() =>
+      fetchAvailableSlots(nextMonthStart)
+    );
   };
 
   const handlePrevMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
     setSelectedDate(startOfMonth(subMonths(currentMonth, 1)));
-    fetchAppointments(startOfMonth(subMonths(currentMonth, 1)));
-    fetchAvailableSlots(startOfMonth(subMonths(currentMonth, 1)));
+    const prevMonthStart = startOfMonth(subMonths(currentMonth, 1));
+    fetchAppointments(prevMonthStart);
+    fetchTargetPrograms(prevMonthStart).then(() =>
+      fetchAvailableSlots(prevMonthStart)
+    );
   };
 
   const handleViewDetail = (slot) => {
@@ -369,7 +461,9 @@ const PsychologistSchedulePage = () => {
   };
 
   const handleChat = (id) => {
-    const slot = [...bookings, ...availableSlots].find((s) => s.id === id);
+    const slot = [...bookings, ...availableSlots, ...targetPrograms].find(
+      (s) => s.id === id
+    );
     navigate(`/chat/${id}`, {
       state: { googleMeetURL: slot?.details?.googleMeetURL || null },
     });
@@ -395,7 +489,9 @@ const PsychologistSchedulePage = () => {
         await loadUserProfile();
         if (teacherId) {
           await fetchAppointments(selectedDate);
-          await fetchAvailableSlots(selectedDate);
+          await fetchTargetPrograms(selectedDate).then(() =>
+            fetchAvailableSlots(selectedDate)
+          );
         }
       } catch (error) {
         setErrorMessage("Failed to initialize data.");
@@ -406,12 +502,10 @@ const PsychologistSchedulePage = () => {
     initializeData();
   }, [teacherId]);
 
-  useEffect(() => {
-    if (teacherId && userProfile) {
-      fetchAppointments(selectedDate);
-      fetchAvailableSlots(selectedDate);
-    }
-  }, [selectedDate, userProfile, teacherId]);
+  const filteredAvailableSlots =
+    filterStatus === "All"
+      ? availableSlots
+      : availableSlots.filter((s) => s.status === filterStatus);
 
   return (
     <motion.div
@@ -435,8 +529,6 @@ const PsychologistSchedulePage = () => {
             animationDirection={animationDirection}
             setAnimationDirection={setAnimationDirection}
             visibleDaysCount={visibleDaysCount}
-            filterStatus={filterStatus}
-            setFilterStatus={setFilterStatus}
             handlePrev={handlePrev}
             handleNext={handleNext}
             handleSelectDate={handleSelectDate}
@@ -470,16 +562,15 @@ const PsychologistSchedulePage = () => {
                   ? bookings
                   : bookings.filter((b) => b.status === filterStatus)
               }
-              filteredAvailableSlots={
-                filterStatus === "All"
-                  ? availableSlots
-                  : availableSlots.filter((s) => s.status === filterStatus)
-              }
+              filteredAvailableSlots={filteredAvailableSlots}
+              targetPrograms={targetPrograms}
               handleViewDetail={handleViewDetail}
               handleChat={handleChat}
               handleCancelAppointment={handleConfirmCancel}
               handleNavigate={handleNavigateToRegistration}
               selectedDate={selectedDate}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
             />
           </motion.div>
         </div>

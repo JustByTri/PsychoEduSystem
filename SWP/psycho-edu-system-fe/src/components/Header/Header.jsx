@@ -79,139 +79,87 @@ const Header = () => {
   }, []);
 
   const avatarMap = {
-    Admin: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
-    Student: "https://cdn-icons-png.flaticon.com/512/3048/3048122.png",
-    Teacher: "https://cdn-icons-png.flaticon.com/512/3048/3048127.png",
-    Psychologist: "https://cdn-icons-png.flaticon.com/512/2921/2921838.png",
-    Parent: "https://cdn-icons-png.flaticon.com/512/1460/1460669.png",
+    Admin: "https://cdn-icons-png.flaticon.com/512/2922/2922510.png",
+    Student: "https://cdn-icons-png.flaticon.com/512/2922/2922520.png",
+    Teacher: "https://cdn-icons-png.flaticon.com/512/2922/2922565.png",
+    Psychologist: "https://cdn-icons-png.flaticon.com/512/2922/2922570.png",
+    Parent: "https://cdn-icons-png.flaticon.com/512/2922/2922580.png",
   };
 
   const getAvatar = (role) =>
-    avatarMap[role] || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    avatarMap[role] ||
+    "https://cdn-icons-png.flaticon.com/512/2922/2922510.png";
 
   if (!profile) {
     return <div className="text-center text-gray-500 py-4">Loading...</div>;
   }
 
   return (
-    <AppBar
-      position="sticky"
-      sx={{
-        backgroundColor: "#26A69A", // Teal
-        boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-        px: 2,
-      }}
-    >
-      <Toolbar
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          py: 1,
-        }}
-      >
-        <Box display="flex" alignItems="center">
-          <img
-            src={LogoHeader}
-            alt="Logo"
-            style={{ width: 130, height: "auto" }}
-          />
+    <AppBar position="sticky" className="bg-white ">
+      <Toolbar className="flex justify-between py-2">
+        <Box className="flex items-center">
+          <img src={LogoHeader} alt="Logo" className="w-32 h-auto" />
         </Box>
-        <Box display="flex" alignItems="center">
+        <Box className="flex items-center">
           <IconButton
             onClick={handleMenuOpen}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              color: "#F7FAFC",
-              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
-            }}
+            className="flex items-center text-teal-600 hover:bg-transparent"
           >
             <Avatar
               src={getAvatar(profile.role)}
               alt="Profile"
-              sx={{
-                width: 44,
-                height: 44,
-                border: "2px solid #F9E79F", // Soft Yellow
-                transition: "0.3s",
-                "&:hover": {
-                  transform: "scale(1.05)",
-                  boxShadow: "0px 6px 16px rgba(0, 0, 0, 0.15)",
-                },
-              }}
+              className="w-11 h-11 border-2 border-yellow-300 bg-gray-200 transition-transform transform hover:scale-105 "
             />
-            <Typography
-              sx={{
-                ml: 1,
-                fontWeight: 500,
-                fontSize: "1rem",
-                color: "#F7FAFC",
-              }}
-            >
+            <Typography className="ml-2 font-medium text-lg text-teal-600">
               {profile && profile.fullName
                 ? profile.fullName
                 : profile?.Username || "User"}
             </Typography>
-            <ArrowDropDownIcon sx={{ color: "#FBBF24" }} />
+            <ArrowDropDownIcon className="text-yellow-400" />
           </IconButton>
         </Box>
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
-          TransitionComponent={Fade}
-          sx={{ mt: 1 }}
+          // TransitionComponent={Fade}
+          className="mt-1"
           PaperProps={{
             elevation: 0,
-            sx: {
-              borderRadius: 2,
-              minWidth: 250,
-              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-              backgroundColor: "#FFFFFF", // White
-              p: 1,
-              border: "1px solid #E5E7EB",
-            },
+            className:
+              "rounded-lg min-w-[250px] shadow-md bg-white p-1 border border-gray-300",
           }}
         >
-          <Box display="flex" alignItems="center" px={2} py={1}>
+          <Box className="flex items-center px-4 py-2">
             <Avatar
               src={getAvatar(profile.role)}
-              sx={{
-                width: 50,
-                height: 50,
-                border: "2px solid #F9E79F", // Soft Yellow
-                mr: 1,
-              }}
+              className="w-12 h-12 border-2 border-yellow-300 bg-gray-200 mr-2"
             />
             <Box>
-              <Typography variant="subtitle1" fontWeight={600} color="#26A69A">
+              <Typography
+                variant="subtitle1"
+                className="font-semibold text-teal-600"
+              >
                 {profile.fullName || profile.Username || "User"}
               </Typography>
               <Typography
                 variant="body2"
-                color="#666"
-                display="flex"
-                alignItems="center"
+                className="text-gray-600 flex items-center"
               >
-                <MailIcon fontSize="small" sx={{ mr: 0.5, color: "#FBBF24" }} />
+                <MailIcon className="mr-1 text-yellow-400" />
                 {profile.Email}
               </Typography>
             </Box>
           </Box>
-          <Divider sx={{ my: 1, borderColor: "#E5E7EB" }} />
+          <Divider className="my-2 border-gray-300" />
           <MenuItem
             component={Link}
             to="/profile"
             onClick={handleMenuClose}
-            sx={{
-              fontSize: "0.95rem",
-              py: 1,
-              color: "#26A69A",
-              "&:hover": { backgroundColor: "#F9E79F", color: "#26A69A" }, // Soft Yellow
-            }}
+            className="text-teal-600 hover:bg-yellow-300 hover:text-teal-600 text-sm py-2"
           >
             <ListItemIcon>
-              <PersonIcon fontSize="small" sx={{ color: "#FBBF24" }} />
+              <PersonIcon className="text-yellow-400" />
             </ListItemIcon>
             Profile
           </MenuItem>
@@ -219,30 +167,20 @@ const Header = () => {
             component={Link}
             to="/"
             onClick={handleMenuClose}
-            sx={{
-              fontSize: "0.95rem",
-              py: 1,
-              color: "#26A69A",
-              "&:hover": { backgroundColor: "#F9E79F", color: "#26A69A" }, // Soft Yellow
-            }}
+            className="text-teal-600 hover:bg-yellow-300 hover:text-teal-600 text-sm py-2"
           >
             <ListItemIcon>
-              <HomeIcon fontSize="small" sx={{ color: "#FBBF24" }} />
+              <HomeIcon className="text-yellow-400" />
             </ListItemIcon>
             Home
           </MenuItem>
-          <Divider sx={{ my: 1, borderColor: "#E5E7EB" }} />
+          <Divider className="my-2 border-gray-300" />
           <MenuItem
             onClick={handleLogout}
-            sx={{
-              fontSize: "0.95rem",
-              py: 1,
-              color: "#FF6F61", // Coral
-              "&:hover": { backgroundColor: "#F9E79F", color: "#FF8A80" }, // Soft Yellow + Coral nhạt
-            }}
+            className="text-red-500 hover:bg-yellow-300 hover:text-red-400 text-sm py-2"
           >
             <ListItemIcon>
-              <LogoutIcon fontSize="small" sx={{ color: "#FF6F61" }} />
+              <LogoutIcon className="text-red-500" />
             </ListItemIcon>
             Logout
           </MenuItem>

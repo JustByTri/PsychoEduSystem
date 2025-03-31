@@ -1,190 +1,110 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import apiService from "../../services/apiService";
-import { toast } from "react-toastify";
-import { motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faHeading,
-  faImage,
-  faFileAlt,
-  faList,
-} from "@fortawesome/free-solid-svg-icons";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { showError } from "../../utils/swalConfig"; // Thay toast bằng Swal
 
-const BlogForm = ({ blog, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({
-    title: "",
-    thumbnail: "",
-    excerpt: "",
-    content: "",
-    category: "",
-  });
-
-  useEffect(() => {
-    if (blog) setFormData(blog);
-  }, [blog]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleContentChange = (value) => {
-    setFormData({ ...formData, content: value });
-  };
+const BlogForm = ({ blog, dimensions, onSave, onCancel }) => {
+  const [formData, setFormData] = useState(
+    blog
+      ? { title: blog.title, content: blog.content }
+      : { title: "", content: "", dimensionId: dimensions[0]?.id }
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !formData.title ||
-      !formData.thumbnail ||
-      !formData.excerpt ||
-      !formData.content ||
-      !formData.category
-    ) {
-      toast.error("Please fill in all fields!");
-      return;
-    }
     try {
+      let response;
       if (blog) {
-        const response = await apiService.blog.updateBlog(blog.id, formData);
-        if (response.isSuccess) {
-          toast.success(response.message);
-          onSave();
-        }
+        const updateData = { title: formData.title, content: formData.content };
+        response = await apiService.blog.updateBlog(blog.id, updateData);
       } else {
-        const response = await apiService.blog.createBlog(formData);
-        if (response.isSuccess) {
-          toast.success(response.message);
-          onSave();
-        }
+        response = await apiService.blog.createBlog(formData);
       }
+      onSave("Blog saved successfully!");
     } catch (error) {
-      toast.error(error.message);
+      showError("Error", error.message || "Failed to save blog");
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto border border-[#E5E7EB]"
-    >
-      <h3 className="text-2xl font-bold text-[#26A69A] mb-6">
-        {blog ? "Edit Blog Post" : "Create New Blog Post"}
+    <div>
+      <h3 className="text-xl font-semibold mb-4">
+        {blog ? "Edit Blog" : "Create New Blog"}
       </h3>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-[#374151] mb-2">
-            <FontAwesomeIcon icon={faHeading} className="mr-2 text-[#26A69A]" />
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             Title
           </label>
           <input
             type="text"
-            name="title"
             value={formData.title}
-            onChange={handleChange}
-            placeholder="Enter the blog title..."
-            className="block w-full border border-[#E5E7EB] rounded-lg p-3 focus:ring-2 focus:ring-[#26A69A] focus:border-[#26A69A] transition-all duration-300 shadow-sm"
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
+            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            placeholder="Enter blog title"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-[#374151] mb-2">
-            <FontAwesomeIcon icon={faImage} className="mr-2 text-[#26A69A]" />
-            Image (URL)
-          </label>
-          <input
-            type="text"
-            name="thumbnail"
-            value={formData.thumbnail}
-            onChange={handleChange}
-            placeholder="Paste the image URL..."
-            className="block w-full border border-[#E5E7EB] rounded-lg p-3 focus:ring-2 focus:ring-[#26A69A] focus:border-[#26A69A] transition-all duration-300 shadow-sm"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-[#374151] mb-2">
-            <FontAwesomeIcon icon={faFileAlt} className="mr-2 text-[#26A69A]" />
-            Excerpt
-          </label>
-          <textarea
-            name="excerpt"
-            value={formData.excerpt}
-            onChange={handleChange}
-            placeholder="Enter a short excerpt (2-3 sentences)..."
-            className="block w-full border border-[#E5E7EB] rounded-lg p-3 focus:ring-2 focus:ring-[#26A69A] focus:border-[#26A69A] transition-all duration-300 shadow-sm"
-            rows="3"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-[#374151] mb-2">
-            <FontAwesomeIcon icon={faFileAlt} className="mr-2 text-[#26A69A]" />
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             Content
           </label>
-          <ReactQuill
+          <textarea
             value={formData.content}
-            onChange={handleContentChange}
-            className="bg-white rounded-lg shadow-sm"
-            theme="snow"
-            modules={{
-              toolbar: [
-                [{ header: [1, 2, false] }],
-                ["bold", "italic", "underline"],
-                ["link", "image"],
-                [{ list: "ordered" }, { list: "bullet" }],
-                ["clean"],
-              ],
-            }}
+            onChange={(e) =>
+              setFormData({ ...formData, content: e.target.value })
+            }
+            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            rows="6"
+            placeholder="Write your content here"
+            required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-[#374151] mb-2">
-            <FontAwesomeIcon icon={faList} className="mr-2 text-[#26A69A]" />
-            Category
-          </label>
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className="block w-full border border-[#E5E7EB] rounded-lg p-3 focus:ring-2 focus:ring-[#26A69A] focus:border-[#26A69A] transition-all duration-300 shadow-sm"
-            required
-          >
-            <option value="">Select a category</option>
-            <option value="Lo Âu">Lo Âu</option>
-            <option value="Trầm Cảm">Trầm Cảm</option>
-            <option value="Cognitive Health">Cognitive Health</option>
-            <option value="Emotional Health">Emotional Health</option>
-            <option value="Social Health">Social Health</option>
-            <option value="Physical Health">Physical Health</option>
-            <option value="School Stories">School Stories</option>
-          </select>
-        </div>
-        <div className="flex space-x-4 pt-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+        {blog ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <p className="text-gray-600">{blog.category}</p>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              value={formData.dimensionId}
+              onChange={(e) =>
+                setFormData({ ...formData, dimensionId: e.target.value })
+              }
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            >
+              {dimensions.map((dim) => (
+                <option key={dim.id} value={dim.id}>
+                  {dim.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div className="flex space-x-4">
+          <button
             type="submit"
-            className="bg-[#26A69A] text-white px-6 py-2 rounded-lg hover:bg-[#4DB6AC] transition-all duration-300 shadow-md"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition"
           >
-            {blog ? "Update" : "Create"}
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            Save
+          </button>
+          <button
             type="button"
             onClick={onCancel}
-            className="bg-[#FF6F61] text-white px-6 py-2 rounded-lg hover:bg-[#FF8A80] transition-all duration-300 shadow-md"
+            className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg shadow-md hover:bg-gray-400 transition"
           >
             Cancel
-          </motion.button>
+          </button>
         </div>
       </form>
-    </motion.div>
+    </div>
   );
 };
 

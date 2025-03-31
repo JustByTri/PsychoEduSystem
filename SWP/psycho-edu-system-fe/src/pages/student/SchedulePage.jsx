@@ -88,7 +88,7 @@ const SchedulePage = () => {
       setUserProfile(profile);
     } catch (error) {
       console.error("Failed to load user:", error);
-      setErrorMessage("Failed to load user profile.");
+      setErrorMessage("Không thể tải hồ sơ người dùng.");
     }
   };
 
@@ -103,8 +103,8 @@ const SchedulePage = () => {
       setBookings(appointmentsData || []);
       setAppointmentViewKey((prev) => prev + 1);
     } catch (error) {
-      // console.error("Failed to load appointments:", error);
       setBookings([]);
+      setError("Không thể tải lịch hẹn: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -205,7 +205,7 @@ const SchedulePage = () => {
       (appt) => appt.id === id || appt.appointmentId === id
     );
     navigate(`/chat/${id}`, {
-      state: { googleMeetURL: appointment?.googleMeetURL || null, },
+      state: { googleMeetURL: appointment?.googleMeetURL || null },
     });
   };
 
@@ -243,7 +243,7 @@ const SchedulePage = () => {
         await loadUserProfile();
       } catch (error) {
         console.error("Failed to initialize data:", error);
-        setErrorMessage("Failed to load user profile. Please try again later.");
+        setErrorMessage("Không thể tải dữ liệu ban đầu. Vui lòng thử lại sau.");
       } finally {
         setIsLoading(false);
       }
@@ -262,11 +262,11 @@ const SchedulePage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="w-full min-h-screen bg-gray-50 flex items-center justify-center" // Sửa nền thành bg-gray-50
+      className="w-full min-h-screen bg-gray-50 flex items-center justify-center"
     >
       <CContainer
         fluid
-        className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr] p-4" // Thêm padding p-4
+        className="max-w-[1440px] min-h-[100vh] mx-auto grid grid-rows-[auto_1fr] p-4"
       >
         <div ref={calendarContainerRef} className="w-full">
           <CalendarHeader
@@ -295,9 +295,18 @@ const SchedulePage = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-500 text-white rounded-lg mb-4 p-4 shadow-md" // Cập nhật màu đỏ đồng bộ với Cancel
+              className="bg-red-500 text-white rounded-lg mb-4 p-4 shadow-md"
             >
               <p>{errorMessage}</p>
+            </motion.div>
+          )}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-500 text-white rounded-lg mb-4 p-4 shadow-md"
+            >
+              <p>{error}</p>
             </motion.div>
           )}
           <motion.div
@@ -336,7 +345,7 @@ const SchedulePage = () => {
             }
             setConfirmModalState({ visible: false, appointmentId: null });
           }}
-          appointmentId={confirmModalState.appointmentId} // Truyền appointmentId
+          appointmentId={confirmModalState.appointmentId}
         />
 
         <AppointmentDetailModal

@@ -1,64 +1,88 @@
 import axios from "axios";
 import { parseISO, startOfDay, format } from "date-fns";
 import { getAuthDataFromLocalStorage } from "../utils/auth";
-
 const API_BASE_URL = "https://localhost:7192/api";
 const authData = getAuthDataFromLocalStorage();
-
+const dimensions = [
+  { id: 1, name: "Lo Âu" },
+  { id: 2, name: "Trầm Cảm" },
+  { id: 3, name: "Căng Thẳng" },
+];
 const apiService = {
-  // Các API khác giữ nguyên, chỉ cập nhật phần blog
   fetchUserProfile: async (userId) => {
-    try {
-      if (!authData || !authData.accessToken) {
-        throw new Error("Authentication data not found. Please log in.");
+    const response = await axios.get(
+      `${API_BASE_URL}/User/profile?userId=${userId}`,
+      {
+        headers: { Authorization: `Bearer ${authData.accessToken}` },
       }
-
-      const profileResponse = await axios.get(
-        `${API_BASE_URL}/User/profile?userId=${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (profileResponse.data.isSuccess) {
-        console.log("User Profile Response:", profileResponse.data.result);
-        return { ...profileResponse.data.result, userId };
-      } else {
-        throw new Error(
-          profileResponse.data.message || "Failed to get user profile"
-        );
+    );
+    return response.data.isSuccess
+      ? response.data.result
+      : Promise.reject(response.data.message);
+  },
+  fetchUserSchedules: async (userId) => {
+    const response = await axios.get(
+      `${API_BASE_URL}/Schedule/user-schedules/${userId}`,
+      {
+        headers: { Authorization: `Bearer ${authData.accessToken}` },
       }
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      throw new Error("Failed to load user profile. Please try again later.");
-    }
+    );
+    return response.data;
   },
-
-  updateUserProfile: async (userId, data, config = {}) => {
-    try {
-      const response = await axios.put(
-        `${API_BASE_URL}/User/profile/${userId}`,
-        data,
-        {
-          ...config,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authData.accessToken}`,
-            ...config.headers,
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Failed to update profile"
-      );
-    }
+  fetchConsultantSlots: async (consultantId, date) => {
+    const response = await axios.get(
+      `${API_BASE_URL}/User/${consultantId}/slots?selectedDate=${date}`,
+      {
+        headers: { Authorization: `Bearer ${authData.accessToken}` },
+      }
+    );
+    return response.data.result || [];
   },
-
+  bookSlots: async (payload) => {
+    const response = await axios.post(
+      `${API_BASE_URL}/Schedule/book-slots`,
+      payload,
+      {
+        headers: { Authorization: `Bearer ${authData.accessToken}` },
+      }
+    );
+    return response.data;
+  },
+  fetchConsultantAppointments: async (teacherId, date) => {
+    const response = await axios.get(
+      `${API_BASE_URL}/appointments/consultants/${teacherId}/appointments?selectedDate=${date}`,
+      { headers: { Authorization: `Bearer ${authData.accessToken}` } }
+    );
+    return response.data.result || [];
+  },
+  cancelAppointment: async (appointmentId) => {
+    const response = await axios.get(
+      `${API_BASE_URL}/appointments/${appointmentId}/cancellation`,
+      {
+        headers: { Authorization: `Bearer ${authData.accessToken}` },
+      }
+    );
+    return response.data;
+  },
+  createTargetProgram: async (data) => {
+    const response = await axios.post(
+      `${API_BASE_URL}/TargetProgram/create`,
+      data,
+      {
+        headers: { Authorization: `Bearer ${authData.accessToken}` },
+      }
+    );
+    return response.data;
+  },
+  getAvailableCounselors: async (dateTime) => {
+    const response = await axios.get(
+      `${API_BASE_URL}/TargetProgram/available-counselors?dateTime=${dateTime}`,
+      {
+        headers: { Authorization: `Bearer ${authData.accessToken}` },
+      }
+    );
+    return response.data.result || [];
+  },
   checkUserExistence: async (email) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -80,7 +104,6 @@ const apiService = {
       throw error;
     }
   },
-
   createUserAccount: async (userData) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -107,7 +130,6 @@ const apiService = {
       throw error;
     }
   },
-
   fetchAppointments: async (userId, date) => {
     try {
       const formattedDate = format(new Date(date), "yyyy-MM-dd");
@@ -156,36 +178,6 @@ const apiService = {
       throw error;
     }
   },
-
-  cancelAppointment: async (appointmentId) => {
-    try {
-      if (!appointmentId) {
-        throw new Error("Appointment ID is undefined");
-      }
-
-      const response = await axios.get(
-        `${API_BASE_URL}/appointments/${appointmentId}/cancellation`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.isSuccess) {
-        return response.data.message || "Appointment cancelled successfully!";
-      } else {
-        throw new Error(
-          response.data.message || "Failed to cancel appointment"
-        );
-      }
-    } catch (error) {
-      console.error("Error cancelling appointment:", error);
-      throw error;
-    }
-  },
-
   fetchAvailableSlots: async (date) => {
     try {
       if (!authData || !authData.accessToken) {
@@ -213,31 +205,6 @@ const apiService = {
       throw new Error();
     }
   },
-
-  fetchConsultantSlots: async (consultantId, date) => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/User/${consultantId}/slots?selectedDate=${date}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(response.data.result);
-
-      if (response.status === 200) {
-        return response.data.result || response.data || [];
-      } else {
-        throw new Error("Failed to fetch consultant slots");
-      }
-    } catch (error) {
-      console.error("Error fetching consultant slots:", error);
-      throw error;
-    }
-  },
-
   fetchParentChildren: async (parentId) => {
     try {
       const response = await axios.get(
@@ -255,7 +222,6 @@ const apiService = {
       throw error;
     }
   },
-
   bookAppointment: async (appointmentData) => {
     try {
       const { bookedBy, appointmentFor, meetingWith, date, slotId, isOnline } =
@@ -325,103 +291,15 @@ const apiService = {
       };
     }
   },
-
-  fetchUserSchedules: async (userId) => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/Schedule/user-schedules/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200 && Array.isArray(response.data)) {
-        return response.data;
-      } else {
-        throw new Error("Failed to fetch user schedules");
-      }
-    } catch (error) {
-      console.error("Error fetching user schedules:", error);
-      throw error;
-    }
-  },
-
-  bookSlots: async (payload) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/Schedule/book-slots`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authData.accessToken}`,
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        const bookedSlots = payload.bookingDetails.map((booking) => ({
-          bookingId: null,
-          slotId: booking.slotId,
-          date: booking.date,
-        }));
-
-        return {
-          isSuccess: true,
-          message: response.data || "Slots booked successfully!",
-          bookings: bookedSlots,
-        };
-      } else {
-        throw new Error("Failed to book slots");
-      }
-    } catch (error) {
-      console.error("Error booking slots:", error);
-      throw new Error(error.response?.data?.message || "Failed to book slots");
-    }
-  },
-
-  fetchConsultantAppointments: async (teacherId, date) => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/appointments/consultants/${teacherId}/appointments?selectedDate=${date}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200 && response.data.isSuccess) {
-        return response.data.result || [];
-      } else {
-        throw new Error("Failed to fetch consultant appointments");
-      }
-    } catch (error) {
-      console.error("Error fetching consultant appointments:", error);
-      throw error;
-    }
-  },
-
-  // Cập nhật API cho Blog (không yêu cầu Authorization)
   blog: {
-    // Lấy danh sách bài viết (phân trang)
-    fetchBlogs: async (pageNumber = 1, pageSize = 10) => {
+    fetchBlogs: async (pageNumber = 1, pageSize = 5) => {
       try {
         const response = await axios.get(
           `${API_BASE_URL}/BlogPost/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+          { headers: { "Content-Type": "application/json" } }
         );
-
         if (response.status === 200) {
-          const { blogs } = response.data;
+          const { blogs, totalPages, totalRecords } = response.data;
           return {
             isSuccess: true,
             result: blogs.map((blog) => ({
@@ -430,19 +308,12 @@ const apiService = {
               content: blog.content,
               category: blog.dimensionName,
               createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
-              thumbnail: blog.thumbnail || "https://via.placeholder.com/150",
               excerpt: blog.content.substring(0, 100) + "...",
             })),
-            pagination: {
-              pageNumber: response.data.pageNumber,
-              pageSize: response.data.pageSize,
-              totalPages: response.data.totalPages,
-              totalRecords: response.data.totalRecords,
-            },
+            pagination: { pageNumber, pageSize, totalPages, totalRecords },
           };
-        } else {
-          throw new Error("Failed to fetch blogs");
         }
+        throw new Error("Failed to fetch blogs");
       } catch (error) {
         console.error("Error fetching blogs:", error);
         throw new Error(
@@ -450,16 +321,11 @@ const apiService = {
         );
       }
     },
-
-    // Lấy chi tiết bài viết
     fetchBlogById: async (id) => {
       try {
         const response = await axios.get(`${API_BASE_URL}/BlogPost/${id}`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
-
         if (response.status === 200) {
           const blog = response.data;
           return {
@@ -470,13 +336,11 @@ const apiService = {
               content: blog.content,
               category: blog.dimensionName,
               createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
-              thumbnail: blog.thumbnail || "https://via.placeholder.com/150",
               excerpt: blog.content.substring(0, 100) + "...",
             },
           };
-        } else {
-          throw new Error("Blog not found");
         }
+        throw new Error("Blog not found");
       } catch (error) {
         console.error("Error fetching blog by ID:", error);
         throw new Error(
@@ -484,25 +348,20 @@ const apiService = {
         );
       }
     },
-
-    // Tạo bài viết mới (vẫn cần Authorization vì đây là hành động của admin)
     createBlog: async (blogData) => {
       try {
         const payload = {
           title: blogData.title,
           content: blogData.content,
-          authorId: authData?.userId || 1,
-          dimensionId: mapCategoryToDimensionId(blogData.category),
+          dimensionId: Number(blogData.dimensionId),
         };
-
         const response = await axios.post(`${API_BASE_URL}/BlogPost`, payload, {
           headers: {
             Authorization: `Bearer ${authData.accessToken}`,
             "Content-Type": "application/json",
           },
         });
-
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 201) {
           const blog = response.data;
           return {
             isSuccess: true,
@@ -513,14 +372,11 @@ const apiService = {
               content: blog.content,
               category: blog.dimensionName,
               createdAt: format(new Date(blog.createdAt), "yyyy-MM-dd"),
-              thumbnail:
-                blogData.thumbnail || "https://via.placeholder.com/150",
               excerpt: blog.content.substring(0, 100) + "...",
             },
           };
-        } else {
-          throw new Error("Failed to create blog");
         }
+        throw new Error("Failed to create blog");
       } catch (error) {
         console.error("Error creating blog:", error);
         throw new Error(
@@ -528,17 +384,13 @@ const apiService = {
         );
       }
     },
-
-    // Cập nhật bài viết (vẫn cần Authorization vì đây là hành động của admin)
     updateBlog: async (id, blogData) => {
       try {
         const payload = {
           title: blogData.title,
           content: blogData.content,
-          authorId: authData?.userId || 1,
-          dimensionId: mapCategoryToDimensionId(blogData.category),
+          dimensionId: Number(blogData.dimensionId),
         };
-
         const response = await axios.put(
           `${API_BASE_URL}/BlogPost/${id}`,
           payload,
@@ -549,8 +401,10 @@ const apiService = {
             },
           }
         );
-
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 204) {
+          const updatedCategory = dimensions.find(
+            (dim) => dim.id === Number(blogData.dimensionId)
+          )?.name;
           return {
             isSuccess: true,
             message: "Blog updated successfully",
@@ -558,16 +412,13 @@ const apiService = {
               id,
               title: blogData.title,
               content: blogData.content,
-              category: blogData.category,
-              createdAt: blogData.createdAt,
-              thumbnail:
-                blogData.thumbnail || "https://via.placeholder.com/150",
+              category: updatedCategory,
+              createdAt: blogData.createdAt || format(new Date(), "yyyy-MM-dd"),
               excerpt: blogData.content.substring(0, 100) + "...",
             },
           };
-        } else {
-          throw new Error("Blog not found");
         }
+        throw new Error("Failed to update blog");
       } catch (error) {
         console.error("Error updating blog:", error);
         throw new Error(
@@ -575,8 +426,6 @@ const apiService = {
         );
       }
     },
-
-    // Xóa bài viết (vẫn cần Authorization vì đây là hành động của admin)
     deleteBlog: async (id) => {
       try {
         const response = await axios.delete(`${API_BASE_URL}/BlogPost/${id}`, {
@@ -585,15 +434,10 @@ const apiService = {
             "Content-Type": "application/json",
           },
         });
-
-        if (response.status === 200) {
-          return {
-            isSuccess: true,
-            message: "Blog deleted successfully",
-          };
-        } else {
-          throw new Error("Blog not found");
+        if (response.status === 200 || response.status === 204) {
+          return { isSuccess: true, message: "Blog deleted successfully" };
         }
+        throw new Error("Failed to delete blog");
       } catch (error) {
         console.error("Error deleting blog:", error);
         throw new Error(
@@ -601,17 +445,8 @@ const apiService = {
         );
       }
     },
+    getDimensions: () => dimensions,
   },
-};
-
-// Hàm ánh xạ category sang dimensionId
-const mapCategoryToDimensionId = (category) => {
-  const dimensionMap = {
-    "Lo Âu": 1,
-    "Trầm Cảm": 2,
-    "Căng Thẳng": 3,
-  };
-  return dimensionMap[category] || 1;
 };
 
 export default apiService;

@@ -1,15 +1,14 @@
 /* eslint-disable no-unused-vars */
 import { useState, useRef, useEffect, useContext } from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import { ToastContainer, toast } from "react-toastify";
 import AuthContext from "../../context/auth/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser } from "@fortawesome/free-solid-svg-icons";
-import Swal from "sweetalert2";
+import Swal from "sweetalert2"; // Giữ nguyên Swal gốc vì đã dùng trực tiếp
+import { showSuccess, showError } from "../../utils/swalConfig"; // Thêm Swal config cho các thông báo khác
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-// Thêm CSS inline để đảm bảo body và html không có padding/margin ảnh hưởng
 const globalStyles = `
   html, body {
     margin: 0;
@@ -43,21 +42,17 @@ const LoginModal = () => {
   };
 
   useEffect(() => {
-    // Thêm global styles để loại bỏ padding/margin mặc định
     const styleSheet = document.createElement("style");
     styleSheet.innerText = globalStyles;
     document.head.appendChild(styleSheet);
 
     if (isLoginModal) {
       document.addEventListener("mousedown", handleOutsideClick);
-      // Ngăn scroll khi modal mở
       document.body.style.overflow = "hidden";
-      // Đảm bảo body không có padding/margin
       document.body.style.margin = "0";
       document.body.style.padding = "0";
     } else {
       document.removeEventListener("mousedown", handleOutsideClick);
-      // Khôi phục scroll khi modal đóng
       document.body.style.overflow = "auto";
     }
     return () => {
@@ -74,12 +69,13 @@ const LoginModal = () => {
       const role = await loginGoogle(response.credential);
       if (role === "Student") navigate("/student");
       setIsLoginModal(false);
+      showSuccess("Logged In", "Logged in successfully with Google!");
     } catch (error) {
-      toast.error(error);
+      showError("Error", error.message || "Google login failed");
     }
   };
 
-  const handleGoogleError = (error) => toast.error(error);
+  const handleGoogleError = () => showError("Error", "Google login failed");
 
   const handleOpenMenu = () => setIsOpenMenu(!isOpenMenu);
 
@@ -91,19 +87,13 @@ const LoginModal = () => {
       showCancelButton: true,
       confirmButtonText: "Yes",
       cancelButtonText: "No",
-      confirmButtonColor: "#FF6F61", // Coral
-      cancelButtonColor: "#26A69A", // Teal
+      confirmButtonColor: "#FF6F61",
+      cancelButtonColor: "#26A69A",
     }).then((result) => {
       if (result.isConfirmed) {
         logout();
-        Swal.fire({
-          title: "Logged Out",
-          text: "You have successfully logged out.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-          willClose: () => navigate("/"),
-        });
+        showSuccess("Logged Out", "You have successfully logged out.");
+        navigate("/");
       }
     });
   };
@@ -129,18 +119,18 @@ const LoginModal = () => {
           navigate("/psychologist");
           break;
         default:
-          toast.error("Invalid role detected!");
+          showError("Error", "Invalid role detected!");
           return;
       }
       setIsLoginModal(false);
+      showSuccess("Logged In", "Logged in successfully!");
     } catch (error) {
-      toast.error(error);
+      showError("Error", error.message || "Login failed");
     }
   };
 
   return (
     <>
-      <ToastContainer />
       {isAuthenticated === false ? (
         <a
           className="flex items-center py-2 px-3 text-sm font-semibold text-[#FFFFFF] bg-[#26A69A] hover:text-[#FBBF24] hover:bg-[#4DB6AC] transition-all duration-300 no-underline rounded-md"
@@ -166,7 +156,7 @@ const LoginModal = () => {
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-md border border-[#E5E7EB] text-left"
             >
-              <ul className="py-2 px-1 text-sm font-medium text-[#26A69A]">
+              <ul className="py-1 px-1 text-sm font-medium text-[#26A69A]">
                 <li>
                   <a
                     href={role}
@@ -178,23 +168,7 @@ const LoginModal = () => {
                 <li>
                   <a
                     href="#"
-                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FBBF24] transition-all duration-300 no-underline"
-                  >
-                    Profile
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FBBF24] transition-all duration-300 no-underline"
-                  >
-                    Switch Account
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="block px-4 py-2 hover:bg-[#F9E79F] hover:text-[#FF6F61] transition-all duration-300 no-underline"
+                    className="block px-4 py-1 hover:bg-[#F9E79F] hover:text-[#FF6F61] transition-all duration-300 no-underline"
                     onClick={handleLogout}
                   >
                     Sign out
@@ -211,7 +185,6 @@ const LoginModal = () => {
           className="fixed top-0 left-0 w-screen h-screen z-50 flex items-center justify-center"
           style={{ margin: 0, padding: 0 }}
         >
-          {/* Nền tối với hiệu ứng xuất hiện */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
@@ -220,7 +193,6 @@ const LoginModal = () => {
             className="absolute top-0 left-0 w-screen h-screen bg-black"
             style={{ margin: 0, padding: 0 }}
           />
-          {/* Modal không có hiệu ứng xuất hiện */}
           <div
             className="relative p-6 w-full max-w-md bg-white rounded-lg shadow-md border border-[#E5E7EB] z-60"
             ref={modalRef}

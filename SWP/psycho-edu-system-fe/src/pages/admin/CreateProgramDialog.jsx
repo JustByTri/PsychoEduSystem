@@ -1,6 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/prop-types */
-// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -22,7 +19,7 @@ import { TargetProgramService } from "../../api/services/targetProgram";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import "dayjs/locale/vi"; // Import Vietnamese locale
+import "dayjs/locale/vi";
 import {
   LocalizationProvider,
   DatePicker,
@@ -30,6 +27,8 @@ import {
 } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { toast } from "react-toastify";
+import { showError } from "../../utils/swalConfig";
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 const VN_TZ = "Asia/Ho_Chi_Minh";
@@ -66,6 +65,7 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
       fetchCounselors();
     }
   }, [programData.day, programData.time]);
+
   const fetchCounselors = async () => {
     try {
       if (programData.day && programData.time) {
@@ -74,14 +74,21 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
           selectedDateTime
         );
         setCounselors(response.result);
+        if (!response.result.length) {
+          showError(
+            "No Counselors",
+            "No counselors available for this time. Please choose another slot."
+          );
+        }
       }
     } catch (error) {
       console.error("Error fetching counselors:", error);
+      showError("Error", "Unable to fetch counselors. Please try again.");
     }
   };
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
-  console.log(programData);
+
   const handleSubmit = async () => {
     try {
       await TargetProgramService.createProgram(programData);
@@ -91,17 +98,30 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
       onClose();
     } catch (error) {
       console.error("Error creating program:", error);
-      toast.error("Failed to create program. Please try again.");
+      showError("Error", "Failed to create program. Please try again.");
     }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth>
-      <DialogTitle>Create Program</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      sx={{ "& .MuiDialog-paper": { fontFamily: "Inter, sans-serif" } }}
+    >
+      <DialogTitle
+        sx={{
+          fontFamily: "Inter, sans-serif",
+          bgcolor: "#1976D2",
+          color: "white",
+        }}
+      >
+        Create Program
+      </DialogTitle>
       <DialogContent>
         {step === 1 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}>
-            <Typography variant="h6" color="primary">
+            <Typography variant="h6" color="#1976D2">
               Program Details
             </Typography>
 
@@ -227,7 +247,7 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
                 }}
               />
 
-              {/* Counselor Selection (Previously Step 3) */}
+              {/* Counselor Selection */}
               <Typography
                 variant="h6"
                 fontWeight="bold"
@@ -314,13 +334,39 @@ const CreateProgramDialog = ({ open, onClose, reloadPrograms }) => {
           </LocalizationProvider>
         )}
       </DialogContent>
-      <DialogActions>
-        {step > 1 && <Button onClick={handleBack}>Back</Button>}
-
+      <DialogActions sx={{ bgcolor: "#F0F8FF" }}>
+        {step > 1 && (
+          <Button
+            onClick={handleBack}
+            sx={{ fontFamily: "Inter, sans-serif", color: "#1976D2" }}
+          >
+            Back
+          </Button>
+        )}
         {step === 1 ? (
-          <Button onClick={handleNext}>Next</Button>
+          <Button
+            onClick={handleNext}
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              bgcolor: "#26A69A",
+              color: "white",
+              "&:hover": { bgcolor: "#1D7A74" },
+            }}
+          >
+            Next
+          </Button>
         ) : (
-          <Button onClick={handleSubmit}>Confirm</Button>
+          <Button
+            onClick={handleSubmit}
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              bgcolor: "#26A69A",
+              color: "white",
+              "&:hover": { bgcolor: "#1D7A74" },
+            }}
+          >
+            Confirm
+          </Button>
         )}
       </DialogActions>
     </Dialog>

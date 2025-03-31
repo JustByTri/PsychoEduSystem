@@ -1,7 +1,8 @@
-// eslint-disable-next-line no-unused-vars
+/* eslint-disable-next-line no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { SurveyService } from "../../api/services/surveyService";
+import Loading from "../../components/Loadings/Loading";
 
 const RequireSurvey = () => {
   const [loading, setLoading] = useState(true);
@@ -33,7 +34,7 @@ const RequireSurvey = () => {
     checkSurveyStatus();
   }, []);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <Loading />;
 
   if (!hasCompletedSurvey) {
     return (

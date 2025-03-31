@@ -1,20 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Bar } from "react-chartjs-2";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Box,
-  CircularProgress,
-  Divider,
-} from "@mui/material";
-import { DateRange, School } from "@mui/icons-material";
 import { SurveyService } from "../../api/services/surveyService";
 import {
   Chart as ChartJS,
@@ -24,16 +10,13 @@ import {
   Title,
   Tooltip,
   Legend,
-  PointElement,
-  LineElement,
 } from "chart.js";
 import TargetProgramsPage from "./TargetProgramsPage";
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   Title,
   Tooltip,
   Legend
@@ -47,20 +30,20 @@ const Dashboard = () => {
   const [surveyResult, setSurveyResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchSurveyResult = async () => {
-      setLoading(true);
-      try {
-        const response = await SurveyService.getSurveyResult({ month, year });
-        setSurveyResult(response.length > 0 ? response[0] : null);
-      } catch (error) {
-        console.error("Error fetching survey result:", error);
-        setSurveyResult(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchSurveyResult = async () => {
+    setLoading(true);
+    try {
+      const response = await SurveyService.getSurveyResult({ month, year });
+      setSurveyResult(response.length > 0 ? response[0] : null);
+    } catch (error) {
+      console.error("Error fetching survey result:", error);
+      setSurveyResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSurveyResult();
   }, [month, year]);
 
@@ -71,193 +54,145 @@ const Dashboard = () => {
     return "#F44336";
   };
 
-  const chartData = surveyResult
-    ? {
-        labels: surveyResult.dimensions.map((dim) => dim.dimensionName),
-        datasets: [
-          {
-            type: "bar",
-            label: "DASS-21 Score",
-            data: surveyResult.dimensions.map((dim) => dim.points),
-            backgroundColor: surveyResult.dimensions.map((dim) =>
-              getBarColor(dim.points)
-            ),
-            borderRadius: 10,
-            order: 2,
-          },
-        ],
-      }
-    : null;
+  const chartData = useMemo(() => {
+    if (!surveyResult) return null;
+    return {
+      labels: surveyResult.dimensions.map((dim) => dim.dimensionName),
+      datasets: [
+        {
+          type: "bar",
+          label: "DASS-21 Score",
+          data: surveyResult.dimensions.map((dim) => dim.points),
+          backgroundColor: surveyResult.dimensions.map((dim) =>
+            getBarColor(dim.points)
+          ),
+          borderRadius: 10,
+          order: 2,
+        },
+      ],
+    };
+  }, [surveyResult]);
 
   return (
     <>
       <TargetProgramsPage />
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          sx={{
-            color: "#1976d2",
-            padding: "10px 20px",
-            borderRadius: "6px",
-            display: "flex",
-          }}
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-100 px-6 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center"
         >
-          Mental Health Evaluation
-        </Typography>
-      </motion.div>
-      <motion.div
-        className="flex flex-col items-center justify-start bg-gradient-to-b from-white to-gray-100 px-6 py-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-      >
-        <Grid container spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-          <Grid item>
-            <FormControl
-              sx={{
-                minWidth: 160,
-                backgroundColor: "white",
-                boxShadow: 2,
-                borderRadius: 2,
-              }}
-            >
-              <InputLabel>Month</InputLabel>
-              <Select
-                value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <MenuItem key={m} value={m}>
-                    <DateRange sx={{ mr: 1, color: "#1976D2" }} /> Month {m}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-blue-600 to-blue-400 inline-block px-4 py-2 rounded-md">
+            Mental Health Evaluation
+          </h1>
+        </motion.div>
 
-          <Grid item>
-            <FormControl
-              sx={{
-                minWidth: 160,
-                backgroundColor: "white",
-                boxShadow: 2,
-                borderRadius: 2,
-              }}
+        <div className="mt-8 flex flex-col items-center">
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="w-40 p-2 bg-white shadow-md rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <InputLabel>Year</InputLabel>
-              <Select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-              >
-                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(
-                  (y) => (
-                    <MenuItem key={y} value={y}>
-                      <School sx={{ mr: 1, color: "#1976D2" }} /> Year {y}
-                    </MenuItem>
-                  )
-                )}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <option key={m} value={m}>
+                  Month {m}
+                </option>
+              ))}
+            </select>
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="w-40 p-2 bg-white shadow-md rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {Array.from({ length: 5 }, (_, i) => currentYear - i).map((y) => (
+                <option key={y} value={y}>
+                  Year {y}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {loading ? (
-          <CircularProgress size={60} sx={{ mt: 3, color: "#1976D2" }} />
-        ) : surveyResult ? (
-          <Grid
-            container
-            spacing={4}
-            justifyContent="center"
-            sx={{ width: "100%", maxWidth: 1200 }}
-          >
-            {/* Bar Chart */}
-            <Grid item xs={12} md={8}>
+          {loading ? (
+            <div className="mt-8">
+              <svg
+                className="animate-spin h-12 w-12 text-blue-500 mx-auto"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+            </div>
+          ) : surveyResult ? (
+            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Bar Chart */}
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.6 }}
+                className="col-span-2 bg-white shadow-lg rounded-lg p-6"
               >
-                <Card sx={{ boxShadow: 6, borderRadius: 4, p: 3 }}>
-                  <CardContent>
-                    {chartData && (
-                      <div className="w-full h-[400px]">
-                        <Bar
-                          data={chartData}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: { y: { beginAtZero: true, max: 21 } },
-                            plugins: { legend: { display: true } },
-                          }}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                {chartData && (
+                  <div className="h-96">
+                    <Bar
+                      data={chartData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, max: 21 } },
+                        plugins: { legend: { display: true } },
+                      }}
+                    />
+                  </div>
+                )}
               </motion.div>
-            </Grid>
 
-            {/* Legend */}
-            <Grid item xs={12} md={4}>
+              {/* Legend */}
               <motion.div
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.6 }}
+                className="bg-white shadow-lg rounded-lg p-6 text-center hover:scale-105 transition-transform duration-300"
               >
-                <Card
-                  sx={{
-                    boxShadow: 6,
-                    borderRadius: 4,
-                    p: 3,
-                    textAlign: "center",
-                    "&:hover": { transform: "scale(1.02)", transition: "0.3s" },
-                  }}
-                >
-                  <CardContent>
-                    <Typography variant="h6" fontWeight="bold">
-                      DASS-21 Levels
-                    </Typography>
-                    <Divider sx={{ my: 2 }} />
-                    {[
-                      { color: "#4CAF50", label: "Normal (0-9)" },
-                      { color: "#FFC107", label: "Moderate (10-13)" },
-                      { color: "#FF9800", label: "Severe (14-20)" },
-                      { color: "#F44336", label: "Extreme (21+)" },
-                    ].map(({ color, label }) => (
-                      <Box
-                        key={label}
-                        display="flex"
-                        alignItems="center"
-                        mt={2}
-                        gap={2}
-                      >
-                        <Box
-                          sx={{
-                            width: 20,
-                            height: 20,
-                            bgcolor: color,
-                            borderRadius: 1,
-                          }}
-                        />
-                        <Typography>{label}</Typography>
-                      </Box>
-                    ))}
-                  </CardContent>
-                </Card>
+                <h3 className="text-lg font-bold mb-4">DASS-21 Levels</h3>
+                <hr className="my-2" />
+                {[
+                  { color: "#4CAF50", label: "Normal (0-9)" },
+                  { color: "#FFC107", label: "Moderate (10-13)" },
+                  { color: "#FF9800", label: "Severe (14-20)" },
+                  { color: "#F44336", label: "Extreme (21+)" },
+                ].map(({ color, label }) => (
+                  <div key={label} className="flex items-center gap-2 mt-2">
+                    <div
+                      className="w-5 h-5 rounded"
+                      style={{ backgroundColor: color }}
+                    />
+                    <p>{label}</p>
+                  </div>
+                ))}
               </motion.div>
-            </Grid>
-          </Grid>
-        ) : (
-          <Typography variant="h6" color="gray" sx={{ mt: 3 }}>
-            No data available. Please select another period.
-          </Typography>
-        )}
-      </motion.div>
+            </div>
+          ) : (
+            <p className="mt-8 text-lg text-gray-500">
+              No data available. Please select another period.
+            </p>
+          )}
+        </div>
+      </div>
     </>
   );
 };

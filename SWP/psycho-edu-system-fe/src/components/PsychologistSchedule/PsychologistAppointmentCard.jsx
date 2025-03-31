@@ -14,9 +14,9 @@ const PsychologistAppointmentCard = ({
   appointmentFor,
   isOnline,
   showParent,
-  onViewDetail,
   onChat,
   onCancel,
+  onViewDetail, // Giữ prop này nhưng không dùng cho TARGET PROGRAM
 }) => {
   const parseDate = (dateString) => {
     const parsed = parse(dateString, "EEE, dd-MM-yyyy", new Date());
@@ -47,6 +47,8 @@ const PsychologistAppointmentCard = ({
         return { bg: "bg-green-500", text: "text-green-500", effect: "" };
       case "CANCELLED":
         return { bg: "bg-red-500", text: "text-red-500", effect: "" };
+      case "TARGET PROGRAM":
+        return { bg: "bg-blue-500", text: "text-blue-500", effect: "" };
       default:
         return { bg: "bg-gray-500", text: "text-gray-500", effect: "" };
     }
@@ -54,8 +56,15 @@ const PsychologistAppointmentCard = ({
 
   const { bg, text, effect } = getStatusColorAndEffect();
 
+  // Đặt type là "Offline" cho TARGET PROGRAM, các loại khác giữ nguyên
   const displayType =
-    isOnline === null ? "N/A" : isOnline ? "Online" : "Offline";
+    status === "TARGET PROGRAM"
+      ? "Offline"
+      : isOnline === null
+      ? "N/A"
+      : isOnline
+      ? "Online"
+      : "Offline";
 
   return (
     <motion.div
@@ -64,7 +73,7 @@ const PsychologistAppointmentCard = ({
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
       whileHover={{ scale: 1.02, boxShadow: "0 8px 16px rgba(0,0,0,0.05)" }}
-      onDoubleClick={onViewDetail}
+      onDoubleClick={status === "TARGET PROGRAM" ? undefined : onViewDetail} // Bỏ double-click cho TARGET PROGRAM
       className={`w-[300px] min-w-[250px] min-h-[200px] h-full ${effect}`}
     >
       <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 h-full flex flex-col gap-1.5">
@@ -144,7 +153,7 @@ const PsychologistAppointmentCard = ({
           </div>
         </div>
 
-        {/* Meeting Type và View Detail */}
+        {/* Meeting Type (bỏ View Detail cho TARGET PROGRAM) */}
         <div className="flex justify-between items-center min-h-[20px]">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -154,14 +163,19 @@ const PsychologistAppointmentCard = ({
           >
             {displayType}
           </motion.div>
-          <motion.a
-            whileHover={{ x: 5 }}
-            href="#"
-            onClick={onViewDetail}
-            className="text-[0.8rem] text-orange-500 hover:underline"
-          >
-            View detail
-          </motion.a>
+          {status !== "TARGET PROGRAM" && (
+            <motion.a
+              whileHover={{ x: 5 }}
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onViewDetail();
+              }}
+              className="text-[0.8rem] text-orange-500 hover:underline"
+            >
+              View detail
+            </motion.a>
+          )}
         </div>
       </div>
     </motion.div>

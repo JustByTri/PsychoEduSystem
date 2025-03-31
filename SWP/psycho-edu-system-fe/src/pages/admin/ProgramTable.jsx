@@ -1,6 +1,4 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react/prop-types */
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -42,49 +40,111 @@ const ProgramTable = ({
   };
 
   const handleUpdate = () => {
+    // Thêm validation
+    if (updatedProgram.minPoint < 0 || updatedProgram.capacity < 0) {
+      showError(
+        "Invalid Input",
+        "Minimum score and capacity must be non-negative."
+      );
+      return;
+    }
     onUpdateProgram(updatedProgram);
-    console.log(updatedProgram);
+    showSuccess("Success", "Program updated successfully!");
     setEditingProgram(null);
   };
 
   return (
     <div>
       {loading ? (
-        <div className="flex justify-center items-center h-32">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "8rem",
+          }}
+        >
           <CircularProgress />
-        </div>
+        </Box>
       ) : error ? (
         <Typography
           align="center"
-          color="error"
-          sx={{ fontSize: "1.2rem", fontWeight: "bold", my: 3 }}
+          sx={{
+            color: "#1976D2",
+            fontSize: "1.2rem",
+            fontWeight: "bold",
+            fontFamily: "Inter, sans-serif",
+            my: 3,
+          }}
         >
-          {error}
+          Unable to load programs. Please try again later.
         </Typography>
       ) : (
         <TableContainer component={Paper} sx={{ mt: 2, borderRadius: "12px" }}>
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: "#1976D2" }}>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   Program Name
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   Description
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   Min Score
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   Dimension
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   Capacity
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   Date & Time
                 </TableCell>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                <TableCell
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   Actions
                 </TableCell>
               </TableRow>
@@ -92,23 +152,25 @@ const ProgramTable = ({
             <TableBody>
               {programs.map((program) => (
                 <TableRow key={program.programId} hover>
-                  <TableCell>
+                  <TableCell sx={{ fontFamily: "Inter, sans-serif" }}>
                     {editingProgram === program.programId ? (
                       <TextField
                         value={updatedProgram.name}
                         onChange={(e) => handleInputChange(e, "name")}
                         size="small"
+                        sx={{ fontFamily: "Inter, sans-serif" }}
                       />
                     ) : (
                       program.name
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontFamily: "Inter, sans-serif" }}>
                     {editingProgram === program.programId ? (
                       <TextField
                         value={updatedProgram.description}
                         onChange={(e) => handleInputChange(e, "description")}
                         size="small"
+                        sx={{ fontFamily: "Inter, sans-serif" }}
                       />
                     ) : program.description.length > 50 ? (
                       `${program.description.substring(0, 50)}...`
@@ -116,25 +178,26 @@ const ProgramTable = ({
                       program.description
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontFamily: "Inter, sans-serif" }}>
                     {editingProgram === program.programId ? (
                       <TextField
                         value={updatedProgram.minPoint}
                         onChange={(e) => handleInputChange(e, "minPoint")}
                         size="small"
                         type="number"
+                        sx={{ fontFamily: "Inter, sans-serif" }}
                       />
                     ) : (
                       program.minPoint
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontFamily: "Inter, sans-serif" }}>
                     {editingProgram === program.programId ? (
                       <Select
                         value={updatedProgram.dimensionName}
                         onChange={(e) => handleInputChange(e, "dimensionName")}
                         size="small"
-                        sx={{ minWidth: 120 }}
+                        sx={{ fontFamily: "Inter, sans-serif", minWidth: 120 }}
                       >
                         <MenuItem value={"Lo Âu"}>Lo Âu</MenuItem>
                         <MenuItem value={"Trầm Cảm"}>Trầm Cảm</MenuItem>
@@ -144,56 +207,62 @@ const ProgramTable = ({
                       program.dimensionName
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontFamily: "Inter, sans-serif" }}>
                     {editingProgram === program.programId ? (
                       <TextField
                         value={updatedProgram.capacity}
                         onChange={(e) => handleInputChange(e, "capacity")}
                         size="small"
                         type="number"
+                        sx={{ fontFamily: "Inter, sans-serif" }}
                       />
                     ) : (
                       `${program.currentCapacity}/${program.capacity}`
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontFamily: "Inter, sans-serif" }}>
                     {program.day} at {program.time}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontFamily: "Inter, sans-serif" }}>
                     {editingProgram === program.programId ? (
-                      <>
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Button
+                          variant="contained"
+                          sx={{
+                            bgcolor: "#388E3C",
+                            color: "white",
+                            "&:hover": { bgcolor: "#2E7D32" },
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                          onClick={handleUpdate}
                         >
-                          <Button
-                            variant="contained"
-                            sx={{
-                              bgcolor: "#388E3C",
-                              color: "white",
-                              "&:hover": { bgcolor: "#2E7D32" },
-                            }}
-                            onClick={handleUpdate}
-                          >
-                            Save
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            onClick={() => setEditingProgram(null)}
-                          >
-                            Cancel
-                          </Button>
-                        </Box>
-                      </>
+                          Save
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          sx={{
+                            color: "#FF6F61",
+                            borderColor: "#FF6F61",
+                            "&:hover": { borderColor: "#FF6F61" },
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                          onClick={() => setEditingProgram(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </Box>
                     ) : (
                       <>
                         <Button
                           variant="contained"
                           sx={{
-                            bgcolor: "#0288D1",
+                            bgcolor: "#26A69A",
                             color: "white",
-                            "&:hover": { bgcolor: "#0277BD" },
+                            "&:hover": { bgcolor: "#1D7A74" },
                             mr: 1,
+                            fontFamily: "Inter, sans-serif",
                           }}
                           onClick={() => onSelectProgram(program)}
                         >
@@ -206,6 +275,7 @@ const ProgramTable = ({
                               bgcolor: "#F57C00",
                               color: "white",
                               "&:hover": { bgcolor: "#E65100" },
+                              fontFamily: "Inter, sans-serif",
                             }}
                             onClick={() => handleEditClick(program)}
                           >

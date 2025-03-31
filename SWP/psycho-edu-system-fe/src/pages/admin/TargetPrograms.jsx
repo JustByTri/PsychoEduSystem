@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useContext, useEffect, useState } from "react";
 import { TargetProgramService } from "../../api/services/targetProgram";
-import { Typography, Button } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import AuthContext from "../../context/auth/AuthContext";
@@ -10,6 +9,7 @@ import ProgramTable from "./ProgramTable";
 import FilterForms from "./FiltersForm";
 import CreateProgramDialog from "./CreateProgramDialog";
 import { toast } from "react-toastify";
+
 const TargetPrograms = () => {
   const { user } = useContext(AuthContext) || {};
   const [programs, setPrograms] = useState([]);
@@ -25,17 +25,6 @@ const TargetPrograms = () => {
   });
   const [tempFilters, setTempFilters] = useState(filters);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
-  const [step, setStep] = useState(1);
-  const [programData, setProgramData] = useState({
-    name: "",
-    description: "",
-    minPoint: 0,
-    capacity: 0,
-    dimensionId: "",
-    day: null,
-    time: null,
-    counselors: [],
-  });
 
   const loadPrograms = async () => {
     setLoading(true);
@@ -58,7 +47,7 @@ const TargetPrograms = () => {
       setPrograms(data);
       setError(null);
     } catch (err) {
-      setError("Failed to fetch programs");
+      setError("Unable to load program list. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -71,6 +60,7 @@ const TargetPrograms = () => {
   const applyFilters = () => {
     setFilters(tempFilters);
   };
+
   const onUpdateProgram = async (updatedProgram) => {
     const updatedProgramPayload = {
       programId: updatedProgram.programId,
@@ -87,7 +77,6 @@ const TargetPrograms = () => {
           ? 3
           : updatedProgram.dimensionId,
     };
-    console.log(updatedProgramPayload);
     try {
       const response = await fetch(
         "https://localhost:7192/api/TargetProgram/update",
@@ -112,44 +101,72 @@ const TargetPrograms = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Typography variant="h4" className="mb-6 text-center" color="primary">
-        Student Psychological Support Programs
-      </Typography>
-      <div className="p-6 max-w-6xl mx-auto">
-        {user?.role === "Admin" && (
-          <div className="flex space-x-2 mb-4">
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setOpenCreateDialog(true)}
-            >
-              Create
-            </Button>
-          </div>
-        )}
-        <FilterForms
-          tempFilters={tempFilters}
-          setTempFilters={setTempFilters}
-          applyFilters={applyFilters}
-        />
-        <ProgramTable
-          programs={programs}
-          loading={loading}
-          role={user.role}
-          error={error}
-          onUpdateProgram={onUpdateProgram}
-          onSelectProgram={setSelectedProgram}
-        />
-        <ProgramDialog
-          selectedProgram={selectedProgram}
-          onClose={() => setSelectedProgram(null)}
-        />
+      <div className="min-h-screen bg-gray-100 p-6">
+        <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">
+          Student Psychological Support Programs
+        </h1>
+        <div className="max-w-6xl mx-auto">
+          {user?.role === "Admin" && (
+            <div className="flex justify-start mb-4">
+              <button
+                onClick={() => setOpenCreateDialog(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-300"
+              >
+                Create
+              </button>
+            </div>
+          )}
+          <FilterForms
+            tempFilters={tempFilters}
+            setTempFilters={setTempFilters}
+            applyFilters={applyFilters}
+          />
+          {loading ? (
+            <div className="text-center mt-8">
+              <svg
+                className="animate-spin h-12 w-12 text-blue-500 mx-auto"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+            </div>
+          ) : error ? (
+            <p className="text-red-600 text-center mt-8">{error}</p>
+          ) : (
+            <ProgramTable
+              programs={programs}
+              loading={loading}
+              role={user?.role}
+              error={error}
+              onUpdateProgram={onUpdateProgram}
+              onSelectProgram={setSelectedProgram}
+            />
+          )}
+          <ProgramDialog
+            selectedProgram={selectedProgram}
+            onClose={() => setSelectedProgram(null)}
+          />
+          <CreateProgramDialog
+            open={openCreateDialog}
+            onClose={() => setOpenCreateDialog(false)}
+            reloadPrograms={loadPrograms}
+          />
+        </div>
       </div>
-      <CreateProgramDialog
-        open={openCreateDialog}
-        onClose={() => setOpenCreateDialog(false)}
-        reloadPrograms={loadPrograms}
-      />
     </LocalizationProvider>
   );
 };
