@@ -552,6 +552,29 @@ namespace BLL.Service
                 return false;
             }
         }
+
+        public async Task<ResponseDTO> GetStudentsAsync()
+        {
+            try
+            {
+                var users = await _unitOfWork.User.GetAllByListAsync(u => u.RoleId == 3);
+                if (users == null || !users.Any())
+                {
+                    return new ResponseDTO("No students found", 404, false, string.Empty);
+                }
+                var students = users.Select(u => new StudentDTO
+                {
+                    Id = u.UserId,
+                    Email = u.Email,
+                    Name = u.FullName,
+                });
+                return new ResponseDTO("Retrieve students successfully", 200, true, students);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
     }
     }
 
