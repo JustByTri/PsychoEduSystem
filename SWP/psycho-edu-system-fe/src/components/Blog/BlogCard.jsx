@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaArrowRight } from "react-icons/fa";
 
 const generateTags = (content, maxTags) => {
   const stopWords = [
@@ -76,8 +75,8 @@ const BlogCard = ({ blog }) => {
       transition={{ duration: 0.3 }}
     >
       {/* Phần tiêu đề và meta */}
-      <div className="mb-4">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2 line-clamp-2">
+      <div className="mb-3">
+        <h3 className="text-2xl font-bold text-gray-900 mb-10 line-clamp-2">
           {title}
         </h3>
         <div className="flex items-center space-x-2">
@@ -94,7 +93,7 @@ const BlogCard = ({ blog }) => {
       </p>
 
       {/* Phần tag */}
-      <div className="flex flex-wrap gap-2 mb-4 min-h-[40px]">
+      <div className="flex flex-wrap gap-2 mb-4 h-5">
         {tags.map((tag, index) => (
           <span
             key={index}
@@ -108,10 +107,9 @@ const BlogCard = ({ blog }) => {
       {/* Nút View Details */}
       <Link
         to={`/blog/${id}`}
-        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition self-start"
+        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition self-center no-underline justify-center"
       >
         View Details
-        <FaArrowRight className="ml-2" />
       </Link>
     </motion.div>
   );

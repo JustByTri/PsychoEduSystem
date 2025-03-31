@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import apiService from "../../services/apiService";
 import BlogForm from "../../components/Blog/BlogForm";
-import { toast } from "react-toastify";
+import { showSuccess, showError, showConfirm } from "../../utils/swalConfig";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -27,9 +27,6 @@ const BlogManagementPage = () => {
     pageSize: 5,
     totalPages: 1,
   });
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [modalMessage, setModalMessage] = useState("");
   const [blogToDelete, setBlogToDelete] = useState(null);
 
   useEffect(() => {
@@ -44,9 +41,11 @@ const BlogManagementPage = () => {
         setFilteredBlogs(response.result);
         setPagination((prev) => ({ ...prev, ...response.pagination }));
       } else {
+        showError("Error", "Cannot load blog posts");
         setError("Cannot load blog posts");
       }
     } catch (err) {
+      showError("Error", "An error occurred while loading blog posts");
       setError("An error occurred while loading blog posts");
     } finally {
       setLoading(false);
@@ -66,31 +65,31 @@ const BlogManagementPage = () => {
     setFilteredBlogs(filtered);
   }, [searchTerm, filterCategory, blogs]);
 
-  const handleDelete = (id) => {
-    setBlogToDelete(id);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      const response = await apiService.blog.deleteBlog(blogToDelete);
-      if (response.isSuccess) {
-        toast.success(response.message);
-        fetchBlogs(pagination.pageNumber, pagination.pageSize);
+  const handleDelete = async (id) => {
+    showConfirm(
+      "Are you sure?",
+      "You will delete this blog post.",
+      async () => {
+        setBlogToDelete(id);
+        try {
+          const response = await apiService.blog.deleteBlog(id);
+          if (response.isSuccess) {
+            showSuccess("Deleted", "Blog post has been deleted successfully.");
+            fetchBlogs(pagination.pageNumber, pagination.pageSize);
+          }
+        } catch (error) {
+          showError("Error", error.message || "Failed to delete blog post");
+        } finally {
+          setBlogToDelete(null);
+        }
       }
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setShowDeleteModal(false);
-      setBlogToDelete(null);
-    }
+    );
   };
 
   const handleSave = (message) => {
     setIsFormOpen(false);
     setSelectedBlog(null);
-    setModalMessage(message);
-    setShowSuccessModal(true);
+    showSuccess("Success", message);
     fetchBlogs(pagination.pageNumber, pagination.pageSize);
   };
 
@@ -156,21 +155,6 @@ const BlogManagementPage = () => {
             ))}
           </select>
         </div>
-
-        {isFormOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-12 bg-white p-6 rounded-lg shadow-lg"
-          >
-            <BlogForm
-              blog={selectedBlog}
-              dimensions={dimensions}
-              onSave={handleSave}
-              onCancel={() => setIsFormOpen(false)}
-            />
-          </motion.div>
-        )}
 
         <motion.div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
@@ -250,51 +234,31 @@ const BlogManagementPage = () => {
             Next
           </button>
         </div>
+
+        {isFormOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsFormOpen(false);
+              }
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full"
+            >
+              <BlogForm
+                blog={selectedBlog}
+                dimensions={dimensions}
+                onSave={handleSave}
+                onCancel={() => setIsFormOpen(false)}
+              />
+            </motion.div>
+          </div>
+        )}
       </div>
-
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Confirm Delete
-            </h3>
-            <p className="mt-2 text-gray-600">
-              Are you sure you want to delete this blog post?
-            </p>
-            <div className="mt-4 flex justify-end space-x-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-gray-800">Success</h3>
-            <p className="mt-2 text-gray-600">{modalMessage}</p>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 };

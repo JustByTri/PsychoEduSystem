@@ -232,12 +232,6 @@ const BlogDetailPage = () => {
               <FontAwesomeIcon icon={faShareAlt} className="w-5 h-5 mr-2" />
               Share
             </button>
-            <Link
-              to="/blogs"
-              className="flex items-center text-[#26A69A] hover:text-[#FF6F61] font-semibold transition-colors duration-300 no-underline"
-            >
-              More Articles
-            </Link>
           </div>
         </motion.div>
 

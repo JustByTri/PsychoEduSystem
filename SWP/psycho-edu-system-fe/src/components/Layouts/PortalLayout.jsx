@@ -17,7 +17,7 @@ const PortalLayout = () => {
           <div className="bg-white p-4 border-b border-gray-200 top-0 z-20">
             <Breadcrumbs />
           </div>
-          <div className="flex-1 p-6 overflow-auto">
+          <div className="flex-1 p-6 z-20 overflow-auto">
             <Outlet />
           </div>
         </div>

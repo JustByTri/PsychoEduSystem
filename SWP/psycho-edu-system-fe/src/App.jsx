@@ -28,26 +28,22 @@ import PsychologistSchedulePage from "./pages/couselor/PsychologistSchedulePage"
 import PsychologistScheduleRegistration from "./pages/couselor/PsychologistScheduleRegistration";
 import TeacherScheduleRegistration from "./pages/teacher/TeacherScheduleRegistration";
 import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import Chat from "./pages/chat/Chat";
 import TargetPrograms from "./pages/admin/TargetPrograms";
 import CreateUserPage from "./pages/admin/CreateUserPage";
 import AttendancePage from "./pages/counselor/AttendancePage";
 import UserProfilePage from "./pages/UserProfilePage";
-import BlogDetailPage from "./pages/BlogDetailPage"; // Thêm BlogDetailPage
-import BlogManagementPage from "./pages/admin/BlogManagementPage"; // Thêm BlogManagementPage
+import BlogDetailPage from "./pages/BlogDetailPage";
+import BlogManagementPage from "./pages/admin/BlogManagementPage";
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <ToastContainer />
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
-            <Route path="blog/:id" element={<BlogDetailPage />} />{" "}
-            {/* Thêm route cho BlogDetail */}
+            <Route path="blog/:id" element={<BlogDetailPage />} />
           </Route>
 
           {/* Student Routes */}
@@ -90,8 +86,7 @@ function App() {
               <Route path="survey/:id" element={<SurveyDetail />} />
               <Route path="programs" element={<TargetPrograms />} />
               <Route path="create-parent" element={<CreateUserPage />} />
-              <Route path="blog" element={<BlogManagementPage />} />{" "}
-              {/* Thêm route cho BlogManagement */}
+              <Route path="blog" element={<BlogManagementPage />} />
             </Route>
           </Route>
           <Route
@@ -148,7 +143,6 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
           <Route path="chat/:id" element={<Chat />} />
         </Routes>
-        <ToastContainer position="top-right" autoClose={3000} />
       </Router>
     </AuthProvider>
   );
