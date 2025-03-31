@@ -19,6 +19,7 @@ const PsychologistAppointmentsList = ({
   setFilterStatus,
 }) => {
   const [appointmentsWithNames, setAppointmentsWithNames] = useState([]);
+  const [filteredSlots, setFilteredSlots] = useState([]); // Thêm state cho filteredSlots
   const [activeTab, setActiveTab] = useState("booked");
   const [error, setError] = useState(null);
   const userProfileCache = useRef({});
@@ -115,8 +116,26 @@ const PsychologistAppointmentsList = ({
         ...filteredAvailableSlots,
         ...targetPrograms,
       ];
+
+      // Lấy danh sách slotId từ targetPrograms để lọc
+      const targetProgramSlotIds = targetPrograms.map(
+        (program) => program.details.slotId || program.id
+      );
+
+      // Lọc filteredAvailableSlots để loại bỏ slot đã được gán trong targetPrograms
+      const slotsAfterFilter = filteredAvailableSlots.filter(
+        (slot) => !targetProgramSlotIds.includes(slot.details.slotId || slot.id)
+      );
+      setFilteredSlots(slotsAfterFilter); // Lưu vào state
+
+      const filteredAppointments = [
+        ...filteredBookings,
+        ...slotsAfterFilter, // Dùng danh sách đã lọc
+        ...targetPrograms,
+      ];
+
       const appointmentsWithNames = await Promise.all(
-        allAppointments.map(fetchNamesForAppointment)
+        filteredAppointments.map(fetchNamesForAppointment)
       );
       setAppointmentsWithNames(appointmentsWithNames);
     };
@@ -180,7 +199,8 @@ const PsychologistAppointmentsList = ({
                   : "hover:text-blue-500"
               }`}
             >
-              Available Slots ({filteredAvailableSlots.length})
+              Available Slots ({filteredSlots.length}){" "}
+              {/* Sử dụng state filteredSlots */}
             </CNavLink>
           </CNavItem>
           <CNavItem>
@@ -319,7 +339,7 @@ const PsychologistAppointmentsList = ({
                 exit="exit"
                 className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 w-full max-w-[1248px] mx-auto"
               >
-                {filteredAvailableSlots.length > 0 ? (
+                {filteredSlots.length > 0 ? (
                   sortAppointments(
                     appointmentsWithNames.filter(
                       (appt) => appt.status === "AVAILABLE"

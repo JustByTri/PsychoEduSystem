@@ -25,11 +25,11 @@ export const ConsultantTypeSelection = () => {
   const userId = authData?.userId;
 
   const fetchHomeroomTeacher = useCallback(
-    async (studentId) => {
+    async (userId) => {
       setIsLoading(true);
       try {
         const response = await axios.get(
-          `https://localhost:7192/api/User/${studentId}/class`,
+          `https://localhost:7192/api/User/${userId}/class`,
           {
             headers: {
               Authorization: `Bearer ${authData.accessToken}`,
@@ -42,19 +42,6 @@ export const ConsultantTypeSelection = () => {
         }
         throw new Error("Invalid response from server.");
       } catch (error) {
-        if (error.response?.status === 404) {
-          setError(
-            "There are no homeroom teachers available for this student."
-          );
-        } else {
-          setError("Failed to fetch homeroom teacher: " + error.message);
-          swalWithConfig.fire({
-            title: "Error",
-            text: "Failed to fetch homeroom teacher. Please try again.",
-            icon: "error",
-          });
-        }
-        return null;
       } finally {
         setIsLoading(false);
       }

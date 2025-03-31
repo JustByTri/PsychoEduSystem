@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
+import { Card, CardContent, Typography, Box } from "@mui/material";
 
 const ChildSelector = ({ onChildSelected }) => {
   const [children, setChildren] = useState([]);
@@ -64,59 +65,102 @@ const ChildSelector = ({ onChildSelected }) => {
     };
 
     fetchChildren();
-  }, [parentId, authData.accessToken]);
+  }, [parentId, authData?.accessToken]);
 
-  
   const handleSelectChild = (childId) => {
     console.log("Child selected:", childId);
     onChildSelected(childId);
   };
 
-  if (isLoading)
-    return <div className="text-center text-gray-600">Loading...</div>;
-  if (error)
-    return <div className="text-center text-red-600">Error: {error}</div>;
+  if (isLoading) {
+    return (
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <Typography sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}>
+          Loading...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <Typography sx={{ fontFamily: "Inter, sans-serif", color: "#ef5350" }}>
+          Error: {error}
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-white p-6 rounded-lg shadow-md border border-gray-200"
-    >
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+    <Box sx={{ py: 2 }}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontFamily: "Inter, sans-serif",
+          fontWeight: 600,
+          color: "#333",
+          mb: 2,
+          textAlign: "center",
+        }}
+      >
         Select a Student
-      </h2>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="space-y-3"
+      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 2,
+          flexWrap: "wrap",
+        }}
       >
         {children.map((child, index) => (
-          <motion.div
+          <Card
             key={child.id}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
+            component={motion.div}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            sx={{
+              width: 200,
+              borderRadius: "8px",
+              border: "1px solid #e0e0e0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              cursor: "pointer",
+              "&:hover": {
+                borderColor: "#26A69A",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              },
+            }}
             onClick={() => handleSelectChild(child.id)}
-            className="p-4 border rounded-md cursor-pointer transition-colors hover:border-blue-300"
           >
-            <div className="flex items-center">
-              <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                {child.name.charAt(0) || "S"}
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-800">
-                  {child.name} (ID: {child.id})
-                </p>
-                <p className="text-sm text-gray-500">{child.role}</p>
-              </div>
-            </div>
-          </motion.div>
+            <CardContent sx={{ p: 2, textAlign: "center" }}>
+              <Typography
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 600,
+                  fontSize: "0.95rem",
+                  color: "#333",
+                }}
+              >
+                {child.name}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  fontSize: "0.85rem",
+                  color: "#666",
+                  mt: 0.5,
+                }}
+              >
+                {child.role}
+              </Typography>
+            </CardContent>
+          </Card>
         ))}
-      </motion.div>
-    </motion.div>
+      </Box>
+    </Box>
   );
 };
 

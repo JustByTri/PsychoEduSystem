@@ -35,7 +35,7 @@ export const ConsultantSelection = () => {
           },
         }
       );
-      const teacherId = classResponse.data.result.teacherId;
+      const teacherId = classResponse.data.result.result.teacherId;
       const className = classResponse.data.result.className || "Unknown Class";
 
       const profileResponse = await axios.get(
@@ -66,19 +66,7 @@ export const ConsultantSelection = () => {
           availableSlots: [],
         },
       ];
-    } catch (error) {
-      if (error.response?.status === 404) {
-        return [];
-      } else {
-        setError("Failed to fetch homeroom teacher: " + error.message);
-        swalWithConfig.fire({
-          title: "Error",
-          text: "Failed to fetch homeroom teacher. Please try again.",
-          icon: "error",
-        });
-        return [];
-      }
-    }
+    } catch (error) {}
   };
 
   const fetchCounselors = async () => {
@@ -110,19 +98,7 @@ export const ConsultantSelection = () => {
           availableSlots: [],
         };
       });
-    } catch (error) {
-      if (error.response?.status === 404) {
-        return [];
-      } else {
-        setError("Failed to fetch counselors: " + error.message);
-        swalWithConfig.fire({
-          title: "Error",
-          text: "Failed to fetch counselors. Please try again.",
-          icon: "error",
-        });
-        return [];
-      }
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -165,16 +141,7 @@ export const ConsultantSelection = () => {
               : "There are no counselors available."
           );
         }
-      } catch (error) {
-        setError(error.message || "Failed to fetch consultants");
-        swalWithConfig.fire({
-          title: "Error",
-          text: "Failed to load consultants. Please try again.",
-          icon: "error",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (error) {}
     };
 
     fetchConsultants();
