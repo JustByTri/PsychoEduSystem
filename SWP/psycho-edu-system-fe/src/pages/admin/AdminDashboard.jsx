@@ -96,16 +96,10 @@ const AdminDashboard = () => {
             <ul className="space-y-4">
               {upcomingAppointments.map((appt) => (
                 <li
-                  key={appt.id}
+                  key={appt.appointmentId}
                   className="flex justify-between text-gray-700 border-b pb-2 border-gray-300"
                 >
-                  <span>📅 {appt.title}</span>
-                  <span>
-                    {new Date(appt.dateTime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
+                  <span>📅 {appt.date}</span>
                 </li>
               ))}
             </ul>
