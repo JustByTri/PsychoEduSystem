@@ -17,8 +17,6 @@ import { motion } from "framer-motion";
 import { getAuthDataFromLocalStorage } from "../../utils/auth";
 import ChildSelector from "../../components/ParentSchedule/ChildSelector";
 import CalendarHeader from "../../components/Header/CalendarHeader";
-import AppointmentDetailModal from "../../components/Modal/AppointmentDetailModal";
-import ConfirmModal from "../../components/Modal/ConfirmModal";
 import ParentAppointmentsList from "../../components/ParentSchedule/ParentAppointmentsList"; // Import mới
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -42,10 +40,6 @@ const ParentSchedulePage = () => {
   const [confirmModalState, setConfirmModalState] = useState({
     visible: false,
     appointmentId: null,
-  });
-  const [detailModalState, setDetailModalState] = useState({
-    isOpen: false,
-    selectedAppointment: null,
   });
   const [currentPage, setCurrentPage] = useState(0);
   const [animationDirection, setAnimationDirection] = useState("");
@@ -168,7 +162,6 @@ const ParentSchedulePage = () => {
         setErrorMessage(null);
       } else {
         setBookings([]);
-        setErrorMessage("Không thể tải lịch hẹn từ server.");
       }
     } catch (error) {
       console.error("Failed to load appointments:", error);
@@ -210,10 +203,6 @@ const ParentSchedulePage = () => {
       setErrorMessage("Không thể hủy cuộc hẹn: " + error.message);
       toast.error("Không thể hủy cuộc hẹn.", { position: "top-right" });
     }
-  };
-
-  const handleViewDetail = (appointment) => {
-    setDetailModalState({ isOpen: true, selectedAppointment: appointment });
   };
 
   const handleNext = () => {
@@ -425,7 +414,6 @@ const ParentSchedulePage = () => {
                         (booking) => booking.status === filterStatus
                       )
                 }
-                handleViewDetail={handleViewDetail}
                 handleCancelAppointment={handleCancelAppointment}
                 handleChat={handleChat}
                 handleNavigate={handleNavigate}
@@ -440,34 +428,6 @@ const ParentSchedulePage = () => {
             </div>
           )}
         </div>
-
-        <ConfirmModal
-          visible={confirmModalState.visible}
-          onClose={() =>
-            setConfirmModalState({ visible: false, appointmentId: null })
-          }
-          onConfirm={() => {
-            if (confirmModalState.appointmentId) {
-              handleCancelAppointmentApi(confirmModalState.appointmentId);
-            }
-            setConfirmModalState({ visible: false, appointmentId: null });
-          }}
-          appointmentId={confirmModalState.appointmentId}
-        />
-
-        <AppointmentDetailModal
-          isOpen={detailModalState.isOpen}
-          handleChat={handleChat}
-          onClose={() =>
-            setDetailModalState((prev) => ({
-              ...prev,
-              isOpen: false,
-              selectedAppointment: null,
-            }))
-          }
-          appointment={detailModalState.selectedAppointment}
-        />
-
         <ToastContainer />
       </CContainer>
     </motion.div>
