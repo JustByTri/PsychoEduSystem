@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import ProgressBar from "../../components/Survey/ProgressBar";
 import Swal from "sweetalert2";
@@ -13,6 +13,7 @@ const SurveyPage = () => {
   const [error, setError] = useState(null);
   const questionsPerPage = 5;
   const navigate = useNavigate();
+  const contentRef = useRef(null);
 
   useEffect(() => {
     const storedQuestions = localStorage.getItem("questions");
@@ -22,6 +23,13 @@ const SurveyPage = () => {
       setError("No survey data found. Please go back to the previous step.");
     }
   }, []);
+
+  // Add useLayoutEffect to handle scrolling after page changes
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [currentPage]);
 
   if (!questionsData && !error) {
     return (
@@ -53,17 +61,13 @@ const SurveyPage = () => {
   const handleNextPage = () => {
     if (currentPage < totalPages - 1) {
       setCurrentPage((prev) => prev + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePreviousPage = () => {
     if (currentPage > 0) {
       setCurrentPage((prev) => prev - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async () => {
@@ -198,6 +202,7 @@ const SurveyPage = () => {
       </button>
 
       <motion.div
+        ref={contentRef}
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -50 }}

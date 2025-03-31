@@ -48,7 +48,7 @@ namespace BLL.Service
                 }
                 var slot = await _unitOfWork.Slot.GetByIdInt(request.SlotId);
                 var bookedAppointment = await _unitOfWork.Appointment.GetByConditionAsync(s => s.SlotId == request.SlotId && s.Date == request.Date && s.MeetingWith == request.MeetingWith && s.IsCanceled == false);
-                var bookedTargetProgram = await _unitOfWork.TargetProgram.GetByConditionAsync(t => t.StartDate == DateTime.Parse(request.Date.ToString() + " " + slot.SlotName));
+                var bookedTargetProgram = await _unitOfWork.TargetProgram.GetByConditionAsync(t => t.StartDate == DateTime.Parse(request.Date.ToString() + " " + slot.SlotName) && t.CounselorId == request.MeetingWith);
 
                 if (bookedAppointment != null)
                 {
