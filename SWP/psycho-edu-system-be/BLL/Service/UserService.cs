@@ -646,6 +646,7 @@ namespace BLL.Service
             try
             {
                 var appointments = _unitOfWork.Appointment.GetAll()
+                    .AsEnumerable()
                     .Where(a => a.Date.ToDateTime(TimeOnly.MinValue) >= DateTime.UtcNow)
                     .Take(5)
                     .ToList();
