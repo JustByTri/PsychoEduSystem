@@ -4,6 +4,18 @@ import { getAuthDataFromLocalStorage } from "../../../utils/auth";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { Card, CardContent, Typography, Box } from "@mui/material";
+import Swal from "sweetalert2";
+
+const swalWithConfig = Swal.mixin({
+  confirmButtonColor: "#26A69A",
+  cancelButtonColor: "#FF6F61",
+  timer: 1500,
+  showConfirmButton: false,
+  position: "center",
+  didOpen: (popup) => {
+    popup.style.zIndex = 9999;
+  },
+});
 
 export const ChildSelection = () => {
   const { updateBookingData, bookingData, isParent } = useBooking();
@@ -22,11 +34,15 @@ export const ChildSelection = () => {
           setError(
             "Only parents can select a child, and parent ID is required."
           );
+          swalWithConfig.fire({
+            title: "Access Denied",
+            text: "Only parents can select a child.",
+            icon: "error",
+          });
           setIsLoading(false);
           return;
         }
 
-        // Lấy danh sách relationship
         const relationshipResponse = await axios.get(
           `https://localhost:7192/api/relationships/parent/${parentId}`,
           {
@@ -37,19 +53,14 @@ export const ChildSelection = () => {
           }
         );
 
-        if (relationshipResponse.status !== 200) {
-          throw new Error("Failed to fetch relationships");
-        }
-
         const relationships =
           relationshipResponse.data.result || relationshipResponse.data;
-        if (!Array.isArray(relationships)) {
-          setError("Invalid data format: expected an array of relationships");
+        if (!Array.isArray(relationships) || relationships.length === 0) {
+          setError("There are no students associated with this account.");
           setIsLoading(false);
           return;
         }
 
-        // Lấy thông tin profile của từng student
         const uniqueStudents = {};
         const formattedChildrenPromises = relationships
           .filter((rel) => rel && rel.studentId)
@@ -76,8 +87,8 @@ export const ChildSelection = () => {
                 return {
                   id: studentId,
                   fullName:
-                    profile.fullName || `Student ${studentId.slice(0, 8)}`, // Lấy fullName từ profile
-                  relationshipName: relationship.relationshipName || "Child", // Lấy relationshipName từ relationship
+                    profile.fullName || `Student ${studentId.slice(0, 8)}`,
+                  relationshipName: relationship.relationshipName || "Child",
                 };
               }
               return null;
@@ -90,7 +101,16 @@ export const ChildSelection = () => {
         ).filter(Boolean);
         setChildren(formattedChildren);
       } catch (error) {
-        setError(error.message || "Failed to fetch children");
+        if (error.response?.status === 404) {
+          setError("There are no students associated with this account.");
+        } else {
+          setError(error.message || "Failed to fetch children");
+          swalWithConfig.fire({
+            title: "Error",
+            text: "Failed to fetch children. Please try again.",
+            icon: "error",
+          });
+        }
       } finally {
         setIsLoading(false);
       }
@@ -106,76 +126,94 @@ export const ChildSelection = () => {
   const handleSelectChild = (child) => {
     updateBookingData({
       childId: child.id,
-      childName: child.fullName, // Lưu fullName vào bookingData
-      relationshipName: child.relationshipName, // Lưu relationshipName nếu cần dùng sau này
+      childName: child.fullName,
+      relationshipName: child.relationshipName,
     });
   };
 
-  if (isLoading)
+  if (isLoading) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-center text-gray-600"
-      >
-        Loading children...
-      </motion.div>
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <Typography sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}>
+          Loading children...
+        </Typography>
+      </Box>
     );
-  if (error)
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-center text-red-600"
-      >
-        Error: {error}
-      </motion.div>
-    );
+  }
 
   return (
-    <Box className="py-6">
+    <Box sx={{ py: 2 }}>
       <Typography
         variant="h5"
         sx={{
           fontFamily: "Inter, sans-serif",
           fontWeight: 600,
           color: "#333",
-          mb: 4,
+          mb: 2,
           textAlign: "center",
         }}
       >
         Select Student
       </Typography>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
-        {children.map((child, index) => (
-          <motion.div
-            key={child.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: index * 0.1 }}
-          >
+      {error ? (
+        <Typography sx={{ textAlign: "center", color: "#666" }}>
+          {error}
+        </Typography>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            justifyContent: "center",
+          }}
+        >
+          {children.map((child, index) => (
             <Card
-              className={`rounded-xl shadow-lg border transition-shadow duration-300 cursor-pointer ${
-                bookingData.childId === child.id
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:shadow-xl hover:border-blue-300"
-              }`}
-              sx={{ minWidth: 200, maxWidth: 300 }}
+              key={child.id}
+              component={motion.div}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              sx={{
+                width: 200,
+                borderRadius: "8px",
+                border:
+                  bookingData.childId === child.id
+                    ? "2px solid #26A69A"
+                    : "1px solid #e0e0e0",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                cursor: "pointer",
+                "&:hover": {
+                  borderColor: "#26A69A",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                },
+              }}
               onClick={() => handleSelectChild(child)}
             >
-              <CardContent sx={{ p: 3 }}>
-                <Box className="flex items-center">
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
                   <Box
-                    className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
-                    sx={{ mr: 2 }}
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      bgcolor: "#26A69A",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mr: 2,
+                    }}
                   >
                     <Typography
-                      sx={{ fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        color: "white",
+                        fontWeight: 500,
+                      }}
                     >
                       {child.fullName ? child.fullName.charAt(0) : "S"}
                     </Typography>
@@ -185,28 +223,28 @@ export const ChildSelection = () => {
                       sx={{
                         fontFamily: "Inter, sans-serif",
                         fontWeight: 600,
-                        fontSize: "1rem",
+                        fontSize: "0.95rem",
                         color: "#333",
                       }}
                     >
-                      {child.fullName} {/* Hiển thị fullName */}
+                      {child.fullName}
                     </Typography>
                     <Typography
                       sx={{
                         fontFamily: "Inter, sans-serif",
-                        fontSize: "0.9rem",
+                        fontSize: "0.85rem",
                         color: "#666",
                       }}
                     >
-                      {child.relationshipName} {/* Hiển thị relationshipName */}
+                      {child.relationshipName}
                     </Typography>
                   </Box>
                 </Box>
               </CardContent>
             </Card>
-          </motion.div>
-        ))}
-      </motion.div>
+          ))}
+        </motion.div>
+      )}
     </Box>
   );
 };

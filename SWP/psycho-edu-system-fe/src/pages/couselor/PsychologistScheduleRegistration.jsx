@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import {
   Box,
@@ -79,6 +78,7 @@ const PsychologistScheduleRegistration = () => {
       try {
         setIsLoading(true);
 
+        // Lấy thông tin profile
         const profileResponse = await axios.get(
           `https://localhost:7192/api/User/profile?userId=${userId}`,
           {
@@ -91,8 +91,27 @@ const PsychologistScheduleRegistration = () => {
         if (profileResponse.status === 200 && profileResponse.data.isSuccess) {
           setUserProfile(profileResponse.data.result);
         }
+
+        // Lấy danh sách slot đã đăng ký của psychologist hiện tại
+        const bookedSlotsResponse = await axios.get(
+          `https://localhost:7192/api/Schedule/user-schedules/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const booked = (bookedSlotsResponse.data || []).map((slot) => ({
+          bookingId: slot.scheduleId || null,
+          slotId: slot.slotId,
+          date: slot.date,
+          time: slot.slotName,
+        }));
+        setBookedSlots(booked);
       } catch (error) {
-        toast.error("Failed to load profile data.", { position: "top-right" });
+        toast.error("Failed to load data.", { position: "top-right" });
       } finally {
         setIsLoading(false);
       }
@@ -146,10 +165,12 @@ const PsychologistScheduleRegistration = () => {
       return;
     }
 
+    // Kiểm tra trùng lặp chỉ với lịch của psychologist hiện tại
     const duplicateBookings = bookingDetails.filter((booking) =>
       bookedSlots.some(
         (booked) =>
-          booked.slotId === booking.slotId && booked.date === booking.date
+          booked.slotId === booking.slotId &&
+          moment(booked.date).format("YYYY-MM-DD") === booking.date
       )
     );
 
@@ -171,11 +192,11 @@ const PsychologistScheduleRegistration = () => {
 
     try {
       setIsLoading(true);
-      const response = await apiService.bookSlots(payload); // Gọi API đã có sẵn
+      const response = await apiService.bookSlots(payload);
 
       if (response.isSuccess) {
         const booked = response.bookings.map((booking) => ({
-          bookingId: booking.bookingId || null, // Có thể null nếu backend không trả về
+          bookingId: booking.bookingId || null,
           slotId: booking.slotId,
           date: booking.date,
           time: timeSlots.find((slot) => slot.id === booking.slotId)?.time,
@@ -188,13 +209,13 @@ const PsychologistScheduleRegistration = () => {
         throw new Error("Unexpected response format");
       }
     } catch (error) {
-      console.log("Error response:", error); // Debugging log
       setErrorMessage(error.message || "Failed to book slots");
       setIsErrorModalOpen(true);
     } finally {
       setIsLoading(false);
     }
   };
+
   const closeSuccessModal = () => setIsSuccessModalOpen(false);
   const closeErrorModal = () => setIsErrorModalOpen(false);
 

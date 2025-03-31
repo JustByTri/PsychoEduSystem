@@ -3,12 +3,24 @@ import { useBooking } from "../../../context/BookingContext";
 import { getAuthDataFromLocalStorage } from "../../../utils/auth";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { Card, CardContent } from "@mui/material";
+import { Card, CardContent, Typography, Box } from "@mui/material";
+import Swal from "sweetalert2";
+
+const swalWithConfig = Swal.mixin({
+  confirmButtonColor: "#26A69A",
+  cancelButtonColor: "#FF6F61",
+  timer: 1500,
+  showConfirmButton: false,
+  position: "center",
+  didOpen: (popup) => {
+    popup.style.zIndex = 9999;
+  },
+});
 
 export const ConsultantSelection = () => {
   const { updateBookingData, bookingData, isParent } = useBooking();
   const [consultants, setConsultants] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchHomeroomTeacher = async (studentId) => {
@@ -55,8 +67,17 @@ export const ConsultantSelection = () => {
         },
       ];
     } catch (error) {
-      setError("Failed to fetch homeroom teacher: " + error.message);
-      return [];
+      if (error.response?.status === 404) {
+        return [];
+      } else {
+        setError("Failed to fetch homeroom teacher: " + error.message);
+        swalWithConfig.fire({
+          title: "Error",
+          text: "Failed to fetch homeroom teacher. Please try again.",
+          icon: "error",
+        });
+        return [];
+      }
     }
   };
 
@@ -90,32 +111,67 @@ export const ConsultantSelection = () => {
         };
       });
     } catch (error) {
-      setError("Failed to fetch counselors: " + error.message);
-      return [];
+      if (error.response?.status === 404) {
+        return [];
+      } else {
+        setError("Failed to fetch counselors: " + error.message);
+        swalWithConfig.fire({
+          title: "Error",
+          text: "Failed to fetch counselors. Please try again.",
+          icon: "error",
+        });
+        return [];
+      }
     }
   };
 
   useEffect(() => {
     const fetchConsultants = async () => {
-      setIsLoading(true);
+      setIsLoading(false);
       try {
         if (!bookingData.consultantType) {
           setError("Please select a consultant type first.");
+          swalWithConfig.fire({
+            title: "Selection Required",
+            text: "Please select a consultant type first.",
+            icon: "warning",
+          });
           return;
         }
 
         const studentId = !isParent()
           ? bookingData.userId
           : bookingData.childId;
+        if (!studentId) {
+          setError("No valid student ID available.");
+          swalWithConfig.fire({
+            title: "Invalid Selection",
+            text: "No valid student selected. Please go back and choose a student.",
+            icon: "error",
+          });
+          return;
+        }
+
         const consultantList =
           bookingData.consultantType === "homeroom"
             ? await fetchHomeroomTeacher(studentId)
             : await fetchCounselors();
 
         setConsultants(consultantList.length ? consultantList : []);
-        if (!consultantList.length) setError("No consultants available.");
+        if (!consultantList.length) {
+          setError(
+            bookingData.consultantType === "homeroom"
+              ? "There are no homeroom teachers available."
+              : "There are no counselors available."
+          );
+        }
       } catch (error) {
         setError(error.message || "Failed to fetch consultants");
+        swalWithConfig.fire({
+          title: "Error",
+          text: "Failed to load consultants. Please try again.",
+          icon: "error",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -129,7 +185,6 @@ export const ConsultantSelection = () => {
     isParent,
   ]);
 
-  // Khôi phục hàm handleSelectConsultant
   const handleSelectConsultant = useCallback(
     (consultant) => {
       updateBookingData({
@@ -147,169 +202,145 @@ export const ConsultantSelection = () => {
     [updateBookingData]
   );
 
-  if (isLoading)
-    return <div className="text-center">Loading consultants...</div>;
-  if (error) return <div className="text-center text-red-600">{error}</div>;
+  if (isLoading) {
+    return (
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <Typography sx={{ fontFamily: "Inter, sans-serif", color: "#666" }}>
+          Loading consultants...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 flex justify-center">
-      <div className="w-full max-w-3xl">
-        <h5 className="font-inter font-semibold text-xl sm:text-2xl text-gray-800 mb-6 text-center">
-          Select Counselor
-        </h5>
-        {bookingData.consultantType === "homeroom" && consultants.length > 0 ? (
-          <div className="w-full max-w-[90%] sm:max-w-md md:max-w-lg mx-auto">
-            <h5 className="font-inter font-semibold text-xl sm:text-2xl text-gray-800 mb-4 text-center">
-              Your Homeroom Teacher
-            </h5>
+    <Box sx={{ py: 2 }}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontFamily: "Inter, sans-serif",
+          fontWeight: 600,
+          color: "#333",
+          mb: 2,
+          textAlign: "center",
+        }}
+      >
+        Select Consultant
+      </Typography>
+      {error ? (
+        <Typography sx={{ textAlign: "center", color: "#666" }}>
+          {error}
+        </Typography>
+      ) : (
+        <Box
+          sx={{
+            display: consultants.length <= 3 ? "flex" : "grid", // Flex nếu <= 3, Grid nếu > 3
+            flexWrap: "wrap", // Cho phép xuống dòng nếu cần
+            gridTemplateColumns:
+              consultants.length > 3
+                ? "repeat(auto-fill, minmax(200px, 1fr))"
+                : undefined, // Auto-fill nếu > 3
+            gap: 2,
+            justifyContent: "center", // Căn giữa các card
+            alignItems: "center",
+            maxWidth: "1200px", // Giới hạn chiều rộng tối đa
+            mx: "auto", // Căn giữa container
+          }}
+        >
+          {consultants.map((consultant) => (
             <Card
-              className="rounded-xl bg-gray-50 border border-gray-300 w-full hover:shadow-lg transition-shadow duration-300"
-              style={{ minWidth: "180px" }}
+              key={consultant.id}
+              component={motion.div}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              sx={{
+                width: 200, // Chiều rộng cố định cho mỗi card
+                borderRadius: "8px",
+                border:
+                  bookingData.consultantId === consultant.id
+                    ? "2px solid #26A69A"
+                    : "1px solid #e0e0e0",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                cursor: "pointer",
+                "&:hover": {
+                  borderColor: "#26A69A",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                },
+              }}
+              onClick={() => handleSelectConsultant(consultant)}
             >
-              <CardContent className="p-3 sm:p-4 flex flex-col items-center">
-                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full justify-center">
-                  <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="font-inter font-semibold text-2xl sm:text-3xl text-gray-800">
-                      {consultants[0].name?.charAt(0) || "T"}
-                    </span>
-                  </div>
-                  <div className="text-center sm:text-left">
-                    <p className="font-inter font-bold text-lg sm:text-xl text-gray-800">
-                      {consultants[0].name}
-                    </p>
-                    <p className="font-inter font-medium text-base sm:text-lg text-gray-600">
-                      {consultants[0].role}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 sm:mt-4 w-full flex justify-center">
-                  <div className="text-left w-full max-w-[240px] sm:max-w-xs space-y-1">
-                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
-                      <strong className="inline-block w-20 sm:w-24">
-                        Phone:
-                      </strong>{" "}
-                      {consultants[0].phone}
-                    </p>
-                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
-                      <strong className="inline-block w-20 sm:w-24">
-                        Email:
-                      </strong>{" "}
-                      {consultants[0].email}
-                    </p>
-                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
-                      <strong className="inline-block w-20 sm:w-24">
-                        Age:
-                      </strong>{" "}
-                      {consultants[0].age}
-                    </p>
-                    <p className="font-inter text-sm sm:text-base text-gray-600 hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200">
-                      <strong className="inline-block w-20 sm:w-24">
-                        Class:
-                      </strong>{" "}
-                      {consultants[0].className}
-                    </p>
-                  </div>
-                </div>
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      bgcolor: "#26A69A",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mr: 2,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        color: "white",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {consultant.name?.charAt(0) || "C"}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 600,
+                        fontSize: "0.95rem",
+                        color: "#333",
+                      }}
+                    >
+                      {consultant.name}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: "0.85rem",
+                        color: "#666",
+                      }}
+                    >
+                      {consultant.role}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ textAlign: "left" }}>
+                  <Typography
+                    sx={{
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: "0.8rem",
+                      color: "#666",
+                    }}
+                  >
+                    Phone: {consultant.phone}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: "0.8rem",
+                      color: "#666",
+                    }}
+                  >
+                    Email: {consultant.email}
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
-          >
-            {consultants.map((consultant) => (
-              <Card
-                key={consultant.id}
-                component={motion.div}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                className={`rounded-xl bg-gray-50 border ${
-                  bookingData.consultantId === consultant.id
-                    ? "border-blue-500"
-                    : "border-gray-300"
-                } w-full hover:shadow-lg transition-all duration-300`}
-                style={{ minWidth: "180px" }}
-                onClick={() => handleSelectConsultant(consultant)} // Sử dụng hàm đã định nghĩa
-              >
-                <CardContent className="p-3 sm:p-4 flex flex-col items-center">
-                  <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full justify-center">
-                    <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="font-inter font-semibold text-2xl sm:text-3xl text-gray-800">
-                        {consultant.name?.charAt(0) || "C"}
-                      </span>
-                    </div>
-                    <div className="text-center sm:text-left">
-                      <p
-                        className={`font-inter font-bold text-lg sm:text-xl ${
-                          bookingData.consultantId === consultant.id
-                            ? "text-blue-700"
-                            : "text-gray-800"
-                        }`}
-                      >
-                        {consultant.name}
-                      </p>
-                      <p
-                        className={`font-inter font-medium text-base sm:text-lg ${
-                          bookingData.consultantId === consultant.id
-                            ? "text-blue-600"
-                            : "text-gray-600"
-                        }`}
-                      >
-                        {consultant.role}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-3 sm:mt-4 w-full flex justify-center">
-                    <div className="text-left w-full max-w-[240px] sm:max-w-xs space-y-1">
-                      <p
-                        className={`font-inter text-sm sm:text-base ${
-                          bookingData.consultantId === consultant.id
-                            ? "text-blue-600"
-                            : "text-gray-600"
-                        } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
-                      >
-                        <strong className="inline-block w-20 sm:w-24">
-                          Phone:
-                        </strong>{" "}
-                        {consultant.phone}
-                      </p>
-                      <p
-                        className={`font-inter text-sm sm:text-base ${
-                          bookingData.consultantId === consultant.id
-                            ? "text-blue-600"
-                            : "text-gray-600"
-                        } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
-                      >
-                        <strong className="inline-block w-20 sm:w-24">
-                          Email:
-                        </strong>{" "}
-                        {consultant.email}
-                      </p>
-                      <p
-                        className={`font-inter text-sm sm:text-base ${
-                          bookingData.consultantId === consultant.id
-                            ? "text-blue-600"
-                            : "text-gray-600"
-                        } hover:text-blue-700 hover:bg-gray-100 p-1 rounded transition-all duration-200`}
-                      >
-                        <strong className="inline-block w-20 sm:w-24">
-                          Age:
-                        </strong>{" "}
-                        {consultant.age}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </motion.div>
-        )}
-      </div>
-    </div>
+          ))}
+        </Box>
+      )}
+    </Box>
   );
 };

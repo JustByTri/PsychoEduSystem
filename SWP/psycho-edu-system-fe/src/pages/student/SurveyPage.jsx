@@ -10,6 +10,7 @@ const SurveyPage = () => {
   const [questionsData, setQuestionsData] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [answeredQuestions, setAnsweredQuestions] = useState([]);
+  const [error, setError] = useState(null);
   const questionsPerPage = 5;
   const navigate = useNavigate();
 
@@ -17,13 +18,23 @@ const SurveyPage = () => {
     const storedQuestions = localStorage.getItem("questions");
     if (storedQuestions) {
       setQuestionsData(JSON.parse(storedQuestions));
+    } else {
+      setError("No survey data found. Please go back to the previous step.");
     }
   }, []);
 
-  if (!questionsData) {
+  if (!questionsData && !error) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
         <span className="text-xl font-medium text-gray-600">Loading...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <span className="text-xl font-medium text-red-600">{error}</span>
       </div>
     );
   }
@@ -42,15 +53,17 @@ const SurveyPage = () => {
   const handleNextPage = () => {
     if (currentPage < totalPages - 1) {
       setCurrentPage((prev) => prev + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePreviousPage = () => {
     if (currentPage > 0) {
       setCurrentPage((prev) => prev - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async () => {
@@ -131,10 +144,10 @@ const SurveyPage = () => {
                   "warning"
                 );
               } else {
-                throw error; // Only throw if it's an unexpected error
+                throw error;
               }
             } else {
-              throw error; // Handle network issues or unexpected errors
+              throw error;
             }
           }
 
@@ -152,7 +165,7 @@ const SurveyPage = () => {
           console.error("Survey submission failed:", error);
           Swal.fire(
             "Error",
-            "There was an issue submitting your survey.",
+            error.message || "There was an issue submitting your survey.",
             "error"
           );
         }
@@ -176,7 +189,7 @@ const SurveyPage = () => {
   );
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50 relative">
       <button
         onClick={() => navigate(-1)}
         className="fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition-all duration-300"
@@ -189,7 +202,7 @@ const SurveyPage = () => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -50 }}
         transition={{ duration: 0.4 }}
-        className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-lg"
+        className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-lg mt-16"
       >
         <div className="sticky top-0 left-0 right-0 bg-white shadow-md py-3 z-50">
           <ProgressBar progressPercentage={progressPercentage} />
@@ -201,7 +214,7 @@ const SurveyPage = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
-            className="border rounded-md p-4 w-full mx-auto max-w-2xl"
+            className="border rounded-md p-4 w-full mx-auto max-w-2xl mt-4"
           >
             <h4 className="text-xl lg:text-2xl font-semibold mb-4">
               {question.content}

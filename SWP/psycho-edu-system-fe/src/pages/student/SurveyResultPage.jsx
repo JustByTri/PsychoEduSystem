@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -7,8 +9,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Bar } from "react-chartjs-2";
-import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 ChartJS.register(
   CategoryScale,
@@ -18,63 +21,71 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-import { useLocation, useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
 const SurveyResultPage = () => {
   const location = useLocation();
   const [chartData, setChartData] = useState(null);
   const [status, setStatus] = useState("");
   const [surveyDate, setSurveyDate] = useState("");
-  const navigate = useNavigate();
   const [role, setRole] = useState(null);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (location.state?.message) {
       toast.success(location.state.message, { autoClose: 3000 });
     }
     const data = localStorage.getItem("user");
+    if (!data) {
+      setError("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
+      return;
+    }
     const formattedData = JSON.parse(data);
     setRole(formattedData.role);
+
     const fetchedData = localStorage.getItem("surveyScores");
-    if (fetchedData) {
-      const parsedData = JSON.parse(fetchedData);
-      setSurveyDate(new Date(parsedData.date).toLocaleDateString("vi-VN"));
-
-      setChartData({
-        labels: ["Căng Thẳng", "Lo Âu", "Trầm Cảm"],
-        datasets: [
-          {
-            label: "Survey Scores",
-            data: [
-              parsedData["Căng Thẳng"],
-              parsedData["Lo Âu"],
-              parsedData["Trầm Cảm"],
-            ],
-            backgroundColor: [
-              "rgba(251, 188, 5, 0.8)",
-              "rgba(234, 67, 53, 0.8)",
-              "rgba(66, 133, 244, 0.8)",
-            ],
-            borderColor: ["#FBBC05", "#EA4335", "#4285F4"],
-            borderWidth: 2,
-            borderRadius: 8,
-            hoverBackgroundColor: ["#FFD700", "#FF4500", "#1E90FF"],
-            barPercentage: 0.5,
-          },
-        ],
-      });
-
-      const totalScore =
-        parsedData["Căng Thẳng"] + parsedData["Lo Âu"] + parsedData["Trầm Cảm"];
-      setStatus(
-        totalScore > 21
-          ? "Rủi ro cao: Cần sự hỗ trợ ngay!"
-          : totalScore > 12
-          ? "Rủi ro trung bình: Cần chú ý kiểm soát tâm lý."
-          : "Tâm lý ổn định, tiếp tục duy trì!"
-      );
+    if (!fetchedData) {
+      setError("Không tìm thấy dữ liệu khảo sát.");
+      return;
     }
-  }, []);
+
+    const parsedData = JSON.parse(fetchedData);
+    setSurveyDate(new Date(parsedData.date).toLocaleDateString("vi-VN"));
+
+    setChartData({
+      labels: ["Căng Thẳng", "Lo Âu", "Trầm Cảm"],
+      datasets: [
+        {
+          label: "Survey Scores",
+          data: [
+            parsedData["Căng Thẳng"],
+            parsedData["Lo Âu"],
+            parsedData["Trầm Cảm"],
+          ],
+          backgroundColor: [
+            "rgba(251, 188, 5, 0.8)",
+            "rgba(234, 67, 53, 0.8)",
+            "rgba(66, 133, 244, 0.8)",
+          ],
+          borderColor: ["#FBBC05", "#EA4335", "#4285F4"],
+          borderWidth: 2,
+          borderRadius: 8,
+          hoverBackgroundColor: ["#FFD700", "#FF4500", "#1E90FF"],
+          barPercentage: 0.5,
+        },
+      ],
+    });
+
+    const totalScore =
+      parsedData["Căng Thẳng"] + parsedData["Lo Âu"] + parsedData["Trầm Cảm"];
+    setStatus(
+      totalScore > 21
+        ? "Rủi ro cao: Cần sự hỗ trợ ngay!"
+        : totalScore > 12
+        ? "Rủi ro trung bình: Cần chú ý kiểm soát tâm lý."
+        : "Tâm lý ổn định, tiếp tục duy trì!"
+    );
+  }, [location.state]);
 
   const chartOptions = {
     responsive: true,
@@ -97,6 +108,14 @@ const SurveyResultPage = () => {
     },
   };
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+        <p className="text-red-600 text-lg font-medium">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 bg-gradient-to-b from-gray-50 to-gray-100 shadow-xl rounded-lg flex flex-col min-h-screen">
       <ToastContainer />
@@ -118,7 +137,7 @@ const SurveyResultPage = () => {
         </div>
       ) : (
         <div className="text-center text-xl font-semibold text-gray-500 mt-8">
-          Không có dữ liệu khảo sát.
+          Đang tải dữ liệu...
         </div>
       )}
       <div

@@ -4,46 +4,35 @@ import { getAuthDataFromLocalStorage } from "../../../utils/auth";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { Box, Typography, CircularProgress } from "@mui/material";
+import Swal from "sweetalert2";
+
+const swalWithConfig = Swal.mixin({
+  confirmButtonColor: "#26A69A",
+  cancelButtonColor: "#FF6F61",
+  timer: 1500,
+  showConfirmButton: false,
+  position: "center",
+  didOpen: (popup) => {
+    popup.style.zIndex = 9999;
+  },
+});
 
 export const ConfirmationStep = () => {
   const { bookingData } = useBooking();
-  const [consultantDetails, setConsultantDetails] = useState(null);
-  const [bookedByDetails, setBookedByDetails] = useState(null); // Thêm state cho bookedBy
+  const [bookedByDetails, setBookedByDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const authData = getAuthDataFromLocalStorage();
 
-  const fetchConsultantDetails = useCallback(async () => {
-    if (!bookingData.consultantId) {
-      setError("Consultant ID is missing.");
-      return;
-    }
-
-    try {
-      const response = await axios.get(
-        `https://localhost:7192/api/User/profile?userId=${bookingData.consultantId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authData.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.isSuccess && response.data.statusCode === 200) {
-        setConsultantDetails(response.data.result);
-      } else {
-        throw new Error("Failed to fetch consultant details.");
-      }
-    } catch (err) {
-      setError(`Error fetching consultant details: ${err.message}`);
-    }
-  }, [bookingData.consultantId, authData.accessToken]);
-
   const fetchBookedByDetails = useCallback(async () => {
     if (!authData.userId) {
       setError("User ID is missing from authentication data.");
+      swalWithConfig.fire({
+        title: "Error",
+        text: "User ID is missing.",
+        icon: "error",
+      });
       return;
     }
 
@@ -65,218 +54,269 @@ export const ConfirmationStep = () => {
       }
     } catch (err) {
       setError(`Error fetching bookedBy details: ${err.message}`);
+      swalWithConfig.fire({
+        title: "Error",
+        text: "Failed to fetch bookedBy details.",
+        icon: "error",
+      });
     }
   }, [authData.userId, authData.accessToken]);
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      await Promise.all([fetchConsultantDetails(), fetchBookedByDetails()]);
+      await fetchBookedByDetails();
       setIsLoading(false);
     };
     fetchData();
-  }, [fetchConsultantDetails, fetchBookedByDetails]);
+  }, [fetchBookedByDetails]);
 
   if (isLoading) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex justify-center items-center py-6"
-      >
-        <CircularProgress size={40} color="primary" />
-      </motion.div>
-    );
-  }
-
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-center text-red-600 py-6"
-      >
-        <Typography variant="h6">{error}</Typography>
-      </motion.div>
+      <Box sx={{ textAlign: "center", py: 4 }}>
+        <CircularProgress size={40} sx={{ color: "#26A69A" }} />
+      </Box>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
-      <Box className="bg-green-50 border border-green-200 rounded-lg p-4 sm:p-6">
-        <Typography
-          variant="h5"
-          className="text-lg sm:text-xl font-semibold text-green-800 mb-4 sm:mb-6 text-center"
-          sx={{ fontFamily: "Inter, sans-serif" }}
-        >
-          Booking Summary
+    <Box sx={{ py: 2 }}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontFamily: "Inter, sans-serif",
+          fontWeight: 600,
+          color: "#333",
+          mb: 2,
+          textAlign: "center",
+        }}
+      >
+        Booking Summary
+      </Typography>
+      {error ? (
+        <Typography sx={{ textAlign: "center", color: "#666" }}>
+          {error}
         </Typography>
-
-        <Box className="space-y-4 sm:space-y-5">
-          {/* Booking Type */}
-          <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <Typography
-              className="text-gray-600"
-              sx={{ fontFamily: "Inter, sans-serif" }}
-            >
-              Booking Type:
-            </Typography>
-            <Typography
-              className="font-medium text-gray-800"
-              sx={{ fontFamily: "Inter, sans-serif" }}
-            >
-              {bookingData.userRole === "Parent"
-                ? "Parent Booking"
-                : "Student Booking"}
-            </Typography>
-          </Box>
-
-          {/* Booked By Information */}
-          {bookedByDetails && (
-            <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <Typography
-                className="text-gray-600"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                Booked By:
-              </Typography>
-              <Box className="text-right">
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Box
+            sx={{
+              bgcolor: "#F0F8FF",
+              border: "1px solid #26A69A",
+              borderRadius: "8px",
+              p: 3,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography
-                  className="font-medium text-gray-800"
-                  sx={{ fontFamily: "Inter, sans-serif" }}
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    color: "#666",
+                    fontSize: "0.9rem",
+                  }}
                 >
-                  {bookedByDetails.fullName || "Unknown"} (
-                  {bookingData.userRole})
+                  Booking Type:
                 </Typography>
-                <Box className="text-sm text-gray-600 mt-1">
-                  <Typography sx={{ fontFamily: "Inter, sans-serif" }}>
-                    Phone: {bookedByDetails.phone || "N/A"}
-                  </Typography>
-                  <Typography sx={{ fontFamily: "Inter, sans-serif" }}>
-                    Email: {bookedByDetails.email || "N/A"}
-                  </Typography>
-                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 500,
+                    color: "#333",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {bookingData.userRole === "Parent"
+                    ? "Parent Booking"
+                    : "Student Booking"}
+                </Typography>
               </Box>
-            </Box>
-          )}
-
-          {/* Child Information (if parent) */}
-          {bookingData.userRole === "Parent" && bookingData.childName && (
-            <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <Typography
-                className="text-gray-600"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                Child:
-              </Typography>
-              <Typography
-                className="font-medium text-gray-800"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                {bookingData.childName}{" "}
-                {bookingData.childId ? `(${bookingData.childId})` : ""}
-              </Typography>
-            </Box>
-          )}
-
-          {/* Consultant Information */}
-          {bookingData.consultantName && (
-            <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <Typography
-                className="text-gray-600"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                Consultant:
-              </Typography>
-              <Box className="text-right">
-                <Typography
-                  className="font-medium text-gray-800"
-                  sx={{ fontFamily: "Inter, sans-serif" }}
-                >
-                  {bookingData.consultantName} (
-                  {bookingData.consultantType === "homeroom"
-                    ? "Homeroom Teacher"
-                    : "Counselor"}
-                  )
-                </Typography>
-                {consultantDetails && (
-                  <Box className="text-sm text-gray-600 mt-1">
-                    <Typography sx={{ fontFamily: "Inter, sans-serif" }}>
-                      Phone: {consultantDetails.phone || "N/A"}
+              {bookedByDetails && (
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography
+                    sx={{
+                      fontFamily: "Inter, sans-serif",
+                      color: "#666",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Booked By:
+                  </Typography>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 500,
+                        color: "#333",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      {bookedByDetails.fullName || "Unknown"} (
+                      {bookingData.userRole})
                     </Typography>
-                    <Typography sx={{ fontFamily: "Inter, sans-serif" }}>
-                      Email: {consultantDetails.email || "N/A"}
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: "0.85rem",
+                        color: "#666",
+                      }}
+                    >
+                      Phone: {bookedByDetails.phone || "N/A"}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: "0.85rem",
+                        color: "#666",
+                      }}
+                    >
+                      Email: {bookedByDetails.email || "N/A"}
                     </Typography>
                   </Box>
-                )}
+                </Box>
+              )}
+              {bookingData.userRole === "Parent" && bookingData.childName && (
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography
+                    sx={{
+                      fontFamily: "Inter, sans-serif",
+                      color: "#666",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Child:
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: "Inter, sans-serif",
+                      fontWeight: 500,
+                      color: "#333",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {bookingData.childName}{" "}
+                    {bookingData.childId ? `(${bookingData.childId})` : ""}
+                  </Typography>
+                </Box>
+              )}
+              {bookingData.consultantName && (
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography
+                    sx={{
+                      fontFamily: "Inter, sans-serif",
+                      color: "#666",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Consultant:
+                  </Typography>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 500,
+                        color: "#333",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      {bookingData.consultantName} (
+                      {bookingData.consultantType === "homeroom"
+                        ? "Homeroom Teacher"
+                        : "Counselor"}
+                      )
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: "0.85rem",
+                        color: "#666",
+                      }}
+                    >
+                      Phone: {bookingData.consultantDetails?.phone || "N/A"}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontFamily: "Inter, sans-serif",
+                        fontSize: "0.85rem",
+                        color: "#666",
+                      }}
+                    >
+                      Email: {bookingData.consultantDetails?.email || "N/A"}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+              {bookingData.date && bookingData.time && (
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography
+                    sx={{
+                      fontFamily: "Inter, sans-serif",
+                      color: "#666",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Date & Time:
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: "Inter, sans-serif",
+                      fontWeight: 500,
+                      color: "#333",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {new Date(bookingData.date).toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}{" "}
+                    at {bookingData.time}
+                  </Typography>
+                </Box>
+              )}
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Typography
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    color: "#666",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  Meeting Type:
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 500,
+                    color: "#333",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {bookingData.appointmentType || "Not specified"}
+                </Typography>
               </Box>
             </Box>
-          )}
-
-          {/* Date & Time */}
-          {bookingData.date && bookingData.time && (
-            <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <Typography
-                className="text-gray-600"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                Date & Time:
-              </Typography>
-              <Typography
-                className="font-medium text-gray-800"
-                sx={{ fontFamily: "Inter, sans-serif" }}
-              >
-                {new Date(bookingData.date).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}{" "}
-                at {bookingData.time}
-              </Typography>
-            </Box>
-          )}
-
-          {/* Appointment Type */}
-          <Box className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <Typography
-              className="text-gray-600"
-              sx={{ fontFamily: "Inter, sans-serif" }}
-            >
-              Meeting Type:
-            </Typography>
-            <Typography
-              className="font-medium text-gray-800 capitalize"
-              sx={{ fontFamily: "Inter, sans-serif" }}
-            >
-              {bookingData.appointmentType || "Not specified"}
-            </Typography>
           </Box>
-        </Box>
-      </Box>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="text-center"
-      >
-        <Typography
-          sx={{
-            fontFamily: "Inter, sans-serif",
-            color: "#555",
-            fontSize: "0.9rem",
-            sm: { fontSize: "1rem" },
-          }}
-        >
-          Please review your booking details above. Click "Confirm Booking" to
-          finalize.
-        </Typography>
-      </motion.div>
-    </motion.div>
+          <Typography
+            sx={{
+              fontFamily: "Inter, sans-serif",
+              color: "#555",
+              fontSize: "0.85rem",
+              textAlign: "center",
+              mt: 2,
+            }}
+          >
+            Please review your booking details above. Click "Confirm Booking" to
+            finalize.
+          </Typography>
+        </motion.div>
+      )}
+    </Box>
   );
 };
