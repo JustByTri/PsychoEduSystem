@@ -5,9 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 
-using Octokit;
-using BLL.Utilities;
-
 namespace PsychoEduSystem.Controller
 {
     [Route("api/[controller]")]
@@ -21,171 +18,102 @@ namespace PsychoEduSystem.Controller
             _userService = userService;
         }
 
-        // Lấy thông tin người dùng bằng username
         [HttpGet("username/{userName}")]
         public async Task<IActionResult> GetUserByUserNameAsync(string userName)
         {
-            try
-            {
-                var user = await _userService.GetUserByUserNameAsync(userName);
-                if (user == null)
-                {
-                    return NotFound(new { Message = "User not found" });
-                }
-                return Ok(user);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred while processing your request.", Error = ex.Message });
-            }
+            var user = await _userService.GetUserByUserNameAsync(userName);
+            if (user == null)
+                return Ok(new { Message = "User not found", IsSuccess = false });
+            return Ok(new { Result = user, IsSuccess = true });
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUserAsync(UserRegisterDTO newUserDTO)
         {
-            try
-            {
-                // Kiểm tra người dùng đã tồn tại chưa (kiểm tra cả tên đăng nhập và email)
-                var existingUserByUserName = await _userService.GetUserByUserNameAsync(newUserDTO.UserName);
-                var existingUserByEmail = await _userService.GetUserByEmailAsync(newUserDTO.Email);
+            var existingUserByUserName = await _userService.GetUserByUserNameAsync(newUserDTO.UserName);
+            var existingUserByEmail = await _userService.GetUserByEmailAsync(newUserDTO.Email);
 
-                if (existingUserByUserName != null)
-                {
-                    return BadRequest(new { Message = "User with this username already exists" });
-                }
-                if (existingUserByEmail != null)
-                {
-                    return BadRequest(new { Message = "User with this email already exists" });
-                }
+            if (existingUserByUserName != null)
+                return Ok(new { Message = "User with this username already exists", IsSuccess = false });
+            if (existingUserByEmail != null)
+                return Ok(new { Message = "User with this email already exists", IsSuccess = false });
 
-
-
-
-                // Đăng ký người dùng mới
-                var result = await _userService.RegisterUserAsync(newUserDTO); // Sử dụng newUserDTO ở đây
-                if (result)
-                {
-                    return Ok(new { Message = "User registered successfully!" });
-                }
-
-                return BadRequest(new { Message = "An error occurred during registration" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred while registering the user", Error = ex.Message });
-            }
+            var result = await _userService.RegisterUserAsync(newUserDTO);
+            if (result)
+                return Ok(new { Message = "User registered successfully!", IsSuccess = true });
+            return Ok(new { Message = "An error occurred during registration", IsSuccess = false });
         }
 
         [HttpGet("profile")]
         public async Task<IActionResult> GetUserProfile(Guid userId)
         {
-            if (Guid.Empty == userId) return BadRequest("User ID is required.");
+            if (Guid.Empty == userId)
+                return Ok(new { Message = "User ID is required.", IsSuccess = false });
 
-            try
-            {
-                var response = await _userService.GetUserProfile(userId);
-
-                if (response.IsSuccess && response.Result != null)
-                {
-                    return Ok(response);
-                }
-
-                return NotFound(response.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred while fetching user profile.", Error = ex.Message });
-            }
+            var response = await _userService.GetUserProfile(userId);
+            return Ok(response);
         }
 
-
-
-        // Kiểm tra sự tồn tại của người dùng qua username hoặc email
         [HttpGet("check-existence")]
         public async Task<IActionResult> IsUserExistAsync([FromQuery] string userName, [FromQuery] string email)
         {
-            try
-            {
-                var exists = await _userService.IsUserExistAsync(userName, email);
-                if (exists)
-                {
-                    return Ok(new { Message = "User exists" });
-                }
-                return NotFound(new { Message = "User does not exist" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred while checking user existence.", Error = ex.Message });
-            }
+            var exists = await _userService.IsUserExistAsync(userName, email);
+            if (exists)
+                return Ok(new { Message = "User exists", IsSuccess = true });
+            return Ok(new { Message = "User does not exist", IsSuccess = false });
         }
+
         [HttpPost("create-account")]
         public async Task<IActionResult> CreateParentAccount([FromBody] CreateAccountDTO accountDTO)
         {
             if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+                return Ok(new { Message = "Invalid request data.", Errors = ModelState, IsSuccess = false });
 
             var (success, errors) = await _userService.CreateAccountAsync(accountDTO);
-
             if (!success)
-            {
-                return BadRequest(new { Message = "Failed to create account.", Errors = errors });
-            }
-
-            return Ok(new { Message = "Account created successfully." });
+                return Ok(new { Message = "Failed to create account.", Errors = errors, IsSuccess = false });
+            return Ok(new { Message = "Account created successfully.", IsSuccess = true });
         }
 
         [HttpGet("{studentId}/class")]
         public async Task<IActionResult> RetrieveUserClassInfo(Guid studentId)
         {
             if (studentId == Guid.Empty)
-                return BadRequest("Invalid student ID.");
+                return Ok(new { Message = "Invalid student ID.", IsSuccess = false });
 
             var response = await _userService.RetrieveUserClassInfoAsync(studentId);
-
             if (response == null)
-                return NotFound("Class information not found for the given student ID.");
-
-            return Ok(response);
+                return Ok(new { Message = "Class information not found for the given student ID.", IsSuccess = false });
+            return Ok(new { Result = response, IsSuccess = true });
         }
+
         [HttpGet("{userId}/slots")]
         public async Task<IActionResult> GetAvailableSlots(Guid userId, [FromQuery] DateOnly selectedDate)
         {
             if (userId == Guid.Empty)
-                return BadRequest("Invalid user ID.");
+                return Ok(new { Message = "Invalid user ID.", IsSuccess = false });
 
             var response = await _userService.GetAvailableSlotsAsync(userId, selectedDate);
-
-            if (!response.IsSuccess || response.Result == null)
-                return NotFound(response.Message);
-
             return Ok(response);
         }
+
         [HttpPut("profile/{userId}")]
         public async Task<IActionResult> UpdateUserProfile(Guid userId, [FromBody] UpdateUserProfileDTO updateDto)
         {
             if (userId == Guid.Empty)
-                return BadRequest("User ID is required.");
-
+                return Ok(new { Message = "User ID is required.", IsSuccess = false });
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return Ok(new { Message = "Invalid request data.", Errors = ModelState, IsSuccess = false });
 
-            try
-            {
-                var response = await _userService.UpdateUserProfileAsync(userId, updateDto);
+            var response = await _userService.UpdateUserProfileAsync(userId, updateDto);
+            return Ok(response);
+        }
 
-                if (response.IsSuccess)
-                {
-                    return Ok(response);
-                }
-
-                return StatusCode(response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred while updating user profile.", Error = ex.Message });
-            }
+        [HttpGet("students")]
+        public async Task<IActionResult> GetStudents()
+        {
+            var response = await _userService.GetStudentsAsync();
+            return Ok(response);
         }
     }
 }
