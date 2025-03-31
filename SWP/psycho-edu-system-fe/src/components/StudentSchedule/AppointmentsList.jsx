@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { CSpinner } from "@coreui/react";
 import AppointmentsCard from "./AppointmentCard";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,7 +7,7 @@ import apiService from "../../services/apiService";
 
 const AppointmentsList = ({
   isLoading,
-  filteredAppointments = [], // Default empty array
+  filteredAppointments = [], // Add default empty array here
   handleViewDetail,
   handleCancelAppointment,
   handleChat,
@@ -16,10 +16,6 @@ const AppointmentsList = ({
 }) => {
   const [appointmentsWithNames, setAppointmentsWithNames] = useState([]);
   const userProfileCache = useRef({});
-  // Add a ref to track if the component is mounted
-  const isMounted = useRef(true);
-  // Add a processing flag to prevent multiple concurrent updates
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const getTimeFromSlotId = (slotId) => {
     const times = [
@@ -47,8 +43,7 @@ const AppointmentsList = ({
     return `${startTime} - ${endTime}`;
   };
 
-  // Memoize this function to ensure it doesn't change on every render
-  const fetchNamesForAppointment = useCallback(async (appointment) => {
+  const fetchNamesForAppointment = async (appointment) => {
     if (!appointment) return null;
 
     const isPsychologist = !!appointment.details; // Phân biệt student và psychologist
@@ -65,22 +60,11 @@ const AppointmentsList = ({
           appointmentFor: details?.appointmentFor || "N/A",
         };
       }
-
-      // Check cache first to reduce API calls
       let studentProfile = userProfileCache.current[details.studentId];
       if (!studentProfile) {
-        try {
-          studentProfile = await apiService.fetchUserProfile(details.studentId);
-          userProfileCache.current[details.studentId] = studentProfile;
-        } catch (error) {
-          console.error(
-            `Error fetching profile for studentId: ${details.studentId}`,
-            error
-          );
-          studentProfile = null;
-        }
+        studentProfile = await apiService.fetchUserProfile(details.studentId);
+        userProfileCache.current[details.studentId] = studentProfile;
       }
-
       return {
         ...appointment,
         student:
@@ -90,7 +74,7 @@ const AppointmentsList = ({
         appointmentFor: details.appointmentFor || "Unknown",
       };
     } catch (error) {
-      console.error("Error processing appointment:", error);
+      console.error("Error fetching names:", error);
       return {
         ...appointment,
         student: "Unknown Student",
@@ -99,67 +83,28 @@ const AppointmentsList = ({
         appointmentFor: details?.appointmentFor || "Unknown",
       };
     }
-  }, []);
+  };
 
-  // Clean up effect
   useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  // Main effect for fetching appointment names
-  useEffect(() => {
-    // Prevent running if already processing or component unmounted
-    if (isProcessing || !isMounted.current) return;
-
     const fetchAllNames = async () => {
-      // Set processing flag to true to prevent concurrent updates
-      setIsProcessing(true);
-
-      try {
-        if (!filteredAppointments || filteredAppointments.length === 0) {
-          if (isMounted.current) {
-            setAppointmentsWithNames([]);
-          }
-          return;
-        }
-
-        // Create a stable copy of the array to work with
-        const appointments = [...filteredAppointments];
-        const promises = appointments.map(fetchNamesForAppointment);
-        const results = await Promise.all(promises);
-
-        // Only update state if component is still mounted
-        if (isMounted.current) {
-          // Filter out any null values
-          setAppointmentsWithNames(results.filter(Boolean));
-        }
-      } catch (error) {
-        console.error("Error in fetchAllNames:", error);
-        if (isMounted.current) {
-          setAppointmentsWithNames([]);
-        }
-      } finally {
-        // Reset processing flag when done
-        if (isMounted.current) {
-          setIsProcessing(false);
-        }
+      if (!filteredAppointments || filteredAppointments.length === 0) {
+        setAppointmentsWithNames([]);
+        return;
       }
+
+      const appointmentsWithNames = await Promise.all(
+        filteredAppointments.map(fetchNamesForAppointment)
+      );
+      // Filter out any null values that might have occurred
+      setAppointmentsWithNames(appointmentsWithNames.filter(Boolean));
     };
-
     fetchAllNames();
-
-    // Include filteredAppointments.length in the dependency array
-    // instead of the entire filteredAppointments array
-    // This prevents unnecessary re-renders when the array reference changes
-    // but the actual data remains the same
-  }, [fetchNamesForAppointment, filteredAppointments.length]);
+  }, [filteredAppointments]);
 
   return (
     <div className="appointments-container h-full overflow-hidden flex flex-col bg-gray-50">
       <div className="flex-1 flex flex-col">
-        {isLoading || isProcessing ? (
+        {isLoading ? (
           <div className="flex justify-center items-center h-full">
             <CSpinner color="primary" />
           </div>
@@ -178,16 +123,9 @@ const AppointmentsList = ({
                 const details = isPsychologist
                   ? appointment.details
                   : appointment;
-
-                // Create a stable key for React
-                const appointmentKey =
-                  appointment.id ||
-                  details?.appointmentId ||
-                  `appointment-${Math.random()}`;
-
                 return (
                   <AppointmentsCard
-                    key={appointmentKey}
+                    key={appointment.id || `appointment-${Math.random()}`}
                     student={appointment.student}
                     lesson={appointment.lesson}
                     date={
