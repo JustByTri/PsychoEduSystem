@@ -43,5 +43,11 @@ namespace PsychoEduSystem.Controller
             var response = await _userService.GetTotalAppointmentAsync();
             return Ok(response);
         }
+        [HttpGet("upcoming-appointments")]
+        public async Task<IActionResult> GetUpcomingAppointmentsAsync()
+        {
+            var response = await _userService.GetUpcomingAppointmentsAsync();
+            return Ok(response);
+        }
     }
 }

@@ -640,6 +640,22 @@ namespace BLL.Service
                 return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
             }
         }
+
+        public async Task<ResponseDTO> GetUpcomingAppointmentsAsync()
+        {
+            try
+            {
+                var appointments = _unitOfWork.Appointment.GetAll()
+                    .Where(a => a.Date.ToDateTime(TimeOnly.MinValue) >= DateTime.UtcNow)
+                    .Take(5)
+                    .ToList();
+                return new ResponseDTO("Retrieve upcoming appointments successfully", 200, true, appointments);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO($"Error: {ex.Message}", 500, false, string.Empty);
+            }
+        }
     }
     }
 
